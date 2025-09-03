@@ -1,0 +1,12 @@
+/.vs/*
+/*.sdf
+/loader/*.aps
+/CMakeSettings.json
+/out
+/.idea/
+/.vscode/
+/build/
+/loader/RCa22240
+/cmake-build*/
+/nampower/cmake-build*/
+.claude/
