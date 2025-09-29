@@ -30,8 +30,8 @@ namespace Nampower {
     constexpr uint32_t BUFFER_DECREASE_FREQUENCY = 10000; // time in ms between changes to lower buffer
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 10;
-    constexpr uint32_t PATCH_VERSION = 16;
+    constexpr uint32_t MINOR_VERSION = 11;
+    constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
@@ -110,7 +110,7 @@ namespace Nampower {
     using LuaCallT = void (__fastcall *)(const char *code, const char *unused);
     using LuaScriptT = uint32_t (__fastcall *)(uintptr_t *luaState);
     using GetGUIDFromNameT = std::uint64_t (__fastcall *)(const char *);
-    using GetUnitFromNameT = uintptr_t (__fastcall *)(const char *);
+    using GetUnitFromNameT = uintptr_t *(__fastcall *)(const char *);
     using lua_gettableT = void (__fastcall *)(uintptr_t *luaState, int globalsIndex);
     using lua_isstringT = bool (__fastcall *)(uintptr_t *, int);
     using lua_isnumberT = bool (__fastcall *)(uintptr_t *, int);
@@ -131,7 +131,8 @@ namespace Nampower {
     using SpellVisualsInitializeT = void (__stdcall *)(void);
 
     using PlaySpellVisual = void (__stdcall *)(int **param_1, void *param_2, int param_3, void **param_4);
-    using CGUnit_C_ClearCastingSpellT = void (__thiscall *)(uintptr_t *unit, uint32_t param_1, int param_2, int param_3);
+    using CGUnit_C_ClearCastingSpellT = void (__thiscall *)(uintptr_t *unit, uint32_t param_1, int param_2,
+                                                            int param_3);
     using CGUnit_C_ClearSpellEffectT = void (__thiscall *)(uintptr_t *unit, uint32_t param_1, int param_2);
 
     using GetBuffByIndexT = uintptr_t *(__fastcall *)(int index);

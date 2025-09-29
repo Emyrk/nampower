@@ -22,8 +22,11 @@ struct UserSettings {
     bool optimizeBufferUsingPacketTimings;
 
     bool preventRightClickTargetChange;
+    bool preventRightClickPvPAttack;
 
     bool doubleCastToEndChannelEarly;
+
+    bool spamProtectionEnabled;
 
     uint32_t spellQueueWindowMs;
     uint32_t onSwingBufferCooldownMs;

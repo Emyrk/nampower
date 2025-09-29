@@ -45,6 +45,8 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <cstdio>
+#include <windows.h>
 
 BOOL WINAPI DllMain(HINSTANCE, uint32_t, void *);
 
@@ -155,8 +157,8 @@ namespace Nampower {
         function(code, "Unused");
     }
 
-    uintptr_t* GetLuaStatePtr() {
-        typedef uintptr_t* (__fastcall* GETCONTEXT)(void);
+    uintptr_t *GetLuaStatePtr() {
+        typedef uintptr_t *(__fastcall *GETCONTEXT)(void);
         static auto p_GetContext = reinterpret_cast<GETCONTEXT>(0x7040D0);
         return p_GetContext();
     }
@@ -478,9 +480,19 @@ namespace Nampower {
 
                 // combat check from Script_UnitAffectingCombat
                 // only prevent right click if in combat
-                if (unit && ((*(uint32_t *) (*(int32_t *) (unit + 0x110) + 0xa0) >> 0x13 & 1) != 0)) {
+                if (unit && game::UnitIsInCombat(unit)) {
                     return 1;
                 }
+            }
+        }
+
+        if (gUserSettings.preventRightClickPvPAttack) {
+            // check if clicking player
+            auto playerUnit = game::ClntObjMgrObjectPtr(game::TYPEMASK_PLAYER, objectGUID);
+
+            if (playerUnit && game::UnitIsPvpFlagged(playerUnit)) {
+                // check if they have pvp enabled
+                return 1;
             }
         }
 
@@ -543,9 +555,17 @@ namespace Nampower {
             gUserSettings.preventRightClickTargetChange = atoi(value) != 0;
             DEBUG_LOG("Set NP_PreventRightClickTargetChange to " << gUserSettings.preventRightClickTargetChange);
 
+        } else if (strcmp(cvar, "NP_PreventRightClickPvPAttack") == 0) {
+            gUserSettings.preventRightClickPvPAttack = atoi(value) != 0;
+            DEBUG_LOG("Set NP_PreventRightClickPvPAttack to " << gUserSettings.preventRightClickPvPAttack);
+
         } else if (strcmp(cvar, "NP_DoubleCastToEndChannelEarly") == 0) {
             gUserSettings.doubleCastToEndChannelEarly = atoi(value) != 0;
             DEBUG_LOG("Set NP_DoubleCastToEndChannelEarly to " << gUserSettings.doubleCastToEndChannelEarly);
+
+        } else if (strcmp(cvar, "NP_SpamProtectionEnabled") == 0) {
+            gUserSettings.spamProtectionEnabled = atoi(value) != 0;
+            DEBUG_LOG("Set NP_SpamProtectionEnabled to " << gUserSettings.spamProtectionEnabled);
 
         } else if (strcmp(cvar, "NP_MinBufferTimeMs") == 0) {
             gUserSettings.minBufferTimeMs = atoi(value);
@@ -624,19 +644,43 @@ namespace Nampower {
         }
     }
 
+    bool isFileInUse(const char *filename) {
+        HANDLE file = CreateFileA(filename, GENERIC_READ | GENERIC_WRITE,
+                                  0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (file == INVALID_HANDLE_VALUE) {
+            DWORD error = GetLastError();
+            if (error == ERROR_SHARING_VIOLATION || error == ERROR_LOCK_VIOLATION) {
+                return true;
+            }
+            return false;
+        }
+        CloseHandle(file);
+        return false;
+    }
+
+    bool safeRemove(const char *filename) {
+        if (isFileInUse(filename)) {
+            return false;
+        }
+        return remove(filename) == 0;
+    }
+
+    bool safeRename(const char *oldname, const char *newname) {
+        if (isFileInUse(oldname) || isFileInUse(newname)) {
+            return false;
+        }
+        return rename(oldname, newname) == 0;
+    }
+
     void loadConfig() {
         gStartTime = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::high_resolution_clock::now().time_since_epoch()).count());
 
-        try {
-            // remove/rename previous logs
-            remove("nampower_debug.log.3");
-            rename("nampower_debug.log.2", "nampower_debug.log.3");
-            rename("nampower_debug.log.1", "nampower_debug.log.2");
-            rename("nampower_debug.log", "nampower_debug.log.1");
-        } catch (...) {
-            // ignore any exceptions during log rotation
-        }
+        // remove/rename previous logs
+        safeRemove("nampower_debug.log.3");
+        safeRename("nampower_debug.log.2", "nampower_debug.log.3");
+        safeRename("nampower_debug.log.1", "nampower_debug.log.2");
+        safeRename("nampower_debug.log", "nampower_debug.log.1");
 
 
         // open new log file
@@ -660,8 +704,11 @@ namespace Nampower {
         gUserSettings.optimizeBufferUsingPacketTimings = false;
 
         gUserSettings.preventRightClickTargetChange = false;
+        gUserSettings.preventRightClickPvPAttack = true;
 
         gUserSettings.doubleCastToEndChannelEarly = false;
+
+        gUserSettings.spamProtectionEnabled = true;
 
         gUserSettings.minBufferTimeMs = 55; // time in ms to buffer cast to minimize server failure
         gUserSettings.nonGcdBufferTimeMs = 100; // time in ms to buffer non-GCD spells to minimize server failure
@@ -885,11 +932,31 @@ namespace Nampower {
                      0,  // unk2
                      0); // unk3
 
+        char NP_PreventRightClickPvPAttack[] = "NP_PreventRightClickPvPAttack";
+        CVarRegister(NP_PreventRightClickPvPAttack, // name
+                     nullptr, // help
+                     0,  // unk1
+                     gUserSettings.preventRightClickPvPAttack ? defaultTrue : defaultFalse, // default value address
+                     nullptr, // callback
+                     1, // category
+                     0,  // unk2
+                     0); // unk3
+
         char NP_DoubleCastToEndChannelEarly[] = "NP_DoubleCastToEndChannelEarly";
         CVarRegister(NP_DoubleCastToEndChannelEarly, // name
                      nullptr, // help
                      0,  // unk1
                      gUserSettings.doubleCastToEndChannelEarly ? defaultTrue : defaultFalse, // default value address
+                     nullptr, // callback
+                     1, // category
+                     0,  // unk2
+                     0); // unk3
+
+        char NP_SpamProtectionEnabled[] = "NP_SpamProtectionEnabled";
+        CVarRegister(NP_SpamProtectionEnabled, // name
+                     nullptr, // help
+                     0,  // unk1
+                     gUserSettings.spamProtectionEnabled ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
                      0,  // unk2
@@ -932,7 +999,11 @@ namespace Nampower {
 
         loadUserVar("NP_PreventRightClickTargetChange");
 
+        loadUserVar("NP_PreventRightClickPvPAttack");
+
         loadUserVar("NP_DoubleCastToEndChannelEarly");
+
+        loadUserVar("NP_SpamProtectionEnabled");
 
         loadUserVar("NP_MinBufferTimeMs");
         loadUserVar("NP_NonGcdBufferTimeMs");
@@ -975,7 +1046,8 @@ namespace Nampower {
 
     // Template function to simplify hook initialization with specific storage
     template<typename FuncT, typename HookT>
-    std::unique_ptr<hadesmem::PatchDetour<FuncT>> createHook(const hadesmem::Process& process, Offsets offset, HookT hookFunc) {
+    std::unique_ptr<hadesmem::PatchDetour<FuncT>>
+    createHook(const hadesmem::Process &process, Offsets offset, HookT hookFunc) {
         auto const originalFunc = hadesmem::detail::AliasCast<FuncT>(offset);
         auto detour = std::make_unique<hadesmem::PatchDetour<FuncT>>(process, originalFunc, hookFunc);
         detour->Apply();
@@ -991,30 +1063,50 @@ namespace Nampower {
         gCastDetour = createHook<CastSpellT>(process, Offsets::Spell_C_CastSpell, &Spell_C_CastSpellHook);
         gSendCastDetour = createHook<SendCastT>(process, Offsets::SendCast, &SendCastHook);
         gCancelSpellDetour = createHook<CancelSpellT>(process, Offsets::CancelSpell, &CancelSpellHook);
-        gCastResultHandlerDetour = createHook<PacketHandlerT>(process, Offsets::CastResultHandler, &CastResultHandlerHook);
-        gSpellStartHandlerDetour = createHook<FastCallPacketHandlerT>(process, Offsets::SpellStartHandler, &SpellStartHandlerHook);
-        gPeriodicAuraLogHandlerDetour = createHook<FastCallPacketHandlerT>(process, Offsets::PeriodicAuraLogHandler, &PeriodicAuraLogHandlerHook);
-        gSpellNonMeleeDmgLogHandlerDetour = createHook<FastCallPacketHandlerT>(process, Offsets::SpellNonMeleeDmgLogHandler, &SpellNonMeleeDmgLogHandlerHook);
-        gSpellChannelStartHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellChannelStartHandler, &SpellChannelStartHandlerHook);
-        gSpellChannelUpdateHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellChannelUpdateHandler, &SpellChannelUpdateHandlerHook);
-        gSpellFailedDetour = createHook<Spell_C_SpellFailedT>(process, Offsets::Spell_C_SpellFailed, &Spell_C_SpellFailedHook);
+        gCastResultHandlerDetour = createHook<PacketHandlerT>(process, Offsets::CastResultHandler,
+                                                              &CastResultHandlerHook);
+        gSpellStartHandlerDetour = createHook<FastCallPacketHandlerT>(process, Offsets::SpellStartHandler,
+                                                                      &SpellStartHandlerHook);
+        gPeriodicAuraLogHandlerDetour = createHook<FastCallPacketHandlerT>(process, Offsets::PeriodicAuraLogHandler,
+                                                                           &PeriodicAuraLogHandlerHook);
+        gSpellNonMeleeDmgLogHandlerDetour = createHook<FastCallPacketHandlerT>(process,
+                                                                               Offsets::SpellNonMeleeDmgLogHandler,
+                                                                               &SpellNonMeleeDmgLogHandlerHook);
+        gSpellChannelStartHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellChannelStartHandler,
+                                                                     &SpellChannelStartHandlerHook);
+        gSpellChannelUpdateHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellChannelUpdateHandler,
+                                                                      &SpellChannelUpdateHandlerHook);
+        gSpellFailedDetour = createHook<Spell_C_SpellFailedT>(process, Offsets::Spell_C_SpellFailed,
+                                                              &Spell_C_SpellFailedHook);
         gSpellGoDetour = createHook<SpellGoT>(process, Offsets::SpellGo, &SpellGoHook);
         gSpellDelayedDetour = createHook<PacketHandlerT>(process, Offsets::SpellDelayed, &SpellDelayedHook);
-        gSpellTargetUnitDetour = createHook<LuaScriptT>(process, Offsets::Script_SpellTargetUnit, &Script_SpellTargetUnitHook);
-        gSpellStopCastingDetour = createHook<LuaScriptT>(process, Offsets::Script_SpellStopCasting, &Script_SpellStopCastingHook);
-        gSpell_C_TargetSpellDetour = createHook<Spell_C_TargetSpellT>(process, Offsets::Spell_C_TargetSpell, &Spell_C_TargetSpellHook);
-        gCastSpellByNameNoQueueDetour = createHook<LuaScriptT>(process, Offsets::Script_CastSpellByNameNoQueue, Script_CastSpellByNameNoQueue);
-        gQueueSpellByNameDetour = createHook<LuaScriptT>(process, Offsets::Script_QueueSpellByName, Script_QueueSpellByName);
+        gSpellTargetUnitDetour = createHook<LuaScriptT>(process, Offsets::Script_SpellTargetUnit,
+                                                        &Script_SpellTargetUnitHook);
+        gSpellStopCastingDetour = createHook<LuaScriptT>(process, Offsets::Script_SpellStopCasting,
+                                                         &Script_SpellStopCastingHook);
+        gSpell_C_TargetSpellDetour = createHook<Spell_C_TargetSpellT>(process, Offsets::Spell_C_TargetSpell,
+                                                                      &Spell_C_TargetSpellHook);
+        gCastSpellByNameNoQueueDetour = createHook<LuaScriptT>(process, Offsets::Script_CastSpellByNameNoQueue,
+                                                               Script_CastSpellByNameNoQueue);
+        gQueueSpellByNameDetour = createHook<LuaScriptT>(process, Offsets::Script_QueueSpellByName,
+                                                         Script_QueueSpellByName);
         qQueueScriptDetour = createHook<LuaScriptT>(process, Offsets::Script_QueueScript, Script_QueueScript);
         gIsSpellInRangeDetour = createHook<LuaScriptT>(process, Offsets::Script_IsSpellInRange, Script_IsSpellInRange);
         gIsSpellUsableDetour = createHook<LuaScriptT>(process, Offsets::Script_IsSpellUsable, Script_IsSpellUsable);
-        gGetCurrentCastingInfoDetour = createHook<LuaScriptT>(process, Offsets::Script_GetCurrentCastingInfo, Script_GetCurrentCastingInfo);
-        gGetSpellIdForNameDetour = createHook<LuaScriptT>(process, Offsets::Script_GetSpellIdForName, Script_GetSpellIdForName);
-        gGetSpellNameAndRankForIdDetour = createHook<LuaScriptT>(process, Offsets::Script_GetSpellNameAndRankForId, Script_GetSpellNameAndRankForId);
-        gGetSpellSlotAndTypeForNameDetour = createHook<LuaScriptT>(process, Offsets::Script_GetSpellSlotTypeIdForName, Script_GetSpellSlotTypeIdForName);
-        gOnSpriteRightClickDetour = createHook<OnSpriteRightClickT>(process, Offsets::OnSpriteRightClick, OnSpriteRightClickHook);
-        gChannelStopCastingNextTickDetour = createHook<LuaScriptT>(process, Offsets::Script_ChannelStopCastingNextTick, Script_ChannelStopCastingNextTick);
-        gGetNampowerVersionDetour = createHook<LuaScriptT>(process, Offsets::Script_GetNampowerVersion, Script_GetNampowerVersion);
+        gGetCurrentCastingInfoDetour = createHook<LuaScriptT>(process, Offsets::Script_GetCurrentCastingInfo,
+                                                              Script_GetCurrentCastingInfo);
+        gGetSpellIdForNameDetour = createHook<LuaScriptT>(process, Offsets::Script_GetSpellIdForName,
+                                                          Script_GetSpellIdForName);
+        gGetSpellNameAndRankForIdDetour = createHook<LuaScriptT>(process, Offsets::Script_GetSpellNameAndRankForId,
+                                                                 Script_GetSpellNameAndRankForId);
+        gGetSpellSlotAndTypeForNameDetour = createHook<LuaScriptT>(process, Offsets::Script_GetSpellSlotTypeIdForName,
+                                                                   Script_GetSpellSlotTypeIdForName);
+        gOnSpriteRightClickDetour = createHook<OnSpriteRightClickT>(process, Offsets::OnSpriteRightClick,
+                                                                    OnSpriteRightClickHook);
+        gChannelStopCastingNextTickDetour = createHook<LuaScriptT>(process, Offsets::Script_ChannelStopCastingNextTick,
+                                                                   Script_ChannelStopCastingNextTick);
+        gGetNampowerVersionDetour = createHook<LuaScriptT>(process, Offsets::Script_GetNampowerVersion,
+                                                           Script_GetNampowerVersion);
         gGetItemLevelDetour = createHook<LuaScriptT>(process, Offsets::Script_GetItemLevel, Script_GetItemLevel);
         gIEndSceneDetour = createHook<ISceneEndT>(process, Offsets::ISceneEndPtr, &ISceneEndHook);
     }
@@ -1119,6 +1211,16 @@ namespace Nampower {
 }
 
 extern "C" __declspec(dllexport) uint32_t Load() {
-    Nampower::load();
+    try {
+        Nampower::load();
+    } catch (const std::exception &e) {
+        std::string errorMsg = "Exception in Nampower::load(): ";
+        errorMsg += e.what();
+        MessageBoxA(nullptr, errorMsg.c_str(), "Nampower Error", MB_OK | MB_ICONERROR);
+        return EXIT_FAILURE;
+    } catch (...) {
+        MessageBoxA(nullptr, "Unknown exception in Nampower::load()", "Nampower Error", MB_OK | MB_ICONERROR);
+        return EXIT_FAILURE;
+    }
     return EXIT_SUCCESS;
 }

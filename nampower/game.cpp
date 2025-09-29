@@ -152,4 +152,40 @@ namespace game {
 
         return unitFields->target;
     }
+
+    bool UnitIsPvpFlagged(uintptr_t *unit) {
+        if (!unit) {
+            return false;
+        }
+
+        auto *unitFields = *reinterpret_cast<UnitFields **>(unit + 68);
+
+        if (unitFields == nullptr) {
+            // we don't have attribute info.
+            return false;
+        }
+
+        auto flags = unitFields->flags;
+        return (flags & UNIT_FLAG_PVP);
+    }
+
+    bool UnitIsInCombat(uintptr_t *unit) {
+        if (!unit) {
+            return false;
+        }
+
+        auto *unitFields = *reinterpret_cast<UnitFields **>(unit + 68);
+
+        if (unitFields == nullptr) {
+            // we don't have attribute info.
+            return false;
+        }
+
+        auto flags = unitFields->flags;
+        if ((flags & UNIT_FLAG_IN_COMBAT) != 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

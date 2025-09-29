@@ -88,7 +88,11 @@ SET NP_TargetingQueueWindowMs "1000"
 
 - `NP_PreventRightClickTargetChange` - Whether to prevent right-clicking from changing your current target when in combat.  If you don't have a target right click will still change your target even with this on.  This is mainly to prevent accidentally changing targets in combat when trying to adjust your camera.  0 to disable, 1 to enable. Default is 0.
 
+- `NP_PreventRightClickPvPAttack` - Whether to prevent right-clicking on PvP flagged players to avoid accidental PvP attacks.  0 to disable, 1 to enable. Default is 1.
+
 - `NP_DoubleCastToEndChannelEarly` - Whether to allow double casting a spell within 350ms to end channeling on the next tick.  Takes into account your ChannelLatencyReductionPercentage.  0 to disable, 1 to enable. Default is 0.
+
+- `NP_SpamProtectionEnabled` - Whether to enable spam protection functionality that blocks spamming spells while waiting for the server to respond to your initial cast due to issues spamming can cause.  0 to disable, 1 to enable. Default is 1.
 
 - `NP_ChannelLatencyReductionPercentage` - The percentage of your latency to subtract from the end of a channel duration to optimize cast time while hopefully not losing any ticks (more explanation below). Default is 75.
 

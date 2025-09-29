@@ -521,20 +521,23 @@ namespace Nampower {
         // if cast in the last second and still waiting for server result or succeeded
         // otherwise can break cooldown in the client and cause unnecessary errors
         if (castTime == 0 || spell->Attributes & game::SPELL_ATTR_DISABLED_WHILE_ACTIVE) {
-            auto castParams = gCastHistory.findNewestWaitingForServerSpellId(spellId);
-            if (castParams &&
-                currentTime - castParams->castStartTimeMs < 500) {
-                DEBUG_LOG("Ignoring " << spellName
-                                      << " cast still waiting for server result for the same spell");
-                return false;
-            } else {
-                castParams = gCastHistory.findNewestSuccessfulSpellId(spellId);
+            // check if spam protection is enabled
+            if(gUserSettings.spamProtectionEnabled) {
+                auto castParams = gCastHistory.findNewestWaitingForServerSpellId(spellId);
                 if (castParams &&
-                    castParams->guid == guid &&
                     currentTime - castParams->castStartTimeMs < 500) {
                     DEBUG_LOG("Ignoring " << spellName
-                                          << " cast recently succeeded for the same spell and target");
+                                          << " cast still waiting for server result for the same spell");
                     return false;
+                } else {
+                    castParams = gCastHistory.findNewestSuccessfulSpellId(spellId);
+                    if (castParams &&
+                        castParams->guid == guid &&
+                        currentTime - castParams->castStartTimeMs < 500) {
+                        DEBUG_LOG("Ignoring " << spellName
+                                              << " cast recently succeeded for the same spell and target");
+                        return false;
+                    }
                 }
             }
         }
