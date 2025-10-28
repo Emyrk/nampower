@@ -8,7 +8,7 @@
 #include "logging.hpp"
 
 namespace Nampower {
-    auto const APPLY_BUFFER_TO_GCD = true;  // only necessary until the gcd issue is fixed again
+    auto const APPLY_BUFFER_TO_GCD = false;  // gcd issue seems fixed for now
 
     uint32_t GetChannelBaseDuration(const game::SpellRec *spell) {
         auto const duration = game::GetDurationObject(spell->DurationIndex);
