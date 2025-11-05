@@ -31,7 +31,7 @@ namespace Nampower {
 
     constexpr uint32_t MAJOR_VERSION = 2;
     constexpr uint32_t MINOR_VERSION = 11;
-    constexpr uint32_t PATCH_VERSION = 1;
+    constexpr uint32_t PATCH_VERSION = 2;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
@@ -94,6 +94,8 @@ namespace Nampower {
                                                          uint32_t *duration, uint64_t *startTime, uint32_t *enable);
     using Spell_C_IsSpellUsableT = int (__fastcall *)(const game::SpellRec *spellRec, uint32_t *usesManaReturn);
 
+    using CGPlayer_C_OnAttackIconPressedT = int (__fastcall *)(uintptr_t *this_ptr, void *dummy_edx, uint64_t guid);
+
     using GetSpellSlotAndTypeT = int (__fastcall *)(const char *, uint32_t *);
     using GetTimeMsT = uint64_t (__stdcall *)();
 
@@ -137,6 +139,8 @@ namespace Nampower {
 
     using GetBuffByIndexT = uintptr_t *(__fastcall *)(int index);
 
+    using TargetUnitT = void (__fastcall *)(uint64_t *guid);
+
     using CVarLookupT = uintptr_t *(__fastcall *)(const char *);
     using SetCVarT = int (__fastcall *)(uintptr_t *luaPtr);
     using CVarRegisterT = int *(__fastcall *)(char *name, char *help, int unk1, const char *defaultValuePtr,
@@ -170,4 +174,11 @@ namespace Nampower {
     bool processQueues();
 
     uint32_t EffectiveCastEndMs();
+
+    void SetTarget(uint64_t target);
+
+    void SetSelectionTarget(uint64_t target);
+
+    void SetAttackTarget(uint64_t target);
+
 }

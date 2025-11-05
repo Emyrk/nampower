@@ -128,6 +128,8 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT>> gPeriodicAuraLogHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT>> gSpellNonMeleeDmgLogHandlerDetour;
 
+    std::unique_ptr<hadesmem::PatchDetour<CGPlayer_C_OnAttackIconPressedT>> gCGPlayer_C_OnAttackIconPressedDetour;
+
     uint32_t GetTime() {
         return static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::high_resolution_clock::now().time_since_epoch()).count()) - gStartTime;
@@ -163,6 +165,34 @@ namespace Nampower {
         return p_GetContext();
     }
 
+    void SetTarget(uint64_t target) {
+        auto setTargetFn = reinterpret_cast<TargetUnitT>(Offsets::ScriptTargetUnit);
+        setTargetFn(&target);
+    }
+
+    void SetSelectionTarget(uint64_t target) {
+        auto dataStore = CDataStore();
+        uint32_t opcode = 317; // CMSG_SET_SELECTION
+        dataStore.Put(opcode);
+        dataStore.Put(target);
+
+        dataStore.Finalize();
+
+        auto const clientServicesSend = reinterpret_cast<ClientServices_SendT>(Offsets::ClientServices_Send);
+        clientServicesSend(&dataStore);
+    }
+
+    void SetAttackTarget(uint64_t target) {
+        auto dataStore = CDataStore();
+        uint32_t opcode = 0x141; // CMSG_ATTACKSWING
+        dataStore.Put(opcode);
+        dataStore.Put(target);
+
+        dataStore.Finalize();
+
+        auto const clientServicesSend = reinterpret_cast<ClientServices_SendT>(Offsets::ClientServices_Send);
+        clientServicesSend(&dataStore);
+    }
 
     void RegisterLuaFunction(char *name, uintptr_t *func) {
         DEBUG_LOG("Registering " << name << " to " << func);
@@ -1109,6 +1139,10 @@ namespace Nampower {
                                                            Script_GetNampowerVersion);
         gGetItemLevelDetour = createHook<LuaScriptT>(process, Offsets::Script_GetItemLevel, Script_GetItemLevel);
         gIEndSceneDetour = createHook<ISceneEndT>(process, Offsets::ISceneEndPtr, &ISceneEndHook);
+
+        // gCGPlayer_C_OnAttackIconPressedDetour = createHook<CGPlayer_C_OnAttackIconPressedT>(process,
+        //                                                                                     Offsets::CGPlayer_C_OnAttackIconPressed,
+        //                                                                                    &CGPlayer_C_OnAttackIconPressedHook);
     }
 
     void SpellVisualsInitializeHook(hadesmem::PatchDetourBase *detour) {

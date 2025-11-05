@@ -35,4 +35,7 @@ namespace Nampower {
                                        CDataStore *packet);
 
     int PlaySpellVisualHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet);
+
+    int CGPlayer_C_OnAttackIconPressedHook(hadesmem::PatchDetourBase *detour, uintptr_t *this_ptr, void *dummy_edx,
+                                           uint64_t guid);
 }

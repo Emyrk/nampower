@@ -76,6 +76,7 @@ enum class Offsets : std::uint32_t {
     LockedTargetGuid = 0x00B4E2D8,
     OnSpriteRightClick = 0x00492820,
     CGGameUI_Target = 0X00493540,
+    ScriptTargetUnit = 0X00489A40,
 
     SpellVisualsHandleCastStart = 0X006EC220,
     PlaySpellVisualHandler = 0X006E98D0,
@@ -174,4 +175,6 @@ enum class Offsets : std::uint32_t {
 
     CGUnit_C_ClearCastingSpell = 0x0060d040,
     CGUnit_C_ClearSpellEffect = 0x00614150,
+
+    CGPlayer_C_OnAttackIconPressed = 0X006131A0,
 };

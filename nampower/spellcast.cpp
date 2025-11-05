@@ -108,8 +108,6 @@ namespace Nampower {
         }
 
         gLastCastData.startTimeMs = currentTime;
-
-        // if queued cast, simulate spellcast start
     }
 
     void CastQueuedNonGcdSpell() {
@@ -120,7 +118,7 @@ namespace Nampower {
 
                 gCastData.castingQueuedSpell = true;
                 gCastData.numRetries = nonGcdCastParams.numRetries;
-                Spell_C_CastSpellHook(castSpellDetour, nonGcdCastParams.playerUnit, nonGcdCastParams.spellId,
+                Spell_C_CastSpellHook(castSpellDetour, nonGcdCastParams.casterUnit, nonGcdCastParams.spellId,
                                       nonGcdCastParams.item, nonGcdCastParams.guid);
                 gLastCastData.wasQueued = true;
             } else {
@@ -140,7 +138,7 @@ namespace Nampower {
                 DEBUG_LOG("Triggering queued cast of " << game::GetSpellName(gLastNormalCastParams.spellId));
                 gCastData.castingQueuedSpell = true;
                 gCastData.numRetries = gLastNormalCastParams.numRetries;
-                Spell_C_CastSpellHook(castSpellDetour, gLastNormalCastParams.playerUnit, gLastNormalCastParams.spellId,
+                Spell_C_CastSpellHook(castSpellDetour, gLastNormalCastParams.casterUnit, gLastNormalCastParams.spellId,
                                       gLastNormalCastParams.item, gLastNormalCastParams.guid);
                 gLastCastData.wasQueued = true;
             } else {
@@ -163,7 +161,7 @@ namespace Nampower {
     }
 
     void SaveCastParams(CastSpellParams *params,
-                        uint32_t *playerUnit,
+                        uint32_t *casterUnit,
                         uint32_t spellId,
                         uintptr_t *item,
                         std::uint64_t guid,
@@ -172,7 +170,7 @@ namespace Nampower {
                         uint32_t castStartTimeMs,
                         CastType castType,
                         uint32_t numRetries) {
-        params->playerUnit = playerUnit;
+        params->casterUnit = casterUnit;
         params->spellId = spellId;
         params->item = item;
         params->guid = guid;
@@ -218,18 +216,6 @@ namespace Nampower {
         }
     }
 
-    void setSelectionTarget(uint64_t target) {
-        auto dataStore = CDataStore();
-        uint32_t opcode = 317; // CMSG_SET_SELECTION
-        dataStore.Put(opcode);
-        dataStore.Put(target);
-
-        dataStore.Finalize();
-
-        auto const clientServicesSend = reinterpret_cast<ClientServices_SendT>(Offsets::ClientServices_Send);
-        clientServicesSend(&dataStore);
-    }
-
     bool
     Spell_C_CastSpellHook(hadesmem::PatchDetourBase *detour, uint32_t *casterUnit, uint32_t spellId, uintptr_t *item,
                           std::uint64_t guid) {
@@ -257,14 +243,14 @@ namespace Nampower {
         auto const isSpecialSpell = SpellIsAttackTradeskillOrEnchant(spell);
         auto const currentTargetGuid = game::GetCurrentTargetGuid();
 
-        if(spellIsChanneling) {
+        if (spellIsChanneling) {
             auto casterGuid = game::UnitGetGuid(casterUnit);
             if (casterGuid == game::ClntObjMgrGetActivePlayerGuid()) {
                 // check that locked target guid matches our unit target guid
                 auto unitTargetGuid = game::UnitGetTargetGuid(casterUnit);
                 if (unitTargetGuid != currentTargetGuid) {
                     DEBUG_LOG("Updating selection target to " << currentTargetGuid << " from " << unitTargetGuid);
-                    setSelectionTarget(currentTargetGuid);
+                    SetSelectionTarget(currentTargetGuid);
                 }
             }
         }
@@ -299,7 +285,8 @@ namespace Nampower {
             itemId = game::GetItemId((game::CGItem_C *) item);
         }
 
-        DEBUG_LOG("Attempt cast " << spellName << " item " << item << " on guid " << guid << " target " << currentTargetGuid
+        DEBUG_LOG("Attempt cast " << spellName << " item " << item << " on guid " << guid << " target "
+                                  << currentTargetGuid
                                   << ", time since last cast " << currentTime - gLastCastData.startTimeMs);
 
         // clear cooldown queue if we are casting a spell
@@ -522,7 +509,7 @@ namespace Nampower {
         // otherwise can break cooldown in the client and cause unnecessary errors
         if (castTime == 0 || spell->Attributes & game::SPELL_ATTR_DISABLED_WHILE_ACTIVE) {
             // check if spam protection is enabled
-            if(gUserSettings.spamProtectionEnabled) {
+            if (gUserSettings.spamProtectionEnabled) {
                 auto castParams = gCastHistory.findNewestWaitingForServerSpellId(spellId);
                 if (castParams &&
                     currentTime - castParams->castStartTimeMs < 500) {
@@ -643,7 +630,7 @@ namespace Nampower {
 
 
                         TriggerSpellQueuedEvent(ON_SWING_QUEUE_POPPED, gLastOnSwingCastParams.spellId);
-                        Spell_C_CastSpellHook(castSpellDetour, gLastOnSwingCastParams.playerUnit,
+                        Spell_C_CastSpellHook(castSpellDetour, gLastOnSwingCastParams.casterUnit,
                                               gLastOnSwingCastParams.spellId,
                                               gLastOnSwingCastParams.item, gLastOnSwingCastParams.guid);
                         gCastData.onSwingQueued = false;
