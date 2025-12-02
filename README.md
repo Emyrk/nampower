@@ -122,7 +122,7 @@ Examples:
 ### Spell/Item/Unit information
 
 #### GetItemStats(itemId)
-Returns a Lua table containing all fields for the item’s `ItemStats` record (including localized `displayName` and `description`). Returns nil if the item cannot be found or loaded.
+Returns a Lua table containing all fields for the item's `ItemStats` record (including localized `displayName` and `description`). Returns nil if the item cannot be found or loaded.
 
 Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
 
@@ -151,7 +151,7 @@ print("Weapon speed: " .. (delay / 1000) .. " seconds") -- 1.9 seconds
 ```
 
 #### GetSpellRec(spellId)
-Returns a Lua table containing all fields for the spell’s `SpellRec` record (including localized `name` and `rank`). Returns nil if the spell cannot be found.
+Returns a Lua table containing all fields for the spell's `SpellRec` record (including localized `name` and `rank`). Returns nil if the spell cannot be found.
 
 Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
 
