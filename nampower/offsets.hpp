@@ -104,7 +104,8 @@ enum class Offsets : std::uint32_t {
     Spell_C_GetSpellCooldown = 0X006E2EA0,
     Spell_C_IsSpellUsable = 0X006E3D60,
     Spell_C_GetDuration = 0X006EA000,
-    Spell_C_GetSpellModifiers = 0x006e6af0,
+    Spell_C_ApplySpellModifiers = 0x006e6af0,
+    Spell_C_GetSpellModifierValues = 0x006e6b30,
 
     CVarLookup = 0x0063DEC0,
     RegisterCVar = 0X0063DB90,

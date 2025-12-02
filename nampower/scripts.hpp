@@ -42,6 +42,12 @@ namespace Nampower {
 
     uint32_t Script_GetSpellRecField(uintptr_t *luaState);
 
+    uint32_t Script_GetUnitData(uintptr_t *luaState);
+
+    uint32_t Script_GetUnitField(uintptr_t *luaState);
+
+    uint32_t Script_GetSpellModifiers(uintptr_t *luaState);
+
     uint32_t GetSpellSlotFromLuaHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t *slot, uint32_t *type);
 
     bool RunQueuedScript(int priority);

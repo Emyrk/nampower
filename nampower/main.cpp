@@ -93,6 +93,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<CancelSpellT>> gCancelSpellDetour;
     std::unique_ptr<hadesmem::PatchDetour<SignalEventT>> gSignalEventDetour;
     std::unique_ptr<hadesmem::PatchDetour<Spell_C_SpellFailedT>> gSpellFailedDetour;
+    std::unique_ptr<hadesmem::PatchDetour<Spell_C_GetSpellModifiersT>> gSpell_C_GetSpellModifiersDetour;
     std::unique_ptr<hadesmem::PatchRaw> gCastbarPatch;
     std::unique_ptr<hadesmem::PatchDetour<ISceneEndT>> gIEndSceneDetour;
     std::unique_ptr<hadesmem::PatchDetour<Spell_C_GetAutoRepeatingSpellT>> gSpell_C_GetAutoRepeatingSpellDetour;
@@ -537,6 +538,13 @@ namespace Nampower {
 
     void InvalidFunctionPtrCheckHook(hadesmem::PatchDetourBase *detour, uint32_t param_1) {
         // remove original call to allow registering lua functions at any address range
+    }
+
+    void
+    Spell_C_GetSpellModifiersHook(hadesmem::PatchDetourBase *detour, const game::SpellRec *spellRec, int *returnVal,
+                                  game::SpellModOp modOp) {
+        auto const getSpellModifiers = detour->GetTrampolineT<Spell_C_GetSpellModifiersT>();
+        getSpellModifiers(spellRec, returnVal, modOp);
     }
 
     void updateFromCvar(const char *cvar, const char *value) {
@@ -1120,9 +1128,6 @@ namespace Nampower {
         gGetSpellSlotFromLuaDetour = createHook<GetSpellSlotFromLuaT>(process, Offsets::GetSpellSlotFromLua,
                                                                       &GetSpellSlotFromLuaHook);
 
-        // gCGPlayer_C_OnAttackIconPressedDetour = createHook<CGPlayer_C_OnAttackIconPressedT>(process,
-        //                                                                                     Offsets::CGPlayer_C_OnAttackIconPressed,
-        //                                                                                    &CGPlayer_C_OnAttackIconPressedHook);
     }
 
     void SpellVisualsInitializeHook(hadesmem::PatchDetourBase *detour) {
@@ -1176,7 +1181,8 @@ namespace Nampower {
         RegisterLuaFunction(getSpellSlotTypeIdForName, reinterpret_cast<uintptr_t *>(Script_GetSpellSlotTypeIdForName));
 
         char channelStopCastingNextTick[] = "ChannelStopCastingNextTick";
-        RegisterLuaFunction(channelStopCastingNextTick, reinterpret_cast<uintptr_t *>(Script_ChannelStopCastingNextTick));
+        RegisterLuaFunction(channelStopCastingNextTick,
+                            reinterpret_cast<uintptr_t *>(Script_ChannelStopCastingNextTick));
 
         char getNampowerVersion[] = "GetNampowerVersion";
         RegisterLuaFunction(getNampowerVersion, reinterpret_cast<uintptr_t *>(Script_GetNampowerVersion));
@@ -1195,6 +1201,15 @@ namespace Nampower {
 
         char getSpellRecField[] = "GetSpellRecField";
         RegisterLuaFunction(getSpellRecField, reinterpret_cast<uintptr_t *>(Script_GetSpellRecField));
+
+        char getUnitData[] = "GetUnitData";
+        RegisterLuaFunction(getUnitData, reinterpret_cast<uintptr_t *>(Script_GetUnitData));
+
+        char getUnitField[] = "GetUnitField";
+        RegisterLuaFunction(getUnitField, reinterpret_cast<uintptr_t *>(Script_GetUnitField));
+
+        char getSpellModifiers[] = "GetSpellModifiers";
+        RegisterLuaFunction(getSpellModifiers, reinterpret_cast<uintptr_t *>(Script_GetSpellModifiers));
     }
 
     std::once_flag loadFlag;

@@ -6,6 +6,7 @@
 #include "offsets.hpp"
 #include "items.hpp"
 #include "dbc_fields.hpp"
+#include "unit_fields.hpp"
 #include "helper.hpp"
 #include <cstring>
 
@@ -695,6 +696,199 @@ namespace Nampower {
         // Field not found
         lua_error(luaState, "Unknown field name");
         return 0;
+    }
+
+    uint32_t Script_GetUnitData(uintptr_t *luaState) {
+        if (!lua_isstring(luaState, 1)) {
+            lua_error(luaState, "Usage: GetUnitData(unitToken) - unitToken can be 'player', 'target', 'pet', etc., or a GUID string");
+            return 0;
+        }
+
+        const char *unitToken = lua_tostring(luaState, 1);
+        uint64_t guid;
+
+        // Check if it's a GUID string (starts with "0x" or "0X")
+        if (strncmp(unitToken, "0x", 2) == 0 || strncmp(unitToken, "0X", 2) == 0) {
+            guid = std::stoull(unitToken, nullptr, 16);
+        } else {
+            // Get GUID from unit token
+            auto const getGUIDFromName = reinterpret_cast<GetGUIDFromNameT>(Offsets::GetGUIDFromName);
+            guid = getGUIDFromName(unitToken);
+        }
+
+        if (guid == 0) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // Get unit object pointer
+        auto unit = game::GetObjectPtr(guid);
+        if (!unit) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // Get unit fields (offset 68 from unit pointer)
+        auto *unitFields = *reinterpret_cast<game::UnitFields **>(unit + 68);
+        if (!unitFields) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // Create new table
+        lua_newtable(luaState);
+
+        // Push all simple fields using descriptors
+        PushFieldsToLua(luaState, unitFields, unitFieldsFields, unitFieldsFieldsCount);
+
+        // Push all array fields using descriptors
+        PushArrayFieldsToLua(luaState, unitFields, unitFieldsArrayFields, unitFieldsArrayFieldsCount);
+
+        return 1; // Return the table
+    }
+
+    uint32_t Script_GetUnitField(uintptr_t *luaState) {
+        if (!lua_isstring(luaState, 1) || !lua_isstring(luaState, 2)) {
+            lua_error(luaState, "Usage: GetUnitField(unitToken, fieldName) - unitToken can be 'player', 'target', 'pet', etc., or a GUID string");
+            return 0;
+        }
+
+        InitializeUnitFieldMaps();
+
+        const char *unitToken = lua_tostring(luaState, 1);
+        const char *fieldName = lua_tostring(luaState, 2);
+
+        uint64_t guid;
+
+        // Check if it's a GUID string (starts with "0x" or "0X")
+        if (strncmp(unitToken, "0x", 2) == 0 || strncmp(unitToken, "0X", 2) == 0) {
+            guid = std::stoull(unitToken, nullptr, 16);
+        } else {
+            // Get GUID from unit token
+            auto const getGUIDFromName = reinterpret_cast<GetGUIDFromNameT>(Offsets::GetGUIDFromName);
+            guid = getGUIDFromName(unitToken);
+        }
+
+        if (guid == 0) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // Get unit object pointer
+        auto unit = game::GetObjectPtr(guid);
+        if (!unit) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // Get unit fields (offset 68 from unit pointer)
+        auto *unitFields = *reinterpret_cast<game::UnitFields **>(unit + 68);
+        if (!unitFields) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // O(1) hash table lookup for simple fields
+        auto simpleIt = unitFieldsFieldMap.find(fieldName);
+        if (simpleIt != unitFieldsFieldMap.end()) {
+            size_t i = simpleIt->second;
+            const char *fieldPtr = reinterpret_cast<const char *>(unitFields) + unitFieldsFields[i].offset;
+
+            switch (unitFieldsFields[i].type) {
+                case FieldType::UINT32:
+                    lua_pushnumber(luaState, *reinterpret_cast<const uint32_t *>(fieldPtr));
+                    return 1;
+                case FieldType::UINT64:
+                    lua_pushnumber(luaState, static_cast<double>(*reinterpret_cast<const uint64_t *>(fieldPtr)));
+                    return 1;
+                case FieldType::FLOAT:
+                    lua_pushnumber(luaState, *reinterpret_cast<const float *>(fieldPtr));
+                    return 1;
+                default:
+                    break;
+            }
+        }
+
+        // O(1) hash table lookup for array fields
+        auto arrayIt = unitFieldsArrayFieldMap.find(fieldName);
+        if (arrayIt != unitFieldsArrayFieldMap.end()) {
+            size_t i = arrayIt->second;
+            const auto &field = unitFieldsArrayFields[i];
+            lua_newtable(luaState);
+
+            const char *fieldPtr = reinterpret_cast<const char *>(unitFields) + field.offset;
+
+            for (size_t j = 0; j < field.count; ++j) {
+                lua_pushnumber(luaState, j + 1);
+
+                switch (field.type) {
+                    case FieldType::UINT32:
+                        lua_pushnumber(luaState, reinterpret_cast<const uint32_t *>(fieldPtr)[j]);
+                        break;
+                    case FieldType::FLOAT:
+                        lua_pushnumber(luaState, reinterpret_cast<const float *>(fieldPtr)[j]);
+                        break;
+                    default:
+                        lua_pushnumber(luaState, 0);
+                        break;
+                }
+                lua_settable(luaState, -3);
+            }
+            return 1;
+        }
+
+        // Field not found
+        lua_error(luaState, "Unknown field name");
+        return 0;
+    }
+
+    uint32_t Script_GetSpellModifiers(uintptr_t *luaState) {
+        if (!lua_isnumber(luaState, 1) || !lua_isnumber(luaState, 2)) {
+            lua_error(luaState, "Usage: GetSpellModifiers(spellId, modifierType) - modifierType: 0=DAMAGE, 1=DURATION, 2=THREAT, 3=ATTACK_POWER, 4=CHARGES, 5=RANGE, 6=RADIUS, 7=CRITICAL_CHANCE, 8=ALL_EFFECTS, 9=NOT_LOSE_CASTING_TIME, 10=CASTING_TIME, 11=COOLDOWN, 12=SPEED, 14=COST, 15=CRIT_DAMAGE_BONUS, 16=RESIST_MISS_CHANCE, 17=JUMP_TARGETS, 18=CHANCE_OF_SUCCESS, 19=ACTIVATION_TIME, 20=EFFECT_PAST_FIRST, 21=CASTING_TIME_OLD, 22=DOT, 23=HASTE, 24=SPELL_BONUS_DAMAGE, 27=MULTIPLE_VALUE, 28=RESIST_DISPEL_CHANCE");
+            return 0;
+        }
+
+        uint32_t spellId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+        int modifierType = static_cast<int>(lua_tonumber(luaState, 2));
+
+        // Validate modifier type
+        if (modifierType < 0 || modifierType >= game::MAX_SPELLMOD) {
+            lua_error(luaState, "Invalid modifier type. Must be between 0 and 28.");
+            return 0;
+        }
+
+        // Get spell info
+        auto spell = game::GetSpellInfo(spellId);
+        if (!spell) {
+            lua_error(luaState, "Invalid spell id");
+            return 0;
+        }
+
+        // Call Spell_C_GetSpellModifierValues
+        using Spell_C_GetSpellModifierValuesT = uint32_t (__fastcall *)(game::SpellRec *spellRec, int mod, int *flatMod, uint32_t *percentMod);
+        auto const getModifierValues = reinterpret_cast<Spell_C_GetSpellModifierValuesT>(Offsets::Spell_C_GetSpellModifierValues);
+
+        int flatModificationValue = 0;
+        uint32_t percentModificationValue = 0;
+
+        auto ret = getModifierValues(const_cast<game::SpellRec *>(spell), modifierType, &flatModificationValue, &percentModificationValue);
+
+        // show flat modifications
+        lua_pushnumber(luaState, flatModificationValue);
+
+        if (flatModificationValue != 0 && percentModificationValue >= 100) {
+            percentModificationValue -= 100;
+        } else if (modifierType == 9 && percentModificationValue >= 100) {
+            percentModificationValue -= 100;
+        }
+
+        // show percent modifications
+        lua_pushnumber(luaState, percentModificationValue);
+
+        // show return
+        lua_pushnumber(luaState, ret);
+
+        return 3;
     }
 
     uint32_t GetSpellSlotFromLuaHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t *slot, uint32_t *type) {
