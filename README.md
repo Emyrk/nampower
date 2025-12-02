@@ -240,7 +240,7 @@ Returns a Lua table containing all fields for the spell’s `SpellRec` record (i
 #### GetSpellRecField(spellId, fieldName)
 Fast lookup for a single field on a spell. Returns the requested field value or raises a Lua error if the spell or field is not found.
 
-Struct references (see `nampower/game.hpp` for full details):
+Struct references (see `nampower/dbc_fields.cpp` for full details):
 
 #### GetNampowerVersion()
 Returns the current version of Nampower split into major, minor and patch numbers.
