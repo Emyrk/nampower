@@ -98,6 +98,25 @@ SET NP_TargetingQueueWindowMs "1000"
 
 - `NP_NameplateDistance` - The distance in yards to display nameplates.  Defaults to whatever was set by the game or vanilla tweaks.
 
+### Existing Lua Changes
+
+#### Improved flexibility on spellbook Lua functions
+These built-in Lua spell APIs now accept any of the following as their first argument: 1) spell slot (original behavior), 2) spell name, or 3) `spellId:number`. 
+
+Name and spellId lookups are cached internally and validated against current spellbook contents before reuse so you don't have to worry about performance implications or issues after respec'ing.
+
+See examples below for differences in how BOOKTYPE works.
+
+Functions: `GetSpellTexture`, `GetSpellName`, `GetSpellCooldown`, `GetSpellAutocast`, `ToggleSpellAutocast`, `PickupSpell`, `CastSpell`, `IsCurrentCast`, `IsSpellPassive`.
+
+Examples:
+```
+/run print(GetSpellTexture(1, "spell")) -- booktype required
+/run print(GetSpellTexture("spellId:25978")) -- defaults to BOOKTYPE_SPELL
+/run print(GetSpellTexture("spellId:6268", "pet")) -- "pet" needed for pet spells
+/run print(GetSpellTexture("Fireball")) -- name search
+```
+
 ### Custom Lua Functions
 
 #### QueueSpellByName(spellName)
@@ -208,6 +227,20 @@ Examples:
 ```
 /run local slot, bookType, spellId=GetSpellSlotTypeIdForName("Frostbolt");print(slot);print(bookType);print(spellId)
 ```
+
+#### GetItemStats(itemId)
+Returns a Lua table containing all fields for the item’s `ItemStats_C` record (including localized `displayName` and `description`). Returns 0 if the item cannot be found or loaded.
+
+#### GetItemStatsField(itemId, fieldName)
+Fast lookup for a single field on an item. Returns the requested field value or raises a Lua error if the item or field is not found.
+
+#### GetSpellRec(spellId)
+Returns a Lua table containing all fields for the spell’s `SpellRec` record (including localized `name` and `rank`). Returns 0 if the spell cannot be found.
+
+#### GetSpellRecField(spellId, fieldName)
+Fast lookup for a single field on a spell. Returns the requested field value or raises a Lua error if the spell or field is not found.
+
+Struct references (see `nampower/game.hpp` for full details):
 
 #### GetNampowerVersion()
 Returns the current version of Nampower split into major, minor and patch numbers.

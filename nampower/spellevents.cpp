@@ -704,13 +704,4 @@ namespace Nampower {
 
         return 1;
     }
-
-    int CGPlayer_C_OnAttackIconPressedHook(hadesmem::PatchDetourBase *detour, uintptr_t *this_ptr, void *dummy_edx,
-                                           uint64_t guid) {
-        auto const onAttackIconPressed = detour->GetTrampolineT<CGPlayer_C_OnAttackIconPressedT>();
-
-        DEBUG_LOG("Attack icon pressed for guid " << guid);
-
-        return onAttackIconPressed(this_ptr, dummy_edx, 0);
-    }
 }

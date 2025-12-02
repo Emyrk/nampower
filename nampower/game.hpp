@@ -30,6 +30,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 namespace game {
 #pragma pack(push, 1)
@@ -209,7 +210,7 @@ namespace game {
         int m_containerSlots;
         int m_bonusStat[10];
         int m_bonusAmount[10];
-        int m_minDamage[5];
+        float m_minDamage[5];
         float m_maxDamage[5];
         int m_damageType[5];
         int m_resistances[7];
@@ -229,7 +230,7 @@ namespace game {
         int m_pageMaterial;
         int m_startQuestID;
         int m_lockID;
-        char *m_material;
+        int m_material;
         int m_sheatheType;
         int m_randomProperty;
         int m_block;

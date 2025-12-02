@@ -30,8 +30,8 @@ namespace Nampower {
     constexpr uint32_t BUFFER_DECREASE_FREQUENCY = 10000; // time in ms between changes to lower buffer
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 11;
-    constexpr uint32_t PATCH_VERSION = 2;
+    constexpr uint32_t MINOR_VERSION = 12;
+    constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
@@ -96,7 +96,8 @@ namespace Nampower {
 
     using CGPlayer_C_OnAttackIconPressedT = int (__fastcall *)(uintptr_t *this_ptr, void *dummy_edx, uint64_t guid);
 
-    using GetSpellSlotAndTypeT = int (__fastcall *)(const char *, uint32_t *);
+    using GetSpellSlotAndTypeT = uint32_t (__fastcall *)(const char *, uint32_t *);
+    using GetSpellSlotFromLuaT = uint32_t (__fastcall *)(int param_1, uint32_t *slot, uint32_t *type);
     using GetTimeMsT = uint64_t (__stdcall *)();
 
     using GetClientConnectionT = uintptr_t *(__stdcall *)();
@@ -124,6 +125,8 @@ namespace Nampower {
     using lua_pushnilT = void (__fastcall *)(uintptr_t *);
     using lua_errorT = void (__cdecl *)(uintptr_t *, const char *);
     using lua_settopT = void (__fastcall *)(uintptr_t *, int);
+    using lua_newtableT = void (__fastcall *)(uintptr_t *);
+    using lua_settableT = void (__fastcall *)(uintptr_t *, int);
 
     using Spell_C_CooldownEventTriggeredT = void (__fastcall *)(uint32_t spellId,
                                                                 uint64_t *targetGUID,
@@ -146,6 +149,8 @@ namespace Nampower {
     using CVarRegisterT = int *(__fastcall *)(char *name, char *help, int unk1, const char *defaultValuePtr,
                                               void *callbackPtr,
                                               int category, char unk2, int unk3);
+
+    using InvalidFunctionPtrCheckT = void (__fastcall *)(uint32_t param_1);
 
     void RegisterLuaFunction(char *, uintptr_t *func);
 

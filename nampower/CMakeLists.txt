@@ -24,6 +24,10 @@ set(SOURCE_FILES
         spellevents.cpp
         scripts.hpp
         scripts.cpp
+        items.hpp
+        items.cpp
+        dbc_fields.hpp
+        dbc_fields.cpp
 )
 
 add_library(${DLL_NAME} SHARED ${SOURCE_FILES})
