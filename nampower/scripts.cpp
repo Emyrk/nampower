@@ -21,6 +21,7 @@ namespace Nampower {
     // Export Lua functions for dbc_fields.hpp templates
     lua_pushnumberT lua_pushnumber = reinterpret_cast<lua_pushnumberT>(Offsets::lua_pushnumber);
     lua_pushstringT lua_pushstring = reinterpret_cast<lua_pushstringT>(Offsets::lua_pushstring);
+    lua_pushnilT lua_pushnil = reinterpret_cast<lua_pushnilT>(Offsets::lua_pushnil);
     lua_newtableT lua_newtable = reinterpret_cast<lua_newtableT>(Offsets::lua_newtable);
     lua_settableT lua_settable = reinterpret_cast<lua_settableT>(Offsets::lua_settable);
 
@@ -438,8 +439,8 @@ namespace Nampower {
         // Get from cache
         game::ItemStats_C *item = GetItemStats(itemId);
         if (!item) {
-            lua_error(luaState, "Item not found");
-            return 0;
+            lua_pushnil(luaState);
+            return 1;
         }
 
         // Create new table
@@ -476,8 +477,8 @@ namespace Nampower {
         // Get spell info
         auto spell = game::GetSpellInfo(spellId);
         if (!spell) {
-            lua_error(luaState, "Spell not found");
-            return 0;
+            lua_pushnil(luaState);
+            return 1;
         }
 
         // Create new table
@@ -522,7 +523,7 @@ namespace Nampower {
         // Get from cache
         game::ItemStats_C *item = GetItemStats(itemId);
         if (!item) {
-            lua_pushnumber(luaState, 0); // Return nil/false to indicate not found
+            lua_pushnil(luaState);
             return 1;
         }
 
@@ -614,7 +615,7 @@ namespace Nampower {
         // Get spell info
         auto spell = game::GetSpellInfo(spellId);
         if (!spell) {
-            lua_pushnumber(luaState, 0); // Return nil/false to indicate not found
+            lua_pushnil(luaState);
             return 1;
         }
 

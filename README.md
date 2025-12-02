@@ -229,18 +229,24 @@ Examples:
 ```
 
 #### GetItemStats(itemId)
-Returns a Lua table containing all fields for the item’s `ItemStats_C` record (including localized `displayName` and `description`). Returns 0 if the item cannot be found or loaded.
+Returns a Lua table containing all fields for the item’s `ItemStats` record (including localized `displayName` and `description`). Returns nil if the item cannot be found or loaded.
+
+Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
 
 #### GetItemStatsField(itemId, fieldName)
-Fast lookup for a single field on an item. Returns the requested field value or raises a Lua error if the item or field is not found.
+Fast lookup for a single field on an item. Returns the requested field value; returns nil if the item is not found; raises a Lua error if the field name is invalid.
+
+Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
 
 #### GetSpellRec(spellId)
-Returns a Lua table containing all fields for the spell’s `SpellRec` record (including localized `name` and `rank`). Returns 0 if the spell cannot be found.
+Returns a Lua table containing all fields for the spell’s `SpellRec` record (including localized `name` and `rank`). Returns nil if the spell cannot be found.
+
+Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
 
 #### GetSpellRecField(spellId, fieldName)
-Fast lookup for a single field on a spell. Returns the requested field value or raises a Lua error if the spell or field is not found.
+Fast lookup for a single field on a spell. Returns the requested field value; returns nil if the spell is not found; raises a Lua error if the field name is invalid.
 
-Struct references (see `nampower/dbc_fields.cpp` for full details):
+Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
 
 #### GetNampowerVersion()
 Returns the current version of Nampower split into major, minor and patch numbers.
