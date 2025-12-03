@@ -277,7 +277,6 @@ namespace Nampower {
         return spellDelayed(opCode, packet);
     }
 
-
     int CastResultHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet) {
         auto const castResultHandler = detour->GetTrampolineT<PacketHandlerT>();
 

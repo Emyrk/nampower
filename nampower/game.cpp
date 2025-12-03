@@ -85,7 +85,7 @@ namespace game {
     int GetSpellModifier(const SpellRec *spellRec, SpellModOp spellMod) {
         using Spell_C_GetSpellModifiersT = void (__fastcall *)(const SpellRec *spellRec, int *returnVal, SpellModOp modOp);
 
-        auto const getModifiers = reinterpret_cast<Spell_C_GetSpellModifiersT>(Offsets::Spell_C_GetSpellModifiers);
+        auto const getModifiers = reinterpret_cast<Spell_C_GetSpellModifiersT>(Offsets::Spell_C_ApplySpellModifiers);
         auto modificationPercentage = 0;
 
         getModifiers(spellRec, &modificationPercentage, spellMod);

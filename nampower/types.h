@@ -71,7 +71,7 @@ struct CastSpellParams {
     /* Original cast spell function arguments */
     uint64_t castId;
 
-    uint32_t *playerUnit;
+    uint32_t *casterUnit;
     uint32_t spellId;
     uintptr_t *item;
     uint64_t guid;

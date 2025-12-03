@@ -5,8 +5,155 @@
 #include "helper.hpp"
 #include "offsets.hpp"
 #include "main.hpp"
+#include "dbc_fields.hpp"
+#include <algorithm>
+#include <cctype>
+#include <cstring>
+#include <unordered_map>
+#include <string>
 
 namespace Nampower {
+
+    uint32_t GetSpellSlotAndTypeForName(const char *spellName, uint32_t *spellType) {
+        struct CachedEntry {
+            uint32_t slot;
+            uint32_t type;
+            std::string cachedNameLower;
+        };
+        static std::unordered_map<std::string, CachedEntry> spellSlotCache;
+
+        auto const normalize = [](const char *name) -> std::string {
+            std::string out = name ? name : "";
+            std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+            return out;
+        };
+
+        const std::string key = normalize(spellName);
+
+        auto const spellNameMatchesAtSlot = [&normalize](const char *requestedLower, uint32_t slot, uint32_t type) -> bool {
+            if (!requestedLower) {
+                return false;
+            }
+
+            uint32_t spellId = 0;
+            if (type == 0) {
+                spellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownSpells) + slot * 4);
+            } else if (type == 1) {
+                spellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownPetSpells) + slot * 4);
+            } else {
+                return false;
+            }
+
+            if (spellId == 0) {
+                return false;
+            }
+
+            auto const spell = game::GetSpellInfo(spellId);
+            if (!spell) {
+                return false;
+            }
+
+            auto const language = *reinterpret_cast<uint32_t *>(Offsets::Language);
+            auto const actualName = reinterpret_cast<const char *>(spell->SpellName[language]);
+            if (!actualName) {
+                return false;
+            }
+
+            auto const actualLower = normalize(actualName);
+            return _stricmp(actualLower.c_str(), requestedLower) == 0;
+        };
+
+        if (!key.empty()) {
+            auto cacheIt = spellSlotCache.find(key);
+            if (cacheIt != spellSlotCache.end()) {
+                auto const &entry = cacheIt->second;
+                if (entry.slot < 1024 && spellNameMatchesAtSlot(key.c_str(), entry.slot, entry.type)) {
+                    if (spellType) {
+                        *spellType = entry.type;
+                    }
+                    return entry.slot;
+                }
+            }
+        }
+
+        auto const getSpellSlotAndType = reinterpret_cast<GetSpellSlotAndTypeT>(Offsets::GetSpellSlotAndType);
+        auto const slot = getSpellSlotAndType(spellName, spellType);
+
+        if (slot < 1024 && spellType && !key.empty()) {
+            spellSlotCache[key] = {slot, *spellType, key};
+        }
+
+        return slot;
+    }
+
+    uint32_t GetSpellIdFromSpellName(const char *spellName) {
+        uint32_t bookType;
+        uint32_t spellSlot = GetSpellSlotAndTypeForName(spellName, &bookType);
+
+        uint32_t spellId = 0;
+        if (spellSlot < 1024) {
+            if (bookType == 0) {
+                spellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownSpells) +
+                                                        spellSlot * 4);
+            } else {
+                spellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownPetSpells) +
+                                                        spellSlot * 4);
+            }
+        }
+
+        return spellId;
+    }
+
+    uint32_t ConvertSpellIdToSpellSlot(uint32_t spellId, uint32_t bookType) {
+        static std::unordered_map<uint64_t, uint32_t> spellIdToSlotCache;
+        auto const cacheKey = (uint64_t(spellId) << 1) | (bookType & 0x1);
+
+        auto const slotHasSpellId = [bookType](uint32_t slot, uint32_t expectedId) -> bool {
+            if (slot >= 1024) {
+                return false;
+            }
+            uint32_t slotSpellId = 0;
+            if (bookType == 0) {
+                slotSpellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownSpells) + slot * 4);
+            } else {
+                slotSpellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownPetSpells) + slot * 4);
+            }
+            return slotSpellId == expectedId;
+        };
+
+        auto cacheIt = spellIdToSlotCache.find(cacheKey);
+        if (cacheIt != spellIdToSlotCache.end()) {
+            if (slotHasSpellId(cacheIt->second, spellId)) {
+                return cacheIt->second;
+            }
+        }
+
+        // Search through player spellbook
+        if (bookType == 0) {
+            for (uint32_t spellSlot = 0; spellSlot < 1024; spellSlot++) {
+                uint32_t slotSpellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownSpells) +
+                                                                     spellSlot * 4);
+                if (slotSpellId == spellId) {
+                    spellIdToSlotCache[cacheKey] = spellSlot;
+                    return spellSlot;
+                }
+            }
+        } else {
+            // Search through pet spellbook
+            for (uint32_t spellSlot = 0; spellSlot < 1024; spellSlot++) {
+                uint32_t slotSpellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownPetSpells) +
+                                                                     spellSlot * 4);
+                if (slotSpellId == spellId) {
+                    spellIdToSlotCache[cacheKey] = spellSlot;
+                    return spellSlot;
+                }
+            }
+        }
+
+        return 0;
+    }
+
+
     bool SpellIsOnGcd(const game::SpellRec *spell) {
         if (spell->Id == 51714) {
             // power overwhelming gcd removed but client not updated

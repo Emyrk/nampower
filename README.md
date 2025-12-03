@@ -98,7 +98,205 @@ SET NP_TargetingQueueWindowMs "1000"
 
 - `NP_NameplateDistance` - The distance in yards to display nameplates.  Defaults to whatever was set by the game or vanilla tweaks.
 
+### Existing Lua Changes
+
+#### Improved flexibility on spellbook Lua functions
+These built-in Lua spell APIs now accept any of the following as their first argument: 1) spell slot (original behavior), 2) spell name, or 3) `spellId:number`. 
+
+Name and spellId lookups are cached internally and validated against current spellbook contents before reuse so you don't have to worry about performance implications or issues after respec'ing.
+
+See examples below for differences in how BOOKTYPE works.
+
+Functions: `GetSpellTexture`, `GetSpellName`, `GetSpellCooldown`, `GetSpellAutocast`, `ToggleSpellAutocast`, `PickupSpell`, `CastSpell`, `IsCurrentCast`, `IsSpellPassive`.
+
+Examples:
+```
+/run print(GetSpellTexture(1, "spell")) -- booktype required
+/run print(GetSpellTexture("spellId:25978")) -- defaults to BOOKTYPE_SPELL
+/run print(GetSpellTexture("spellId:6268", "pet")) -- "pet" needed for pet spells
+/run print(GetSpellTexture("Fireball")) -- name search
+```
+
 ### Custom Lua Functions
+
+### Spell/Item/Unit information
+
+#### GetItemStats(itemId)
+Returns a Lua table containing all fields for the item's `ItemStats` record (including localized `displayName` and `description`). Returns nil if the item cannot be found or loaded.
+
+Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
+
+#### GetItemStatsField(itemId, fieldName)
+Fast lookup for a single field on an item. Returns the requested field value; returns nil if the item is not found; raises a Lua error if the field name is invalid.
+
+Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
+
+**Examples:**
+```lua
+-- Get item name
+local name = GetItemStatsField(19019, "displayName")
+print(name) -- "Thunderfury, Blessed Blade of the Windseeker"
+
+-- Get item level
+local ilvl = GetItemStatsField(22589, "itemLevel")
+print("Atiesh item level: " .. ilvl) -- 90
+
+-- Get item quality (0=Poor, 1=Common, 2=Uncommon, 3=Rare, 4=Epic, 5=Legendary)
+local quality = GetItemStatsField(19019, "quality")
+print("Quality: " .. quality) -- 5 (Legendary)
+
+-- Get item delay (weapon speed in milliseconds)
+local delay = GetItemStatsField(19019, "delay")
+print("Weapon speed: " .. (delay / 1000) .. " seconds") -- 1.9 seconds
+```
+
+#### GetSpellRec(spellId)
+Returns a Lua table containing all fields for the spell's `SpellRec` record (including localized `name` and `rank`). Returns nil if the spell cannot be found.
+
+Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
+
+#### GetSpellRecField(spellId, fieldName)
+Fast lookup for a single field on a spell. Returns the requested field value; returns nil if the spell is not found; raises a Lua error if the field name is invalid.
+
+Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
+
+**Examples:**
+```lua
+-- Get spell name
+local name = GetSpellRecField(116, "name")
+print(name) -- "Frostbolt"
+
+-- Get spell rank
+local rank = GetSpellRecField(116, "rank")
+print(rank) -- "Rank 1"
+
+-- Get spell cast time in milliseconds
+local castTime = GetSpellRecField(133, "castTime")
+print("Fireball cast time: " .. (castTime / 1000) .. " seconds") -- 3.5 seconds
+
+-- Get spell range (max range in yards * 10, so divide by 10)
+local maxRange = GetSpellRecField(116, "rangeMax")
+print("Frostbolt max range: " .. (maxRange / 10) .. " yards") -- 30 yards
+
+-- Get spell mana cost
+local manaCost = GetSpellRecField(116, "manaCost")
+print("Mana cost: " .. manaCost)
+
+-- Get spell school (0=Physical, 1=Holy, 2=Fire, 3=Nature, 4=Frost, 5=Shadow, 6=Arcane)
+local school = GetSpellRecField(116, "school")
+print("School: " .. school) -- 4 (Frost)
+
+-- Get spell icon ID
+local spellIconID = GetSpellRecField(116, "spellIconID")
+print("Icon ID: " .. spellIconID)
+```
+
+#### GetSpellModifiers(spellId, modifierType)
+Returns the current spell modifiers applied to a spell for the player. This includes buffs, talents, and other effects that modify spell behavior.
+
+**Parameters:**
+- `spellId` (number): The spell ID to check
+- `modifierType` (number): The type of modifier to check (see list below)
+
+**Returns:**
+- 1st param (number): Flat modification value (e.g., +50 damage)
+- 2nd param (number): Percent modification value (e.g., 10 for +10%)
+- 3rd param (number): Return value from the function (whether there was any percent or flat modifier)
+
+**Modifier Types:**
+- 0 = DAMAGE
+- 1 = DURATION
+- 2 = THREAT
+- 3 = ATTACK_POWER
+- 4 = CHARGES
+- 5 = RANGE
+- 6 = RADIUS
+- 7 = CRITICAL_CHANCE
+- 8 = ALL_EFFECTS
+- 9 = NOT_LOSE_CASTING_TIME
+- 10 = CASTING_TIME
+- 11 = COOLDOWN
+- 12 = SPEED
+- 14 = COST
+- 15 = CRIT_DAMAGE_BONUS
+- 16 = RESIST_MISS_CHANCE
+- 17 = JUMP_TARGETS
+- 18 = CHANCE_OF_SUCCESS
+- 19 = ACTIVATION_TIME
+- 20 = EFFECT_PAST_FIRST
+- 21 = CASTING_TIME_OLD
+- 22 = DOT
+- 23 = HASTE
+- 24 = SPELL_BONUS_DAMAGE
+- 27 = MULTIPLE_VALUE
+- 28 = RESIST_DISPEL_CHANCE
+
+**Example:**
+```lua
+-- Check damage modifiers on Frostbolt (spell ID 116)
+local flatMod, percentMod, ret = GetSpellModifiers(116, 0)
+print("Flat damage bonus: " .. flatMod)
+print("Percent damage bonus: " .. percentMod .. "%")
+```
+
+#### GetUnitData(unitToken)
+Returns a Lua table containing all unit fields for the specified unit. This provides access to low-level unit data like health, mana, stats, auras, resistances, and more.
+
+**Parameters:**
+- `unitToken` (string): Can be a standard unit token ("player", "target", "pet", "mouseover", etc.) or a GUID string (e.g., "0xF5300000000000A5")
+
+**Returns:**
+- A Lua table containing all unit fields, or nil if the unit cannot be found
+
+Full field name lists are in [`UNIT_FIELDS.md`](UNIT_FIELDS.md).
+
+**Example:**
+```lua
+-- Get all unit data for your current target
+local data = GetUnitData("target")
+if data then
+    print("Target health: " .. data.health .. "/" .. data.maxHealth)
+    print("Target level: " .. data.level)
+    print("Target display ID: " .. data.displayId)
+end
+
+-- Using a GUID
+local data = GetUnitData("0xF5300000000000A5")
+```
+
+#### GetUnitField(unitToken, fieldName)
+Fast lookup for a single field on a unit. More efficient than GetUnitData when you only need one specific field.
+
+**Parameters:**
+- `unitToken` (string): Can be a standard unit token ("player", "target", "pet", "mouseover", etc.) or a GUID string
+- `fieldName` (string): The name of the field to retrieve
+
+**Returns:**
+- The requested field value; returns nil if the unit is not found; raises a Lua error if the field name is invalid
+- For array fields (like "aura", "resistances"), returns a Lua table with numeric indices
+
+Full field name lists are in [`UNIT_FIELDS.md`](UNIT_FIELDS.md).
+
+**Examples:**
+```lua
+-- Get target's current health
+local health = GetUnitField("target", "health")
+print("Target health: " .. health)
+
+-- Get player's current mana (power1)
+local mana = GetUnitField("player", "power1")
+print("Player mana: " .. mana)
+
+-- Get all auras on target (returns a table)
+local auras = GetUnitField("target", "aura")
+for i, auraId in ipairs(auras) do
+    print("Aura " .. i .. ": " .. auraId)
+end
+
+-- Get all resistances (returns a table)
+local resistances = GetUnitField("player", "resistances")
+-- resistances[1] = armor, [2] = holy, [3] = fire, [4] = nature, [5] = frost, [6] = shadow, [7] = arcane
+```
 
 #### QueueSpellByName(spellName)
 Will force queue a spell regardless of the appropriate queue window.  If no spell is currently being cast it will be cast immediately.

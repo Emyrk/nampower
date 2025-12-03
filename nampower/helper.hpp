@@ -7,6 +7,11 @@
 #include "game.hpp"
 
 namespace Nampower {
+    uint32_t GetSpellSlotAndTypeForName(const char *spellName, uint32_t *spellType);
+
+    uint32_t GetSpellIdFromSpellName(const char *spellName);
+
+    uint32_t ConvertSpellIdToSpellSlot(uint32_t spellId, uint32_t bookType);
 
     bool SpellIsOnGcd(const game::SpellRec *spell);
 

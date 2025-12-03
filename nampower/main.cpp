@@ -36,6 +36,7 @@
 #include "scripts.hpp"
 #include "spellchannel.hpp"
 #include "helper.hpp"
+#include "items.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -92,6 +93,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<CancelSpellT>> gCancelSpellDetour;
     std::unique_ptr<hadesmem::PatchDetour<SignalEventT>> gSignalEventDetour;
     std::unique_ptr<hadesmem::PatchDetour<Spell_C_SpellFailedT>> gSpellFailedDetour;
+    std::unique_ptr<hadesmem::PatchDetour<Spell_C_GetSpellModifiersT>> gSpell_C_GetSpellModifiersDetour;
     std::unique_ptr<hadesmem::PatchRaw> gCastbarPatch;
     std::unique_ptr<hadesmem::PatchDetour<ISceneEndT>> gIEndSceneDetour;
     std::unique_ptr<hadesmem::PatchDetour<Spell_C_GetAutoRepeatingSpellT>> gSpell_C_GetAutoRepeatingSpellDetour;
@@ -99,22 +101,9 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<SpellGoT>> gSpellGoDetour;
     std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gSpellTargetUnitDetour;
     std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gSpellStopCastingDetour;
-    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gCastSpellByNameNoQueueDetour;
-    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gQueueSpellByNameDetour;
-    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> qQueueScriptDetour;
-    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gIsSpellInRangeDetour;
-    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gIsSpellUsableDetour;
-    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gGetCurrentCastingInfoDetour;
-    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gGetSpellIdForNameDetour;
-    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gGetSpellNameAndRankForIdDetour;
-    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gGetSpellSlotAndTypeForNameDetour;
-    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gChannelStopCastingNextTickDetour;
     std::unique_ptr<hadesmem::PatchDetour<OnSpriteRightClickT>> gOnSpriteRightClickDetour;
     std::unique_ptr<hadesmem::PatchDetour<Spell_C_HandleSpriteClickT>> gSpell_C_HandleSpriteClickDetour;
     std::unique_ptr<hadesmem::PatchDetour<Spell_C_TargetSpellT>> gSpell_C_TargetSpellDetour;
-
-    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gGetNampowerVersionDetour;
-    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gGetItemLevelDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT>> gSpellCooldownDetour;
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT>> gSpellDelayedDetour;
@@ -127,6 +116,12 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT>> gSpellStartHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT>> gPeriodicAuraLogHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT>> gSpellNonMeleeDmgLogHandlerDetour;
+
+    std::unique_ptr<hadesmem::PatchDetour<CGPlayer_C_OnAttackIconPressedT>> gCGPlayer_C_OnAttackIconPressedDetour;
+
+    std::unique_ptr<hadesmem::PatchDetour<InvalidFunctionPtrCheckT>> gInvalidFunctionPtrCheckDetour;
+
+    std::unique_ptr<hadesmem::PatchDetour<GetSpellSlotFromLuaT>> gGetSpellSlotFromLuaDetour;
 
     uint32_t GetTime() {
         return static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -163,6 +158,34 @@ namespace Nampower {
         return p_GetContext();
     }
 
+    void SetTarget(uint64_t target) {
+        auto setTargetFn = reinterpret_cast<TargetUnitT>(Offsets::ScriptTargetUnit);
+        setTargetFn(&target);
+    }
+
+    void SetSelectionTarget(uint64_t target) {
+        auto dataStore = CDataStore();
+        uint32_t opcode = 317; // CMSG_SET_SELECTION
+        dataStore.Put(opcode);
+        dataStore.Put(target);
+
+        dataStore.Finalize();
+
+        auto const clientServicesSend = reinterpret_cast<ClientServices_SendT>(Offsets::ClientServices_Send);
+        clientServicesSend(&dataStore);
+    }
+
+    void SetAttackTarget(uint64_t target) {
+        auto dataStore = CDataStore();
+        uint32_t opcode = 0x141; // CMSG_ATTACKSWING
+        dataStore.Put(opcode);
+        dataStore.Put(target);
+
+        dataStore.Finalize();
+
+        auto const clientServicesSend = reinterpret_cast<ClientServices_SendT>(Offsets::ClientServices_Send);
+        clientServicesSend(&dataStore);
+    }
 
     void RegisterLuaFunction(char *name, uintptr_t *func) {
         DEBUG_LOG("Registering " << name << " to " << func);
@@ -511,6 +534,17 @@ namespace Nampower {
         processQueues();
 
         return iSceneEnd(ptr);
+    }
+
+    void InvalidFunctionPtrCheckHook(hadesmem::PatchDetourBase *detour, uint32_t param_1) {
+        // remove original call to allow registering lua functions at any address range
+    }
+
+    void
+    Spell_C_GetSpellModifiersHook(hadesmem::PatchDetourBase *detour, const game::SpellRec *spellRec, int *returnVal,
+                                  game::SpellModOp modOp) {
+        auto const getSpellModifiers = detour->GetTrampolineT<Spell_C_GetSpellModifiersT>();
+        getSpellModifiers(spellRec, returnVal, modOp);
     }
 
     void updateFromCvar(const char *cvar, const char *value) {
@@ -1086,29 +1120,14 @@ namespace Nampower {
                                                          &Script_SpellStopCastingHook);
         gSpell_C_TargetSpellDetour = createHook<Spell_C_TargetSpellT>(process, Offsets::Spell_C_TargetSpell,
                                                                       &Spell_C_TargetSpellHook);
-        gCastSpellByNameNoQueueDetour = createHook<LuaScriptT>(process, Offsets::Script_CastSpellByNameNoQueue,
-                                                               Script_CastSpellByNameNoQueue);
-        gQueueSpellByNameDetour = createHook<LuaScriptT>(process, Offsets::Script_QueueSpellByName,
-                                                         Script_QueueSpellByName);
-        qQueueScriptDetour = createHook<LuaScriptT>(process, Offsets::Script_QueueScript, Script_QueueScript);
-        gIsSpellInRangeDetour = createHook<LuaScriptT>(process, Offsets::Script_IsSpellInRange, Script_IsSpellInRange);
-        gIsSpellUsableDetour = createHook<LuaScriptT>(process, Offsets::Script_IsSpellUsable, Script_IsSpellUsable);
-        gGetCurrentCastingInfoDetour = createHook<LuaScriptT>(process, Offsets::Script_GetCurrentCastingInfo,
-                                                              Script_GetCurrentCastingInfo);
-        gGetSpellIdForNameDetour = createHook<LuaScriptT>(process, Offsets::Script_GetSpellIdForName,
-                                                          Script_GetSpellIdForName);
-        gGetSpellNameAndRankForIdDetour = createHook<LuaScriptT>(process, Offsets::Script_GetSpellNameAndRankForId,
-                                                                 Script_GetSpellNameAndRankForId);
-        gGetSpellSlotAndTypeForNameDetour = createHook<LuaScriptT>(process, Offsets::Script_GetSpellSlotTypeIdForName,
-                                                                   Script_GetSpellSlotTypeIdForName);
         gOnSpriteRightClickDetour = createHook<OnSpriteRightClickT>(process, Offsets::OnSpriteRightClick,
                                                                     OnSpriteRightClickHook);
-        gChannelStopCastingNextTickDetour = createHook<LuaScriptT>(process, Offsets::Script_ChannelStopCastingNextTick,
-                                                                   Script_ChannelStopCastingNextTick);
-        gGetNampowerVersionDetour = createHook<LuaScriptT>(process, Offsets::Script_GetNampowerVersion,
-                                                           Script_GetNampowerVersion);
-        gGetItemLevelDetour = createHook<LuaScriptT>(process, Offsets::Script_GetItemLevel, Script_GetItemLevel);
         gIEndSceneDetour = createHook<ISceneEndT>(process, Offsets::ISceneEndPtr, &ISceneEndHook);
+        gInvalidFunctionPtrCheckDetour = createHook<InvalidFunctionPtrCheckT>(process, Offsets::InvalidFunctionPtrCheck,
+                                                                              &InvalidFunctionPtrCheckHook);
+        gGetSpellSlotFromLuaDetour = createHook<GetSpellSlotFromLuaT>(process, Offsets::GetSpellSlotFromLua,
+                                                                      &GetSpellSlotFromLuaHook);
+
     }
 
     void SpellVisualsInitializeHook(hadesmem::PatchDetourBase *detour) {
@@ -1135,46 +1154,62 @@ namespace Nampower {
         // register our own lua functions
         DEBUG_LOG("Registering Custom Lua functions");
         char queueSpellByName[] = "QueueSpellByName";
-        RegisterLuaFunction(queueSpellByName, reinterpret_cast<uintptr_t *>(Offsets::Script_QueueSpellByName));
+        RegisterLuaFunction(queueSpellByName, reinterpret_cast<uintptr_t *>(Script_QueueSpellByName));
 
         char castSpellByNameNoQueue[] = "CastSpellByNameNoQueue";
-        RegisterLuaFunction(castSpellByNameNoQueue,
-                            reinterpret_cast<uintptr_t *>(Offsets::Script_CastSpellByNameNoQueue));
+        RegisterLuaFunction(castSpellByNameNoQueue, reinterpret_cast<uintptr_t *>(Script_CastSpellByNameNoQueue));
 
         char queueScript[] = "QueueScript";
-        RegisterLuaFunction(queueScript, reinterpret_cast<uintptr_t *>(Offsets::Script_QueueScript));
+        RegisterLuaFunction(queueScript, reinterpret_cast<uintptr_t *>(Script_QueueScript));
 
         char isSpellInRange[] = "IsSpellInRange";
-        RegisterLuaFunction(isSpellInRange, reinterpret_cast<uintptr_t *>(Offsets::Script_IsSpellInRange));
+        RegisterLuaFunction(isSpellInRange, reinterpret_cast<uintptr_t *>(Script_IsSpellInRange));
 
         char isSpellUsable[] = "IsSpellUsable";
-        RegisterLuaFunction(isSpellUsable, reinterpret_cast<uintptr_t *>(Offsets::Script_IsSpellUsable));
+        RegisterLuaFunction(isSpellUsable, reinterpret_cast<uintptr_t *>(Script_IsSpellUsable));
 
         char getCurrentCastingInfo[] = "GetCurrentCastingInfo";
-        RegisterLuaFunction(getCurrentCastingInfo,
-                            reinterpret_cast<uintptr_t *>(Offsets::Script_GetCurrentCastingInfo));
+        RegisterLuaFunction(getCurrentCastingInfo, reinterpret_cast<uintptr_t *>(Script_GetCurrentCastingInfo));
 
         char getSpellIdForName[] = "GetSpellIdForName";
-        RegisterLuaFunction(getSpellIdForName,
-                            reinterpret_cast<uintptr_t *>(Offsets::Script_GetSpellIdForName));
+        RegisterLuaFunction(getSpellIdForName, reinterpret_cast<uintptr_t *>(Script_GetSpellIdForName));
 
         char getSpellNameAndRankForId[] = "GetSpellNameAndRankForId";
-        RegisterLuaFunction(getSpellNameAndRankForId,
-                            reinterpret_cast<uintptr_t *>(Offsets::Script_GetSpellNameAndRankForId));
+        RegisterLuaFunction(getSpellNameAndRankForId, reinterpret_cast<uintptr_t *>(Script_GetSpellNameAndRankForId));
 
         char getSpellSlotTypeIdForName[] = "GetSpellSlotTypeIdForName";
-        RegisterLuaFunction(getSpellSlotTypeIdForName,
-                            reinterpret_cast<uintptr_t *>(Offsets::Script_GetSpellSlotTypeIdForName));
+        RegisterLuaFunction(getSpellSlotTypeIdForName, reinterpret_cast<uintptr_t *>(Script_GetSpellSlotTypeIdForName));
 
         char channelStopCastingNextTick[] = "ChannelStopCastingNextTick";
         RegisterLuaFunction(channelStopCastingNextTick,
-                            reinterpret_cast<uintptr_t *>(Offsets::Script_ChannelStopCastingNextTick));
+                            reinterpret_cast<uintptr_t *>(Script_ChannelStopCastingNextTick));
 
         char getNampowerVersion[] = "GetNampowerVersion";
-        RegisterLuaFunction(getNampowerVersion, reinterpret_cast<uintptr_t *>(Offsets::Script_GetNampowerVersion));
+        RegisterLuaFunction(getNampowerVersion, reinterpret_cast<uintptr_t *>(Script_GetNampowerVersion));
 
         char getItemILevel[] = "GetItemLevel";
-        RegisterLuaFunction(getItemILevel, reinterpret_cast<uintptr_t *>(Offsets::Script_GetItemLevel));
+        RegisterLuaFunction(getItemILevel, reinterpret_cast<uintptr_t *>(Script_GetItemLevel));
+
+        char getItemStats[] = "GetItemStats";
+        RegisterLuaFunction(getItemStats, reinterpret_cast<uintptr_t *>(Script_GetItemStats));
+
+        char getSpellRec[] = "GetSpellRec";
+        RegisterLuaFunction(getSpellRec, reinterpret_cast<uintptr_t *>(Script_GetSpellRec));
+
+        char getItemStatsField[] = "GetItemStatsField";
+        RegisterLuaFunction(getItemStatsField, reinterpret_cast<uintptr_t *>(Script_GetItemStatsField));
+
+        char getSpellRecField[] = "GetSpellRecField";
+        RegisterLuaFunction(getSpellRecField, reinterpret_cast<uintptr_t *>(Script_GetSpellRecField));
+
+        char getUnitData[] = "GetUnitData";
+        RegisterLuaFunction(getUnitData, reinterpret_cast<uintptr_t *>(Script_GetUnitData));
+
+        char getUnitField[] = "GetUnitField";
+        RegisterLuaFunction(getUnitField, reinterpret_cast<uintptr_t *>(Script_GetUnitField));
+
+        char getSpellModifiers[] = "GetSpellModifiers";
+        RegisterLuaFunction(getSpellModifiers, reinterpret_cast<uintptr_t *>(Script_GetSpellModifiers));
     }
 
     std::once_flag loadFlag;

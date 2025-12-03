@@ -49,6 +49,7 @@ enum class Offsets : std::uint32_t {
     AutoRepeatingSpellId = 0xCEAC30,
     VisualSpellId = 0X00CEAC58,
     GetSpellSlotAndType = 0X004B3950,
+    GetSpellSlotFromLua = 0X004B3EC0,
     OsGetAsyncTimeMs = 0X0042B790,
     ChannelTargetGuid = 0xC4D980,
     NameplateDistance = 0xC4D988,  // float containing the distance squared ready to be pythagorean'd
@@ -76,6 +77,7 @@ enum class Offsets : std::uint32_t {
     LockedTargetGuid = 0x00B4E2D8,
     OnSpriteRightClick = 0x00492820,
     CGGameUI_Target = 0X00493540,
+    ScriptTargetUnit = 0X00489A40,
 
     SpellVisualsHandleCastStart = 0X006EC220,
     PlaySpellVisualHandler = 0X006E98D0,
@@ -102,7 +104,8 @@ enum class Offsets : std::uint32_t {
     Spell_C_GetSpellCooldown = 0X006E2EA0,
     Spell_C_IsSpellUsable = 0X006E3D60,
     Spell_C_GetDuration = 0X006EA000,
-    Spell_C_GetSpellModifiers = 0x006e6af0,
+    Spell_C_ApplySpellModifiers = 0x006e6af0,
+    Spell_C_GetSpellModifierValues = 0x006e6b30,
 
     CVarLookup = 0x0063DEC0,
     RegisterCVar = 0X0063DB90,
@@ -123,20 +126,6 @@ enum class Offsets : std::uint32_t {
     Script_RunScript = 0x0048B980,
     Script_SpellStopCasting = 0x006E6E80,
 
-    // Added script functions
-    Script_QueueSpellByName = 0x004B4B38,  // unused address at the end of Script_CastSpellByName.  Need to be < 0x7FEDAC to avoid Invalid Function Pointer
-    Script_CastSpellByNameNoQueue = 0X004B4B64,
-    Script_QueueScript = 0X0048B968, // unused address at the end of Script_StopCinematic
-    Script_IsSpellInRange = 0x004E76D8,
-    Script_IsSpellUsable = 0X004E77A4,
-    Script_GetCurrentCastingInfo = 0X004E77F8,
-    Script_GetSpellIdForName = 0X004E7828,
-    Script_GetSpellNameAndRankForId = 0X004E7844,
-    Script_GetSpellSlotTypeIdForName = 0X004E784A,
-    Script_ChannelStopCastingNextTick = 0X004E7858,
-    Script_GetNampowerVersion = 0X004E7874,
-    Script_GetItemLevel = 0X004E787A,
-
     lua_state_ptr = 0x7040D0,
 
     lua_isstring = 0x006F3510,
@@ -151,6 +140,11 @@ enum class Offsets : std::uint32_t {
     lua_pcall = 0x006F41A0,
     lua_error = 0X006F4940,
     lua_settop = 0X006F3080,
+    lua_newtable = 0x006F3C90,
+    lua_settable = 0x006F3E20,
+    lua_pushboolean = 0x006F39F0,
+    lua_rawseti = 0x006F3EA0,
+    lua_gettop = 0x006F3070,
 
 
     CGInputControlGetActive = 0XBE1148,
@@ -174,4 +168,10 @@ enum class Offsets : std::uint32_t {
 
     CGUnit_C_ClearCastingSpell = 0x0060d040,
     CGUnit_C_ClearSpellEffect = 0x00614150,
+
+    CGPlayer_C_OnAttackIconPressed = 0X006131A0,
+
+    DBCache_ItemCacheDBGetRow = 0x0055BA30,
+
+    InvalidFunctionPtrCheck = 0x0042A320,
 };
