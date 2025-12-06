@@ -47,6 +47,7 @@ enum class Offsets : std::uint32_t {
     CastingItemIdPtr = 0X00CECAB0,
     CastingSpellId = 0xCECA88,
     AutoRepeatingSpellId = 0xCEAC30,
+    SpellNeedsTargets = 0X00CECAC0,
     VisualSpellId = 0X00CEAC58,
     GetSpellSlotAndType = 0X004B3950,
     GetSpellSlotFromLua = 0X004B3EC0,
@@ -100,10 +101,12 @@ enum class Offsets : std::uint32_t {
     Spell_C_CastSpellByID = 0x6E5A90,
     Spell_C_GetAutoRepeatingSpell = 0x006E9FD0,
     Spell_C_HandleSpriteClick = 0x006E5B10,
+    Spell_C_HandleTerrainClick = 0x006E60F0,
     Spell_C_TargetSpell = 0x006E5250,
     Spell_C_GetSpellCooldown = 0X006E2EA0,
     Spell_C_IsSpellUsable = 0X006E3D60,
     Spell_C_GetDuration = 0X006EA000,
+    Spell_C_GetSpellRadius = 0x006E6350,
     Spell_C_ApplySpellModifiers = 0x006e6af0,
     Spell_C_GetSpellModifierValues = 0x006e6b30,
 
@@ -174,4 +177,7 @@ enum class Offsets : std::uint32_t {
     DBCache_ItemCacheDBGetRow = 0x0055BA30,
 
     InvalidFunctionPtrCheck = 0x0042A320,
+
+    CursorSetCursorMode = 0x00523d20,
+    CursorModelSetSequence = 0x00523c20,
 };

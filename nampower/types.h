@@ -120,6 +120,9 @@ struct CastData {
 
     bool normalSpellQueued;
     bool nonGcdSpellQueued;
+    bool targetingSpellQueued;
+
+    uint32_t targetingSpellId;
 
     bool castingQueuedSpell;
     uint32_t numRetries;

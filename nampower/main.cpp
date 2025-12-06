@@ -94,6 +94,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<SignalEventT>> gSignalEventDetour;
     std::unique_ptr<hadesmem::PatchDetour<Spell_C_SpellFailedT>> gSpellFailedDetour;
     std::unique_ptr<hadesmem::PatchDetour<Spell_C_GetSpellModifiersT>> gSpell_C_GetSpellModifiersDetour;
+    std::unique_ptr<hadesmem::PatchDetour<Spell_C_GetSpellRadiusT>> gSpell_C_GetSpellRadiusDetour;
     std::unique_ptr<hadesmem::PatchRaw> gCastbarPatch;
     std::unique_ptr<hadesmem::PatchDetour<ISceneEndT>> gIEndSceneDetour;
     std::unique_ptr<hadesmem::PatchDetour<Spell_C_GetAutoRepeatingSpellT>> gSpell_C_GetAutoRepeatingSpellDetour;
@@ -103,6 +104,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gSpellStopCastingDetour;
     std::unique_ptr<hadesmem::PatchDetour<OnSpriteRightClickT>> gOnSpriteRightClickDetour;
     std::unique_ptr<hadesmem::PatchDetour<Spell_C_HandleSpriteClickT>> gSpell_C_HandleSpriteClickDetour;
+    std::unique_ptr<hadesmem::PatchDetour<Spell_C_HandleTerrainClickT>> gSpell_C_HandleTerrainClickDetour;
     std::unique_ptr<hadesmem::PatchDetour<Spell_C_TargetSpellT>> gSpell_C_TargetSpellDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT>> gSpellCooldownDetour;
@@ -328,6 +330,8 @@ namespace Nampower {
             gCastData.nonGcdSpellQueued = false;
             gCastData.cooldownNonGcdSpellQueued = false;
         }
+        gCastData.targetingSpellQueued = false;
+        gCastData.targetingSpellId = 0;
     }
 
     void checkForStopChanneling() {
@@ -457,6 +461,8 @@ namespace Nampower {
                                                              << " due to max time since last cast");
                         TriggerSpellQueuedEvent(NORMAL_QUEUE_POPPED, gLastNormalCastParams.spellId);
                         gCastData.normalSpellQueued = false;
+                        gCastData.targetingSpellQueued = false;
+                        gCastData.targetingSpellId = 0;
                     }
                 }
             }
@@ -480,6 +486,9 @@ namespace Nampower {
                 return true;
             }
         }
+
+        // Process item export if active (low priority, runs when nothing else is queued)
+        // ProcessItemExport()
 
         return false;
     }
@@ -1120,6 +1129,8 @@ namespace Nampower {
                                                          &Script_SpellStopCastingHook);
         gSpell_C_TargetSpellDetour = createHook<Spell_C_TargetSpellT>(process, Offsets::Spell_C_TargetSpell,
                                                                       &Spell_C_TargetSpellHook);
+        gSpell_C_HandleTerrainClickDetour = createHook<Spell_C_HandleTerrainClickT>(process, Offsets::Spell_C_HandleTerrainClick,
+                                                                                     &Spell_C_HandleTerrainClickHook);
         gOnSpriteRightClickDetour = createHook<OnSpriteRightClickT>(process, Offsets::OnSpriteRightClick,
                                                                     OnSpriteRightClickHook);
         gIEndSceneDetour = createHook<ISceneEndT>(process, Offsets::ISceneEndPtr, &ISceneEndHook);
@@ -1127,6 +1138,8 @@ namespace Nampower {
                                                                               &InvalidFunctionPtrCheckHook);
         gGetSpellSlotFromLuaDetour = createHook<GetSpellSlotFromLuaT>(process, Offsets::GetSpellSlotFromLua,
                                                                       &GetSpellSlotFromLuaHook);
+        gSpell_C_GetSpellRadiusDetour = createHook<Spell_C_GetSpellRadiusT>(process, Offsets::Spell_C_GetSpellRadius,
+                                                                             &Spell_C_GetSpellRadiusHook);
 
     }
 

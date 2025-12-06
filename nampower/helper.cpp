@@ -30,7 +30,8 @@ namespace Nampower {
 
         const std::string key = normalize(spellName);
 
-        auto const spellNameMatchesAtSlot = [&normalize](const char *requestedLower, uint32_t slot, uint32_t type) -> bool {
+        auto const spellNameMatchesAtSlot = [&normalize](const char *requestedLower, uint32_t slot,
+                                                         uint32_t type) -> bool {
             if (!requestedLower) {
                 return false;
             }
@@ -169,7 +170,8 @@ namespace Nampower {
     }
 
     bool SpellIsTargeting(const game::SpellRec *spell) {
-        return spell->Targets == game::SpellTarget::TARGET_LOCATION_UNIT_POSITION;
+        return spell->Targets & game::SpellCastTargetFlags::TARGET_FLAG_SOURCE_LOCATION ||
+               spell->Targets & game::SpellCastTargetFlags::TARGET_FLAG_DEST_LOCATION;
     }
 
     bool SpellIsOnSwing(const game::SpellRec *spell) {

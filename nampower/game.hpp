@@ -156,6 +156,17 @@ namespace game {
         unsigned __int64 *pos;
     };
 
+    struct C3Vector {
+        float x;
+        float y;
+        float z;
+    };
+
+    struct CTerrainClickEvent {
+        C3Vector point;
+        unsigned int button;
+    };
+
     enum ItemStatsFlags {
         ITEM_FLAG_NO_PICKUP = 1,
         ITEM_FLAG_CONJURED = 2,
@@ -738,6 +749,29 @@ namespace game {
         TARGET_UNIT_RAID_AND_CLASS = 62,
         TARGET_PLAYER_RAID_NYI = 63,
         TARGET_LOCATION_UNIT_POSITION = 64,
+    };
+
+    // SpellEntry::Targets
+    enum SpellCastTargetFlags
+    {
+        TARGET_FLAG_SELF            = 0x00000000,
+        TARGET_FLAG_UNUSED1         = 0x00000001,               // not used in any spells (can be set dynamically)
+        TARGET_FLAG_UNIT            = 0x00000002,               // pguid
+        TARGET_FLAG_UNUSED2         = 0x00000004,               // not used in any spells (can be set dynamically)
+        TARGET_FLAG_UNUSED3         = 0x00000008,               // not used in any spells (can be set dynamically)
+        TARGET_FLAG_ITEM            = 0x00000010,               // pguid
+        TARGET_FLAG_SOURCE_LOCATION = 0x00000020,               // 3 float
+        TARGET_FLAG_DEST_LOCATION   = 0x00000040,               // 3 float
+        TARGET_FLAG_OBJECT_UNK      = 0x00000080,               // used in 7 spells only
+        TARGET_FLAG_UNIT_UNK        = 0x00000100,               // looks like self target (389 spells)
+        TARGET_FLAG_PVP_CORPSE      = 0x00000200,               // pguid
+        TARGET_FLAG_UNIT_CORPSE     = 0x00000400,               // 10 spells (gathering professions)
+        TARGET_FLAG_OBJECT          = 0x00000800,               // pguid, 0 spells
+        TARGET_FLAG_TRADE_ITEM      = 0x00001000,               // pguid, 0 spells
+        TARGET_FLAG_STRING          = 0x00002000,               // string, 0 spells
+        TARGET_FLAG_UNK1            = 0x00004000,               // 199 spells, opening object/lock
+        TARGET_FLAG_CORPSE          = 0x00008000,               // pguid, resurrection spells
+        TARGET_FLAG_UNK2            = 0x00010000,               // pguid, not used in any spells (can be set dynamically)
     };
 
     enum Events : std::uint32_t {

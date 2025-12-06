@@ -10,6 +10,111 @@
 namespace Nampower {
     auto const APPLY_BUFFER_TO_GCD = false;  // gcd issue seems fixed for now
 
+    void SetReleaseAction(uint32_t input) {
+        uint32_t activeControl = *reinterpret_cast<uint32_t *>(Offsets::CGInputControlGetActive);
+
+        typedef void(__thiscall *SetReleaseActionT)(uint32_t, uint32_t);
+        auto SetReleaseAction = reinterpret_cast<SetReleaseActionT>(Offsets::CGInputControlSetReleaseAction);
+        SetReleaseAction(activeControl, input);
+    }
+
+    void SetControlBit(uint32_t input) {
+        uint32_t activeControl = *reinterpret_cast<uint32_t *>(Offsets::CGInputControlGetActive);
+        auto *LastHardwareAction = reinterpret_cast<uintptr_t *>(Offsets::LastHardwareAction);
+
+        typedef void(__thiscall *SetControlBitT)(uint32_t, uint32_t, uint32_t, uintptr_t *, int);
+        auto SetControlBit = reinterpret_cast<SetControlBitT>(Offsets::CGInputControlSetControlBit);
+        SetControlBit(activeControl, 2, input, LastHardwareAction, 0);
+    }
+
+    void CameraOrSelectOrMoveStart() {
+        SetReleaseAction(1);
+        SetControlBit(1);
+    }
+
+    void CameraOrSelectOrMoveStop() {
+        SetControlBit(0);
+    }
+
+
+    uint32_t Spell_C_HandleTerrainClickHook(hadesmem::PatchDetourBase *detour, game::CTerrainClickEvent *event) {
+        if(!gCastData.targetingSpellQueued){
+            auto const handleTerrainClick = detour->GetTrampolineT<Spell_C_HandleTerrainClickT>();
+            return handleTerrainClick(event);
+        }
+        return 0;
+    }
+
+    float Spell_C_GetSpellRadiusHook(hadesmem::PatchDetourBase *detour) {
+        auto originalSpellId = *reinterpret_cast<uint32_t*>(Offsets::VisualSpellId);
+        if(gCastData.targetingSpellQueued){
+            // switch out visual spellid to the queued spell so that we get the correct radius
+            *reinterpret_cast<uint32_t*>(Offsets::VisualSpellId) = gCastData.targetingSpellId;
+        }
+
+        auto const getSpellRadius = detour->GetTrampolineT<Spell_C_GetSpellRadiusT>();
+        auto radius = getSpellRadius();
+
+        if(gCastData.targetingSpellQueued){
+            // switch back to originalSpellId
+            *reinterpret_cast<uint32_t*>(Offsets::VisualSpellId) = originalSpellId;
+        }
+
+        return radius;
+    }
+
+    void EnableSpellTargeting(uint32_t *casterUnit, const game::SpellRec *spell, uintptr_t *unk, uint64_t guid) {
+        // set s_needtargets 00cecac0
+        auto s_needtargets = reinterpret_cast<uint32_t *>(Offsets::SpellNeedsTargets);
+        *s_needtargets = spell->Targets;
+
+        auto const CursorSetCursorMode = reinterpret_cast<void (__fastcall *)(uint32_t)>(Offsets::CursorSetCursorMode);
+        CursorSetCursorMode(1); // CAST_CURSOR
+        auto const CursorModelSetSequence = reinterpret_cast<void (__fastcall *)(uint32_t)>(Offsets::CursorModelSetSequence);
+        CursorModelSetSequence(22); // CAST_CURSOR
+    }
+
+    bool Spell_C_TargetSpellHook(hadesmem::PatchDetourBase *detour,
+                                 uint32_t *player,
+                                 uint32_t *spellId,
+                                 uint32_t unk3,
+                                 float unk4) {
+        auto const spellTarget = detour->GetTrampolineT<Spell_C_TargetSpellT>();
+        auto result = spellTarget(player, spellId, unk3, unk4);
+
+        if (!result) {
+            auto const spellName = game::GetSpellName(*spellId);
+            auto const spell = game::GetSpellInfo(*spellId);
+
+            if (spell->Targets == game::SpellCastTargetFlags::TARGET_FLAG_DEST_LOCATION &&
+                spell->Effect[0] != game::SPELL_EFFECT_SUMMON_GUARDIAN) {
+                // if quickcast is on instantly trigger all casts
+                // otherwise if this is a queued cast, trigger it instant cast
+                if (gUserSettings.quickcastTargetingSpells ||
+                    (gUserSettings.queueTargetingSpells && gCastData.castingQueuedSpell)) {
+                    DEBUG_LOG("Quickcasting terrain spell " << spellName
+                                                            << " quickcast: "
+                                                            << gUserSettings.quickcastTargetingSpells
+                                                            << " queuetrigger: " << gCastData.castingQueuedSpell);
+
+                    // store the current target
+                    auto const targetGuid = game::GetCurrentTargetGuid();
+
+                    CameraOrSelectOrMoveStart();
+                    CameraOrSelectOrMoveStop();
+
+                    // check if target changed
+                    if (targetGuid != game::GetCurrentTargetGuid()) {
+                        DEBUG_LOG("Target changed during quick cast, restoring previous target " << targetGuid);
+                        auto const targetUnit = reinterpret_cast<CGGameUI_TargetT>(Offsets::CGGameUI_Target);
+                        targetUnit(targetGuid);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
     uint32_t GetChannelBaseDuration(const game::SpellRec *spell) {
         auto const duration = game::GetDurationObject(spell->DurationIndex);
         if (duration == nullptr) {
@@ -117,6 +222,8 @@ namespace Nampower {
                 DEBUG_LOG("Triggering queued non gcd cast of " << game::GetSpellName(nonGcdCastParams.spellId));
 
                 gCastData.castingQueuedSpell = true;
+                gCastData.targetingSpellQueued = false; // make sure this is off so SendCast is allowed
+                gCastData.targetingSpellId = 0;
                 gCastData.numRetries = nonGcdCastParams.numRetries;
                 Spell_C_CastSpellHook(castSpellDetour, nonGcdCastParams.casterUnit, nonGcdCastParams.spellId,
                                       nonGcdCastParams.item, nonGcdCastParams.guid);
@@ -128,6 +235,8 @@ namespace Nampower {
             TriggerSpellQueuedEvent(NON_GCD_QUEUE_POPPED, nonGcdCastParams.spellId);
             gCastData.nonGcdSpellQueued = !gNonGcdCastQueue.isEmpty();
             gCastData.castingQueuedSpell = false;
+            gCastData.targetingSpellQueued = false;
+            gCastData.targetingSpellId = 0;
             gCastData.numRetries = 0;
         }
     }
@@ -137,6 +246,8 @@ namespace Nampower {
             if (gLastNormalCastParams.spellId > 0) {
                 DEBUG_LOG("Triggering queued cast of " << game::GetSpellName(gLastNormalCastParams.spellId));
                 gCastData.castingQueuedSpell = true;
+                gCastData.targetingSpellQueued = false; // make sure this is off so SendCast is allowed
+                gCastData.targetingSpellId = 0;
                 gCastData.numRetries = gLastNormalCastParams.numRetries;
                 Spell_C_CastSpellHook(castSpellDetour, gLastNormalCastParams.casterUnit, gLastNormalCastParams.spellId,
                                       gLastNormalCastParams.item, gLastNormalCastParams.guid);
@@ -148,6 +259,8 @@ namespace Nampower {
             TriggerSpellQueuedEvent(NORMAL_QUEUE_POPPED, gLastNormalCastParams.spellId);
             gCastData.normalSpellQueued = false;
             gCastData.castingQueuedSpell = false;
+            gCastData.targetingSpellQueued = false;
+            gCastData.targetingSpellId = 0;
             gCastData.numRetries = 0;
         }
     }
@@ -377,18 +490,28 @@ namespace Nampower {
                 if (gUserSettings.queueTargetingSpells) {
                     if (castTime > 0 && inSpellQueueWindow) {
                         if (gUserSettings.queueCastTimeSpells) {
+                            // call EnableSpellTargeting to set s_needTargets and trigger the targeting indicator
+                            EnableSpellTargeting(casterUnit, spell, nullptr, guid);
+
                             DEBUG_LOG("Queuing targeting for after cast/gcd: " << remainingCD << "ms " << spellName);
                             TriggerSpellQueuedEvent(NORMAL_QUEUED, spellId);
                             gCastData.normalSpellQueued = true;
+                            gCastData.targetingSpellQueued = true;
+                            gCastData.targetingSpellId = spellId;
                             return false;
                         }
                     } else if (inSpellQueueWindow) {
                         if (gUserSettings.queueInstantSpells) {
                             if (spellOnGcd) {
+                                // call EnableSpellTargeting to set s_needTargets and trigger the targeting indicator
+                                EnableSpellTargeting(casterUnit, spell, nullptr, guid);
+
                                 DEBUG_LOG("Queuing instant cast targeting for after cast/gcd: " << remainingCD << "ms "
                                                                                                 << spellName);
                                 TriggerSpellQueuedEvent(NORMAL_QUEUED, spellId);
                                 gCastData.normalSpellQueued = true;
+                                gCastData.targetingSpellQueued = true;
+                                gCastData.targetingSpellId = spellId;
                                 return false;
                             } else if (remainingEffectiveCastTime > 0) {
                                 auto castParams = gNonGcdCastQueue.findSpellId(spellId);
@@ -397,6 +520,9 @@ namespace Nampower {
                                     castParams->guid = guid;
                                     return false;
                                 } else {
+                                    // call EnableSpellTargeting to set s_needTargets and trigger the targeting indicator
+                                    EnableSpellTargeting(casterUnit, spell, nullptr, guid);
+
                                     DEBUG_LOG("Queuing instant cast non GCD targeting for after cast/gcd: "
                                                       << remainingEffectiveCastTime << "ms " << spellName
                                                       << " gcd category "
@@ -410,6 +536,8 @@ namespace Nampower {
                                                            false}, gUserSettings.replaceMatchingNonGcdCategory);
                                     TriggerSpellQueuedEvent(NON_GCD_QUEUED, spellId);
                                     gCastData.nonGcdSpellQueued = true;
+                                    gCastData.targetingSpellQueued = true;
+                                    gCastData.targetingSpellId = spellId;
                                     return false;
                                 }
                             }
@@ -640,74 +768,6 @@ namespace Nampower {
         }
     }
 
-    void SetReleaseAction(uint32_t input) {
-        uint32_t activeControl = *reinterpret_cast<uint32_t *>(Offsets::CGInputControlGetActive);
-
-        typedef void(__thiscall *SetReleaseActionT)(uint32_t, uint32_t);
-        auto SetReleaseAction = reinterpret_cast<SetReleaseActionT>(Offsets::CGInputControlSetReleaseAction);
-        SetReleaseAction(activeControl, input);
-    }
-
-    void SetControlBit(uint32_t input) {
-        uint32_t activeControl = *reinterpret_cast<uint32_t *>(Offsets::CGInputControlGetActive);
-        auto *LastHardwareAction = reinterpret_cast<uintptr_t *>(Offsets::LastHardwareAction);
-
-        typedef void(__thiscall *SetControlBitT)(uint32_t, uint32_t, uint32_t, uintptr_t *, int);
-        auto SetControlBit = reinterpret_cast<SetControlBitT>(Offsets::CGInputControlSetControlBit);
-        SetControlBit(activeControl, 2, input, LastHardwareAction, 0);
-    }
-
-
-    void CameraOrSelectOrMoveStart() {
-        SetReleaseAction(1);
-        SetControlBit(1);
-    }
-
-    void CameraOrSelectOrMoveStop() {
-        SetControlBit(0);
-    }
-
-    bool Spell_C_TargetSpellHook(hadesmem::PatchDetourBase *detour,
-                                 uint32_t *player,
-                                 uint32_t *spellId,
-                                 uint32_t unk3,
-                                 float unk4) {
-        auto const spellTarget = detour->GetTrampolineT<Spell_C_TargetSpellT>();
-        auto result = spellTarget(player, spellId, unk3, unk4);
-
-        if (!result) {
-            auto const spellName = game::GetSpellName(*spellId);
-            auto const spell = game::GetSpellInfo(*spellId);
-
-            if (spell->Targets == game::SpellTarget::TARGET_LOCATION_UNIT_POSITION &&
-                spell->Effect[0] != game::SPELL_EFFECT_SUMMON_GUARDIAN) {
-                // if quickcast is on instantly trigger all casts
-                // otherwise if this is a queued cast, trigger it instant cast
-                if (gUserSettings.quickcastTargetingSpells ||
-                    (gUserSettings.queueTargetingSpells && gCastData.castingQueuedSpell)) {
-                    DEBUG_LOG("Quickcasting terrain spell " << spellName
-                                                            << " quickcast: "
-                                                            << gUserSettings.quickcastTargetingSpells
-                                                            << " queuetrigger: " << gCastData.castingQueuedSpell);
-
-                    // store the current target
-                    auto const targetGuid = game::GetCurrentTargetGuid();
-
-                    CameraOrSelectOrMoveStart();
-                    CameraOrSelectOrMoveStop();
-
-                    // check if target changed
-                    if (targetGuid != game::GetCurrentTargetGuid()) {
-                        DEBUG_LOG("Target changed during quick cast, restoring previous target " << targetGuid);
-                        auto const targetUnit = reinterpret_cast<CGGameUI_TargetT>(Offsets::CGGameUI_Target);
-                        targetUnit(targetGuid);
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
     void
     CancelSpellHook(hadesmem::PatchDetourBase *detour, bool failed, bool notifyServer,
                     game::SpellCastResult reason) {
@@ -724,11 +784,10 @@ namespace Nampower {
     }
 
     void SendCastHook(hadesmem::PatchDetourBase *detour, game::SpellCast *cast, char unk) {
-        auto const sendCast = detour->GetTrampolineT<SendCastT>();
-        sendCast(cast, unk);
+            auto const sendCast = detour->GetTrampolineT<SendCastT>();
+            sendCast(cast, unk);
 
-        auto const spell = game::GetSpellInfo(cast->spellId);
-        BeginCast(gCastData.attemptedCastTimeMs, spell, cast);
+            auto const spell = game::GetSpellInfo(cast->spellId);
+            BeginCast(gCastData.attemptedCastTimeMs, spell, cast);
     }
-
 }

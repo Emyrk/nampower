@@ -32,5 +32,9 @@ namespace Nampower {
                                  uint32_t unk3,
                                  float unk4);
 
+    uint32_t Spell_C_HandleTerrainClickHook(hadesmem::PatchDetourBase *detour, game::CTerrainClickEvent *event);
+
+    float Spell_C_GetSpellRadiusHook(hadesmem::PatchDetourBase *detour);
+
     void SendCastHook(hadesmem::PatchDetourBase *detour, game::SpellCast *cast, char unk);
 }

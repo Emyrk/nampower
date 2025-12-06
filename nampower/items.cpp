@@ -10,58 +10,23 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace Nampower {
     // Global dictionary to store itemId -> ItemStats_C mappings
     static std::unordered_map<uint32_t, game::ItemStats_C *> itemStatsCache;
 
+    // Track pending async loads (can have multiple at once)
+    static std::unordered_set<uint32_t> pendingItemIds;
+
+    // Export state tracking
+    static bool isExporting = false;
+    static uint32_t currentExportItemId = 0;
+    static const uint32_t MAX_EXPORT_ITEM_ID = 100000;
+    static const uint32_t ITEMS_PER_FRAME = 20;
+
     auto const getRow = reinterpret_cast<DBCache_ItemCacheDBGetRowT>(Offsets::DBCache_ItemCacheDBGetRow);
     auto const itemCache = reinterpret_cast<void *>(Offsets::ItemDBCache);
-
-    // Callback function for DBCache
-    void __stdcall ItemStatsCallback(uintptr_t *tooltip, char param_2) {
-        if (tooltip != nullptr) {
-            auto itemId = *reinterpret_cast<uint32_t *>(tooltip + 0xE6);
-
-            int ptr;
-            auto itemStats = getRow(itemCache, nullptr, itemId, &ptr, &ItemStatsCallback, nullptr, 0);
-            if (itemStats) {
-                DEBUG_LOG("Queried itemId " << itemId << " -> " << itemStats);
-                // Store in cache
-                itemStatsCache[itemId] = reinterpret_cast<game::ItemStats_C *>(itemStats);
-            }
-        }
-    }
-
-    void LoadItem(uint32_t itemId) {
-        // Check if already in cache
-        auto it = itemStatsCache.find(itemId);
-        if (it != itemStatsCache.end()) {
-            return;
-        }
-
-        if (!itemCache) {
-            return;
-        }
-
-        int ptr;
-        auto itemStats = getRow(itemCache, nullptr, itemId, &ptr, &ItemStatsCallback, nullptr, 0);
-        if (itemStats) {
-            // Store in cache
-            itemStatsCache[itemId] = reinterpret_cast<game::ItemStats_C *>(itemStats);
-        } else {
-            // wait for .005 sec
-            Sleep(5);
-        }
-    }
-
-    game::ItemStats_C* GetItemStats(uint32_t itemId) {
-        auto it = itemStatsCache.find(itemId);
-        if (it != itemStatsCache.end()) {
-            return it->second;
-        }
-        return nullptr;
-    }
 
     std::string escapeJsonString(const char *str) {
         if (!str) return "null";
@@ -104,21 +69,77 @@ namespace Nampower {
         return result;
     }
 
-    // Register a function if you want to use this
-    // Don't want everyone scraping all items.
-    void ExportAllItems() {
-        DEBUG_LOG("Starting getAllItems - fetching items 1 to 100000");
-
-        // Loop through all item IDs
-        for (uint32_t itemId = 1; itemId <= 100000; ++itemId) {
-            LoadItem(itemId);
-
-            // Log progress every 1000 items
-            if (itemId % 1000 == 0) {
-                DEBUG_LOG("Progress: " << itemId << " / 100000 items processed");
+    // Callback function for DBCache
+    void __fastcall ItemStatsCallback(uint32_t itemId, const uint64_t *ownerGuid, void *userData, bool resultFlag) {
+        if (resultFlag) {
+            uint64_t guid;
+            auto itemStats = getRow(itemCache, itemId, &guid, &ItemStatsCallback, nullptr, false);
+            if (itemStats) {
+                // Store in cache
+                DEBUG_LOG("Added itemId " << itemId);
+                itemStatsCache[itemId] = reinterpret_cast<game::ItemStats_C *>(itemStats);
+            } else {
+                DEBUG_LOG("Still missing " << itemId);
             }
         }
 
+        // Remove from pending set
+        pendingItemIds.erase(itemId);
+    }
+
+    bool LoadItem(uint32_t itemId) {
+        // Check if already in cache
+        auto it = itemStatsCache.find(itemId);
+        if (it != itemStatsCache.end()) {
+            return false;  // Already loaded, no wait needed
+        }
+
+        uint64_t guid;
+        auto itemStats = getRow(itemCache, itemId, &guid, &ItemStatsCallback, nullptr, true);
+        if (itemStats) {
+            // Item was available immediately, store in cache
+            itemStatsCache[itemId] = reinterpret_cast<game::ItemStats_C *>(itemStats);
+            return false;  // Loaded immediately, no wait needed
+        } else {
+            // Item not immediately available, need to wait for callback
+            pendingItemIds.insert(itemId);
+            return true;  // Caller should wait for callback
+        }
+    }
+
+    bool ProcessItemExport() {
+        if (!isExporting) {
+            return false;  // Not currently exporting
+        }
+
+        // Try to load items until we have 20 pending or run out of items
+        uint32_t itemsRequestedThisFrame = 0;
+        while (pendingItemIds.size() < ITEMS_PER_FRAME && currentExportItemId <= MAX_EXPORT_ITEM_ID) {
+            LoadItem(currentExportItemId);
+
+            // Log progress every 1000 items
+            if (currentExportItemId % 1000 == 0) {
+                DEBUG_LOG("Progress: " << currentExportItemId << " / " << MAX_EXPORT_ITEM_ID
+                         << " items requested, " << pendingItemIds.size() << " pending callbacks");
+            }
+
+            currentExportItemId++;
+            itemsRequestedThisFrame++;
+
+            // Safety check - don't request too many in a single frame
+            if (itemsRequestedThisFrame >= ITEMS_PER_FRAME) {
+                break;
+            }
+        }
+
+        // Check if we're done (all items requested and no pending callbacks)
+        if (currentExportItemId > MAX_EXPORT_ITEM_ID && pendingItemIds.empty()) {
+            // Fall through to export completion
+        } else {
+            return true;  // Still exporting, more items to process or waiting for callbacks
+        }
+
+        // Export complete, write to file
         DEBUG_LOG("Finished fetching items, found " << itemStatsCache.size() << " valid items");
         DEBUG_LOG("Writing items to items.json");
 
@@ -127,7 +148,8 @@ namespace Nampower {
             std::ofstream jsonFile("items.json", std::ios::trunc);
             if (!jsonFile.is_open()) {
                 DEBUG_LOG("Failed to open items.json for writing");
-                return;
+                isExporting = false;
+                return false;
             }
 
             jsonFile << "[\n";
@@ -289,5 +311,29 @@ namespace Nampower {
         } catch (const std::exception &e) {
             DEBUG_LOG("Exception writing to items.json: " << e.what());
         }
+
+        isExporting = false;
+        return false;  // Export complete
+    }
+
+    game::ItemStats_C *GetItemStats(uint32_t itemId) {
+        auto it = itemStatsCache.find(itemId);
+        if (it != itemStatsCache.end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
+
+    // Register a function if you want to use this
+    // Don't want everyone scraping all items.
+    void ExportAllItems() {
+        DEBUG_LOG("Starting item export - will fetch items 1 to " << MAX_EXPORT_ITEM_ID << " with up to " << ITEMS_PER_FRAME << " concurrent requests");
+
+        // Initialize export state
+        isExporting = true;
+        currentExportItemId = 1;
+        pendingItemIds.clear();
+
+        DEBUG_LOG("Export initialized. ProcessItemExport will be called each frame from processQueues.");
     }
 }
