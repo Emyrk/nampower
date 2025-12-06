@@ -105,6 +105,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<OnSpriteRightClickT>> gOnSpriteRightClickDetour;
     std::unique_ptr<hadesmem::PatchDetour<Spell_C_HandleSpriteClickT>> gSpell_C_HandleSpriteClickDetour;
     std::unique_ptr<hadesmem::PatchDetour<Spell_C_HandleTerrainClickT>> gSpell_C_HandleTerrainClickDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGWorldFrame_OnLayerTrackTerrainT>> gCGWorldFrame_OnLayerTrackTerrainDetour;
     std::unique_ptr<hadesmem::PatchDetour<Spell_C_TargetSpellT>> gSpell_C_TargetSpellDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT>> gSpellCooldownDetour;
@@ -1131,6 +1132,8 @@ namespace Nampower {
                                                                       &Spell_C_TargetSpellHook);
         gSpell_C_HandleTerrainClickDetour = createHook<Spell_C_HandleTerrainClickT>(process, Offsets::Spell_C_HandleTerrainClick,
                                                                                      &Spell_C_HandleTerrainClickHook);
+        gCGWorldFrame_OnLayerTrackTerrainDetour = createHook<CGWorldFrame_OnLayerTrackTerrainT>(process, Offsets::CGWorldFrame_OnLayerTrackTerrain,
+                                                                                                 &CGWorldFrame_OnLayerTrackTerrainHook);
         gOnSpriteRightClickDetour = createHook<OnSpriteRightClickT>(process, Offsets::OnSpriteRightClick,
                                                                     OnSpriteRightClickHook);
         gIEndSceneDetour = createHook<ISceneEndT>(process, Offsets::ISceneEndPtr, &ISceneEndHook);
@@ -1138,9 +1141,6 @@ namespace Nampower {
                                                                               &InvalidFunctionPtrCheckHook);
         gGetSpellSlotFromLuaDetour = createHook<GetSpellSlotFromLuaT>(process, Offsets::GetSpellSlotFromLua,
                                                                       &GetSpellSlotFromLuaHook);
-        gSpell_C_GetSpellRadiusDetour = createHook<Spell_C_GetSpellRadiusT>(process, Offsets::Spell_C_GetSpellRadius,
-                                                                             &Spell_C_GetSpellRadiusHook);
-
     }
 
     void SpellVisualsInitializeHook(hadesmem::PatchDetourBase *detour) {

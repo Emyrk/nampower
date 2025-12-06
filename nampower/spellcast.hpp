@@ -34,6 +34,8 @@ namespace Nampower {
 
     uint32_t Spell_C_HandleTerrainClickHook(hadesmem::PatchDetourBase *detour, game::CTerrainClickEvent *event);
 
+    void CGWorldFrame_OnLayerTrackTerrainHook(hadesmem::PatchDetourBase *detour, void *thisptr, int dummy_edx, int param_1);
+
     float Spell_C_GetSpellRadiusHook(hadesmem::PatchDetourBase *detour);
 
     void SendCastHook(hadesmem::PatchDetourBase *detour, game::SpellCast *cast, char unk);

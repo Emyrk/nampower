@@ -30,7 +30,7 @@ namespace Nampower {
     constexpr uint32_t BUFFER_DECREASE_FREQUENCY = 10000; // time in ms between changes to lower buffer
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 12;
+    constexpr uint32_t MINOR_VERSION = 13;
     constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
@@ -85,6 +85,7 @@ namespace Nampower {
     using SpellGoT = void (__fastcall *)(uint64_t *, uint64_t *, uint32_t, CDataStore *);
     using Spell_C_HandleSpriteClickT = bool (__fastcall *)(game::CSpriteClickEvent *event);
     using Spell_C_HandleTerrainClickT = uint32_t (__fastcall *)(game::CTerrainClickEvent *event);
+    using CGWorldFrame_OnLayerTrackTerrainT = void (__fastcall *)(void *thisptr, int dummy_edx, int param_1);
     using Spell_C_TargetSpellT = bool (__fastcall *)(
             uint32_t *player,
             uint32_t *spellId,

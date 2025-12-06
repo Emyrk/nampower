@@ -36,6 +36,16 @@ namespace Nampower {
         SetControlBit(0);
     }
 
+    void EnableSpellTargeting(const game::SpellRec *spell) {
+        // set s_needtargets 00cecac0
+        auto s_needtargets = reinterpret_cast<uint32_t *>(Offsets::SpellNeedsTargets);
+        *s_needtargets = spell->Targets;
+
+        auto const CursorSetCursorMode = reinterpret_cast<void (__fastcall *)(uint32_t)>(Offsets::CursorSetCursorMode);
+        CursorSetCursorMode(2); // CAST_CURSOR
+        auto const CursorModelSetSequence = reinterpret_cast<void (__fastcall *)(uint32_t)>(Offsets::CursorModelSetSequence);
+        CursorModelSetSequence(2); // CAST_CURSOR
+    }
 
     uint32_t Spell_C_HandleTerrainClickHook(hadesmem::PatchDetourBase *detour, game::CTerrainClickEvent *event) {
         if(!gCastData.targetingSpellQueued){
@@ -43,6 +53,28 @@ namespace Nampower {
             return handleTerrainClick(event);
         }
         return 0;
+    }
+
+    void CGWorldFrame_OnLayerTrackTerrainHook(hadesmem::PatchDetourBase *detour, void *thisptr, int dummy_edx, int param_1) {
+        auto originalSpellId = *reinterpret_cast<uint32_t*>(Offsets::VisualSpellId);
+        auto originalCasterGuid = *reinterpret_cast<uint64_t*>(Offsets::CasterGuid);
+
+        if(gCastData.targetingSpellQueued){
+            // switch out visual spellid to the queued spell so that we get the correct radius/range
+            *reinterpret_cast<uint32_t*>(Offsets::VisualSpellId) = gCastData.targetingSpellId;
+            // set casterguid to active player so range checks work correctly
+            *reinterpret_cast<uint64_t*>(Offsets::CasterGuid) = game::ClntObjMgrGetActivePlayerGuid();
+        }
+
+        auto const onLayerTrackTerrain = detour->GetTrampolineT<CGWorldFrame_OnLayerTrackTerrainT>();
+        onLayerTrackTerrain(thisptr, dummy_edx, param_1);
+
+        if(gCastData.targetingSpellQueued){
+            // switch back to originalSpellId
+            *reinterpret_cast<uint32_t*>(Offsets::VisualSpellId) = originalSpellId;
+            // restore original caster guid
+            *reinterpret_cast<uint64_t*>(Offsets::CasterGuid) = originalCasterGuid;
+        }
     }
 
     float Spell_C_GetSpellRadiusHook(hadesmem::PatchDetourBase *detour) {
@@ -55,23 +87,7 @@ namespace Nampower {
         auto const getSpellRadius = detour->GetTrampolineT<Spell_C_GetSpellRadiusT>();
         auto radius = getSpellRadius();
 
-        if(gCastData.targetingSpellQueued){
-            // switch back to originalSpellId
-            *reinterpret_cast<uint32_t*>(Offsets::VisualSpellId) = originalSpellId;
-        }
-
         return radius;
-    }
-
-    void EnableSpellTargeting(uint32_t *casterUnit, const game::SpellRec *spell, uintptr_t *unk, uint64_t guid) {
-        // set s_needtargets 00cecac0
-        auto s_needtargets = reinterpret_cast<uint32_t *>(Offsets::SpellNeedsTargets);
-        *s_needtargets = spell->Targets;
-
-        auto const CursorSetCursorMode = reinterpret_cast<void (__fastcall *)(uint32_t)>(Offsets::CursorSetCursorMode);
-        CursorSetCursorMode(1); // CAST_CURSOR
-        auto const CursorModelSetSequence = reinterpret_cast<void (__fastcall *)(uint32_t)>(Offsets::CursorModelSetSequence);
-        CursorModelSetSequence(22); // CAST_CURSOR
     }
 
     bool Spell_C_TargetSpellHook(hadesmem::PatchDetourBase *detour,
@@ -491,7 +507,7 @@ namespace Nampower {
                     if (castTime > 0 && inSpellQueueWindow) {
                         if (gUserSettings.queueCastTimeSpells) {
                             // call EnableSpellTargeting to set s_needTargets and trigger the targeting indicator
-                            EnableSpellTargeting(casterUnit, spell, nullptr, guid);
+                            EnableSpellTargeting(spell);
 
                             DEBUG_LOG("Queuing targeting for after cast/gcd: " << remainingCD << "ms " << spellName);
                             TriggerSpellQueuedEvent(NORMAL_QUEUED, spellId);
@@ -504,7 +520,7 @@ namespace Nampower {
                         if (gUserSettings.queueInstantSpells) {
                             if (spellOnGcd) {
                                 // call EnableSpellTargeting to set s_needTargets and trigger the targeting indicator
-                                EnableSpellTargeting(casterUnit, spell, nullptr, guid);
+                                EnableSpellTargeting(spell);
 
                                 DEBUG_LOG("Queuing instant cast targeting for after cast/gcd: " << remainingCD << "ms "
                                                                                                 << spellName);
@@ -521,7 +537,7 @@ namespace Nampower {
                                     return false;
                                 } else {
                                     // call EnableSpellTargeting to set s_needTargets and trigger the targeting indicator
-                                    EnableSpellTargeting(casterUnit, spell, nullptr, guid);
+                                    EnableSpellTargeting(spell);
 
                                     DEBUG_LOG("Queuing instant cast non GCD targeting for after cast/gcd: "
                                                       << remainingEffectiveCastTime << "ms " << spellName
