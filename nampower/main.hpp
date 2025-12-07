@@ -31,7 +31,7 @@ namespace Nampower {
 
     constexpr uint32_t MAJOR_VERSION = 2;
     constexpr uint32_t MINOR_VERSION = 13;
-    constexpr uint32_t PATCH_VERSION = 0;
+    constexpr uint32_t PATCH_VERSION = 1;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
@@ -119,6 +119,7 @@ namespace Nampower {
     using GetGUIDFromNameT = std::uint64_t (__fastcall *)(const char *);
     using GetUnitFromNameT = uintptr_t *(__fastcall *)(const char *);
     using lua_gettableT = void (__fastcall *)(uintptr_t *luaState, int globalsIndex);
+    using lua_gettopT = int (__fastcall *)(uintptr_t *);
     using lua_isstringT = bool (__fastcall *)(uintptr_t *, int);
     using lua_isnumberT = bool (__fastcall *)(uintptr_t *, int);
     using lua_tostringT = char *(__fastcall *)(uintptr_t *, int);

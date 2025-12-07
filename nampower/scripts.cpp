@@ -13,6 +13,7 @@
 namespace Nampower {
     auto const lua_error = reinterpret_cast<lua_errorT>(Offsets::lua_error);
 
+    auto const lua_gettop = reinterpret_cast<lua_gettopT>(Offsets::lua_gettop);
     auto const lua_isstring = reinterpret_cast<lua_isstringT>(Offsets::lua_isstring);
     auto const lua_isnumber = reinterpret_cast<lua_isnumberT>(Offsets::lua_isnumber);
 
@@ -31,6 +32,8 @@ namespace Nampower {
     char *queuedScript;
 
     uint32_t Script_CastSpellByNameNoQueue(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         DEBUG_LOG("Casting next spell without queuing");
         // turn on forceQueue and then call regular CastSpellByName
         gNoQueueCast = true;
@@ -42,6 +45,8 @@ namespace Nampower {
     }
 
     uint32_t Script_QueueSpellByName(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         DEBUG_LOG("Force queuing next cast spell");
         // turn on forceQueue and then call regular CastSpellByName
         gForceQueueCast = true;
@@ -64,6 +69,8 @@ namespace Nampower {
     }
 
     uint32_t Script_IsSpellInRange(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         auto param1IsString = lua_isstring(luaState, 1);
         auto param1IsNumber = lua_isnumber(luaState, 1);
         if (param1IsString || param1IsNumber) {
@@ -136,8 +143,11 @@ namespace Nampower {
     }
 
     uint32_t Script_IsSpellUsable(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         auto param1IsString = lua_isstring(luaState, 1);
         auto param1IsNumber = lua_isnumber(luaState, 1);
+
         if (param1IsString || param1IsNumber) {
             uint32_t spellId = 0;
 
@@ -190,6 +200,8 @@ namespace Nampower {
     }
 
     uint32_t Script_GetCurrentCastingInfo(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         auto const castingSpellId = reinterpret_cast<uint32_t *>(Offsets::CastingSpellId);
         lua_pushnumber(luaState, *castingSpellId);
 
@@ -232,6 +244,8 @@ namespace Nampower {
     }
 
     uint32_t Script_GetSpellIdForName(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         if (lua_isstring(luaState, 1)) {
             auto const spellName = lua_tostring(luaState, 1);
             auto const spellId = GetSpellIdFromSpellName(spellName);
@@ -245,6 +259,8 @@ namespace Nampower {
     }
 
     uint32_t Script_GetSpellNameAndRankForId(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         if (lua_isnumber(luaState, 1)) {
             auto const spellId = uint32_t(lua_tonumber(luaState, 1));
             auto const spell = game::GetSpellInfo(spellId);
@@ -266,6 +282,8 @@ namespace Nampower {
     }
 
     uint32_t Script_GetSpellSlotTypeIdForName(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         if (lua_isstring(luaState, 1)) {
             auto const spellName = lua_tostring(luaState, 1);
             uint32_t bookType;
@@ -316,6 +334,8 @@ namespace Nampower {
     }
 
     uint32_t Script_ChannelStopCastingNextTick(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         if (gCastData.channeling) {
             DEBUG_LOG("ChannelStopCastingNextTick activated, canceling next tick");
             gCastData.cancelChannelNextTick = true;
@@ -325,6 +345,8 @@ namespace Nampower {
     }
 
     uint32_t Script_GetNampowerVersion(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         lua_pushnumber(luaState, MAJOR_VERSION);
         lua_pushnumber(luaState, MINOR_VERSION);
         lua_pushnumber(luaState, PATCH_VERSION);
@@ -333,6 +355,8 @@ namespace Nampower {
     }
 
     uint32_t Script_GetItemLevel(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         if (lua_isnumber(luaState, 1)) {
             auto const itemId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
 
@@ -366,6 +390,8 @@ namespace Nampower {
     }
 
     uint32_t Script_QueueScript(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         DEBUG_LOG("Trying to queue script");
 
         auto const currentTime = GetTime();
@@ -427,6 +453,8 @@ namespace Nampower {
     }
 
     uint32_t Script_GetItemStats(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         if (!lua_isnumber(luaState, 1)) {
             lua_error(luaState, "Usage: GetItemStats(itemId)");
             return 0;
@@ -468,6 +496,8 @@ namespace Nampower {
     }
 
     uint32_t Script_GetSpellRec(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         if (!lua_isnumber(luaState, 1)) {
             lua_error(luaState, "Usage: GetSpellRec(spellId)");
             return 0;
@@ -508,6 +538,8 @@ namespace Nampower {
     }
 
     uint32_t Script_GetItemStatsField(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         if (!lua_isnumber(luaState, 1) || !lua_isstring(luaState, 2)) {
             lua_error(luaState, "Usage: GetItemStatsField(itemId, fieldName)");
             return 0;
@@ -603,6 +635,8 @@ namespace Nampower {
     }
 
     uint32_t Script_GetSpellRecField(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         if (!lua_isnumber(luaState, 1) || !lua_isstring(luaState, 2)) {
             lua_error(luaState, "Usage: GetSpellRecField(spellId, fieldName)");
             return 0;
@@ -699,6 +733,8 @@ namespace Nampower {
     }
 
     uint32_t Script_GetUnitData(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         if (!lua_isstring(luaState, 1)) {
             lua_error(luaState, "Usage: GetUnitData(unitToken) - unitToken can be 'player', 'target', 'pet', etc., or a GUID string");
             return 0;
@@ -748,6 +784,8 @@ namespace Nampower {
     }
 
     uint32_t Script_GetUnitField(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         if (!lua_isstring(luaState, 1) || !lua_isstring(luaState, 2)) {
             lua_error(luaState, "Usage: GetUnitField(unitToken, fieldName) - unitToken can be 'player', 'target', 'pet', etc., or a GUID string");
             return 0;
@@ -843,6 +881,8 @@ namespace Nampower {
     }
 
     uint32_t Script_GetSpellModifiers(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
         if (!lua_isnumber(luaState, 1) || !lua_isnumber(luaState, 2)) {
             lua_error(luaState, "Usage: GetSpellModifiers(spellId, modifierType) - modifierType: 0=DAMAGE, 1=DURATION, 2=THREAT, 3=ATTACK_POWER, 4=CHARGES, 5=RANGE, 6=RADIUS, 7=CRITICAL_CHANCE, 8=ALL_EFFECTS, 9=NOT_LOSE_CASTING_TIME, 10=CASTING_TIME, 11=COOLDOWN, 12=SPEED, 14=COST, 15=CRIT_DAMAGE_BONUS, 16=RESIST_MISS_CHANCE, 17=JUMP_TARGETS, 18=CHANCE_OF_SUCCESS, 19=ACTIVATION_TIME, 20=EFFECT_PAST_FIRST, 21=CASTING_TIME_OLD, 22=DOT, 23=HASTE, 24=SPELL_BONUS_DAMAGE, 27=MULTIPLE_VALUE, 28=RESIST_DISPEL_CHANCE");
             return 0;

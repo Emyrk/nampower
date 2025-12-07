@@ -651,21 +651,21 @@ namespace Nampower {
         }
     }
 
-    int Script_SetCVarHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaPtr) {
+    int Script_SetCVarHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState) {
         auto const cvarSetOrig = gSetCVarDetour->GetTrampolineT<SetCVarT>();
 
         auto const lua_isstring = reinterpret_cast<lua_isstringT>(Offsets::lua_isstring);
-        if (lua_isstring(luaPtr, 1)) {
+        if (lua_isstring(luaState, 1)) {
             auto const lua_tostring = reinterpret_cast<lua_tostringT>(Offsets::lua_tostring);
-            auto const cVarName = lua_tostring(luaPtr, 1);
-            auto const cVarValue = lua_tostring(luaPtr, 2);
+            auto const cVarName = lua_tostring(luaState, 1);
+            auto const cVarValue = lua_tostring(luaState, 2);
             // if cvar starts with "NP_", then we need to handle it
             if (strncmp(cVarName, "NP_", 3) == 0) {
                 updateFromCvar(cVarName, cVarValue);
             }
         } // original function handles errors
 
-        return cvarSetOrig(luaPtr);
+        return cvarSetOrig(luaState);
     }
 
     int *getCvar(const char *cvar) {
