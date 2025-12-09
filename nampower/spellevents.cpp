@@ -562,6 +562,9 @@ namespace Nampower {
                 hitInfo,
                 spellSchool,
                 effectsAuraTypeStream.str().c_str());
+
+        delete[] targetGuidStr;
+        delete[] casterGuidStr;
     }
 
     int PeriodicAuraLogHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t unk, uint32_t opCode, uint32_t unk2,

@@ -37,6 +37,7 @@
 #include "spellchannel.hpp"
 #include "helper.hpp"
 #include "items.hpp"
+#include "auras.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -86,6 +87,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<SpellVisualsInitializeT >> gSpellVisualsInitDetour;
     std::unique_ptr<hadesmem::PatchDetour<LoadScriptFunctionsT >> gLoadScriptFunctionsDetour;
     std::unique_ptr<hadesmem::PatchDetour<FrameScript_CreateEventsT >> gCreateEventsDetour;
+    std::unique_ptr<hadesmem::PatchDetour<FramescriptSetEventCountT >> gSetEventCountDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<SetCVarT>> gSetCVarDetour;
     std::unique_ptr<hadesmem::PatchDetour<CastSpellT>> gCastDetour;
@@ -121,6 +123,10 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT>> gSpellNonMeleeDmgLogHandlerDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<CGPlayer_C_OnAttackIconPressedT>> gCGPlayer_C_OnAttackIconPressedDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraRemovedT>> gCGUnit_C_OnAuraRemovedDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraAddedT>> gCGUnit_C_OnAuraAddedDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraAddedStackT>> gCGUnit_C_OnAuraAddedStackDetour;
+    std::unique_ptr<hadesmem::PatchDetour<UnitCombatLogUnitDeadT>> gUnitCombatLogUnitDeadDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<InvalidFunctionPtrCheckT>> gInvalidFunctionPtrCheckDetour;
 
@@ -1066,28 +1072,6 @@ namespace Nampower {
         gBufferTimeMs = gUserSettings.minBufferTimeMs;
     }
 
-    void initCustomEvents() {
-        auto strPtr = reinterpret_cast<uintptr_t *>(Offsets::QueueEventStringPtr);
-        const char *SPELL_QUEUE_EVENT = "SPELL_QUEUE_EVENT";
-        // Make 0x00BE175C which is the unused event string ptr point to SPELL_QUEUE_EVENT (369)
-        *strPtr = reinterpret_cast<uintptr_t>(SPELL_QUEUE_EVENT);
-
-        strPtr = reinterpret_cast<uintptr_t *>(Offsets::CastEventStringPtr);
-        const char *SPELL_CAST_EVENT = "SPELL_CAST_EVENT";
-        // Make 0X00BE1A08 which is the unused event string ptr point to SPELL_CAST_EVENT (540)
-        *strPtr = reinterpret_cast<uintptr_t>(SPELL_CAST_EVENT);
-
-        strPtr = reinterpret_cast<uintptr_t *>(Offsets::SpellDamageEventSelfStringPtr);
-        const char *SPELL_DAMAGE_EVENT_SELF = "SPELL_DAMAGE_EVENT_SELF";
-        // Make 0X00BE1A2C which is the unused event string ptr point to SPELL_DAMAGE_EVENT_SELF (549)
-        *strPtr = reinterpret_cast<uintptr_t>(SPELL_DAMAGE_EVENT_SELF);
-
-        strPtr = reinterpret_cast<uintptr_t *>(Offsets::SpellDamageEventOtherStringPtr);
-        const char *SPELL_DAMAGE_EVENT_OTHER = "SPELL_DAMAGE_EVENT_OTHER";
-        // Make 0X00BE1A30 which is the unused event string ptr point to SPELL_DAMAGE_EVENT_OTHER (550)
-        *strPtr = reinterpret_cast<uintptr_t>(SPELL_DAMAGE_EVENT_OTHER);
-    }
-
     // Template function to simplify hook initialization with specific storage
     template<typename FuncT, typename HookT>
     std::unique_ptr<hadesmem::PatchDetour<FuncT>>
@@ -1100,8 +1084,6 @@ namespace Nampower {
 
     void initHooks() {
         const hadesmem::Process process(::GetCurrentProcessId());
-
-        initCustomEvents();
 
         gSetCVarDetour = createHook<SetCVarT>(process, Offsets::Script_SetCVar, &Script_SetCVarHook);
         gCastDetour = createHook<CastSpellT>(process, Offsets::Spell_C_CastSpell, &Spell_C_CastSpellHook);
@@ -1141,6 +1123,14 @@ namespace Nampower {
                                                                               &InvalidFunctionPtrCheckHook);
         gGetSpellSlotFromLuaDetour = createHook<GetSpellSlotFromLuaT>(process, Offsets::GetSpellSlotFromLua,
                                                                       &GetSpellSlotFromLuaHook);
+        gCGUnit_C_OnAuraRemovedDetour = createHook<CGUnit_C_OnAuraRemovedT>(process, Offsets::CGUnit_C_OnAuraRemoved,
+                                                                             &CGUnit_C_OnAuraRemovedHook);
+        gCGUnit_C_OnAuraAddedDetour = createHook<CGUnit_C_OnAuraAddedT>(process, Offsets::CGUnit_C_OnAuraAdded,
+                                                                         &CGUnit_C_OnAuraAddedHook);
+        gCGUnit_C_OnAuraAddedStackDetour = createHook<CGUnit_C_OnAuraAddedStackT>(process, Offsets::CGUnit_C_OnAuraAddedStack,
+                                                                                       &CGUnit_C_OnAuraAddedStackHook);
+        gUnitCombatLogUnitDeadDetour = createHook<UnitCombatLogUnitDeadT>(process, Offsets::UnitCombatLogUnitDead,
+                                                                           &UnitCombatLogUnitDeadHook);
     }
 
     void SpellVisualsInitializeHook(hadesmem::PatchDetourBase *detour) {
@@ -1150,14 +1140,75 @@ namespace Nampower {
         initHooks();
     }
 
+    void addCustomEvent(uint32_t code, char* name) {
+        char ** FrameScript_EventObject_Data = *reinterpret_cast<char ***>(Offsets::Framescript_EventObject_Data);
+
+        auto SStrDupA = reinterpret_cast<char* (__stdcall *)(char*, char*, int)>(Offsets::SStrDupA);
+        FrameScript_EventObject_Data[code*4] = SStrDupA(name, name, 1308);
+
+        DEBUG_LOG("Added custom event code:" << code << " " << name);
+    }
+
+
+    void initCustomEvents() {
+        char SPELL_QUEUE_EVENT[] = "SPELL_QUEUE_EVENT";
+        addCustomEvent(game::SPELL_QUEUE_EVENT, SPELL_QUEUE_EVENT);
+
+        char SPELL_CAST_EVENT[] = "SPELL_CAST_EVENT";
+        addCustomEvent(game::SPELL_CAST_EVENT, SPELL_CAST_EVENT);
+
+        char SPELL_DAMAGE_EVENT_SELF[] = "SPELL_DAMAGE_EVENT_SELF";
+        addCustomEvent(game::SPELL_DAMAGE_EVENT_SELF, SPELL_DAMAGE_EVENT_SELF);
+
+        char SPELL_DAMAGE_EVENT_OTHER[] = "SPELL_DAMAGE_EVENT_OTHER";
+        addCustomEvent(game::SPELL_DAMAGE_EVENT_OTHER, SPELL_DAMAGE_EVENT_OTHER);
+
+        char DEBUFF_ADDED_SELF[] = "DEBUFF_ADDED_SELF";
+        addCustomEvent(game::DEBUFF_ADDED_SELF, DEBUFF_ADDED_SELF);
+
+        char DEBUFF_REMOVED_SELF[] = "DEBUFF_REMOVED_SELF";
+        addCustomEvent(game::DEBUFF_REMOVED_SELF, DEBUFF_REMOVED_SELF);
+
+        char DEBUFF_ADDED_OTHER[] = "DEBUFF_ADDED_OTHER";
+        addCustomEvent(game::DEBUFF_ADDED_OTHER, DEBUFF_ADDED_OTHER);
+
+        char DEBUFF_REMOVED_OTHER[] = "DEBUFF_REMOVED_OTHER";
+        addCustomEvent(game::DEBUFF_REMOVED_OTHER, DEBUFF_REMOVED_OTHER);
+
+        char BUFF_ADDED_SELF[] = "BUFF_ADDED_SELF";
+        addCustomEvent(game::BUFF_ADDED_SELF, BUFF_ADDED_SELF);
+
+        char BUFF_REMOVED_SELF[] = "BUFF_REMOVED_SELF";
+        addCustomEvent(game::BUFF_REMOVED_SELF, BUFF_REMOVED_SELF);
+
+        char BUFF_ADDED_OTHER[] = "BUFF_ADDED_OTHER";
+        addCustomEvent(game::BUFF_ADDED_OTHER, BUFF_ADDED_OTHER);
+
+        char BUFF_REMOVED_OTHER[] = "BUFF_REMOVED_OTHER";
+        addCustomEvent(game::BUFF_REMOVED_OTHER, BUFF_REMOVED_OTHER);
+
+        char UNIT_DIED[] = "UNIT_DIED";
+        addCustomEvent(game::UNIT_DIED, UNIT_DIED);
+    }
+
     void FrameScript_CreateEventsHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t maxEventId) {
         auto const createEvents = detour->GetTrampolineT<FrameScript_CreateEventsT>();
+        createEvents(param_1, maxEventId);
 
-        if (maxEventId == 549) {
-            maxEventId = 551; // add two more events
+        if (maxEventId > 200) {
+            initCustomEvents();
+        }
+    }
+
+    void Framescript_SetEventCountHook(hadesmem::PatchDetourBase *detour, void *thisPtr, void *dummy_edx, uint32_t count) {
+        auto const setEventCount = detour->GetTrampolineT<FramescriptSetEventCountT>();
+
+        if (count > 200) {
+            DEBUG_LOG("Increasing event count from " << count << " to 700");
+            count = 700; // extend to support additional custom events (this matches how superwow does it)
         }
 
-        createEvents(param_1, maxEventId);
+        setEventCount(thisPtr, dummy_edx, count);
     }
 
     void LoadScriptFunctionsHook(hadesmem::PatchDetourBase *detour) {
@@ -1252,6 +1303,13 @@ namespace Nampower {
                                                                                                                      createEventsOrig,
                                                                                                                      &FrameScript_CreateEventsHook);
                            gCreateEventsDetour->Apply();
+
+                           auto const setEventCountOrig = hadesmem::detail::AliasCast<FramescriptSetEventCountT>(
+                                   Offsets::Framescript_SetEventCount);
+                           gSetEventCountDetour = std::make_unique<hadesmem::PatchDetour<FramescriptSetEventCountT >>(process,
+                                                                                                                      setEventCountOrig,
+                                                                                                                      &Framescript_SetEventCountHook);
+                           gSetEventCountDetour->Apply();
                        }
         );
     }

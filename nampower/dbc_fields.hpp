@@ -16,7 +16,8 @@ namespace Nampower {
         UINT32,
         FLOAT,
         STRING,
-        UINT64
+        UINT64,
+        UINT8
     };
 
     // Field descriptor for simple fields
@@ -88,6 +89,9 @@ namespace Nampower {
                 case FieldType::UINT64:
                     lua_pushnumber(luaState, static_cast<double>(*reinterpret_cast<const uint64_t*>(fieldPtr)));
                     break;
+                case FieldType::UINT8:
+                    lua_pushnumber(luaState, *reinterpret_cast<const uint8_t*>(fieldPtr));
+                    break;
                 case FieldType::STRING: {
                     const char* str = *reinterpret_cast<const char* const*>(fieldPtr);
                     lua_pushstring(luaState, str ? const_cast<char*>(str) : const_cast<char*>(""));
@@ -122,6 +126,9 @@ namespace Nampower {
                         break;
                     case FieldType::UINT64:
                         lua_pushnumber(luaState, static_cast<double>(reinterpret_cast<const uint64_t*>(fieldPtr)[j]));
+                        break;
+                    case FieldType::UINT8:
+                        lua_pushnumber(luaState, reinterpret_cast<const uint8_t*>(fieldPtr)[j]);
                         break;
                     case FieldType::STRING: {
                         const char* str = reinterpret_cast<const char* const*>(fieldPtr)[j];

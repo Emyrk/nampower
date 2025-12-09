@@ -573,6 +573,9 @@ namespace Nampower {
                 case FieldType::UINT32:
                     lua_pushnumber(luaState, *reinterpret_cast<const uint32_t *>(fieldPtr));
                     return 1;
+                case FieldType::UINT8:
+                    lua_pushnumber(luaState, *reinterpret_cast<const uint8_t *>(fieldPtr));
+                    return 1;
                 case FieldType::FLOAT:
                     lua_pushnumber(luaState, *reinterpret_cast<const float *>(fieldPtr));
                     return 1;
@@ -604,6 +607,9 @@ namespace Nampower {
                         break;
                     case FieldType::UINT32:
                         lua_pushnumber(luaState, reinterpret_cast<const uint32_t *>(fieldPtr)[j]);
+                        break;
+                    case FieldType::UINT8:
+                        lua_pushnumber(luaState, reinterpret_cast<const uint8_t *>(fieldPtr)[j]);
                         break;
                     case FieldType::FLOAT:
                         lua_pushnumber(luaState, reinterpret_cast<const float *>(fieldPtr)[j]);
@@ -667,6 +673,9 @@ namespace Nampower {
                 case FieldType::UINT32:
                     lua_pushnumber(luaState, *reinterpret_cast<const uint32_t *>(fieldPtr));
                     return 1;
+                case FieldType::UINT8:
+                    lua_pushnumber(luaState, *reinterpret_cast<const uint8_t *>(fieldPtr));
+                    return 1;
                 case FieldType::FLOAT:
                     lua_pushnumber(luaState, *reinterpret_cast<const float *>(fieldPtr));
                     return 1;
@@ -699,6 +708,9 @@ namespace Nampower {
                         break;
                     case FieldType::UINT32:
                         lua_pushnumber(luaState, reinterpret_cast<const uint32_t *>(fieldPtr)[j]);
+                        break;
+                    case FieldType::UINT8:
+                        lua_pushnumber(luaState, reinterpret_cast<const uint8_t *>(fieldPtr)[j]);
                         break;
                     case FieldType::FLOAT:
                         lua_pushnumber(luaState, reinterpret_cast<const float *>(fieldPtr)[j]);
@@ -836,6 +848,9 @@ namespace Nampower {
                 case FieldType::UINT32:
                     lua_pushnumber(luaState, *reinterpret_cast<const uint32_t *>(fieldPtr));
                     return 1;
+                case FieldType::UINT8:
+                    lua_pushnumber(luaState, *reinterpret_cast<const uint8_t *>(fieldPtr));
+                    return 1;
                 case FieldType::UINT64:
                     lua_pushnumber(luaState, static_cast<double>(*reinterpret_cast<const uint64_t *>(fieldPtr)));
                     return 1;
@@ -862,6 +877,9 @@ namespace Nampower {
                 switch (field.type) {
                     case FieldType::UINT32:
                         lua_pushnumber(luaState, reinterpret_cast<const uint32_t *>(fieldPtr)[j]);
+                        break;
+                    case FieldType::UINT8:
+                        lua_pushnumber(luaState, reinterpret_cast<const uint8_t *>(fieldPtr)[j]);
                         break;
                     case FieldType::FLOAT:
                         lua_pushnumber(luaState, reinterpret_cast<const float *>(fieldPtr)[j]);

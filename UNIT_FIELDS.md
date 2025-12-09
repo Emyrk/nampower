@@ -149,11 +149,9 @@ These fields return a Lua table with numeric indices (1-based).
 - **auraFlags** [6] - Bit flags for aura properties (positive, negative, cancelable, etc.)
   - Each UINT32 contains flags for 8 auras (4 bits per aura)
 
-- **auraLevels** [12] - Aura caster levels
-  - Each UINT32 contains 4 aura levels (8 bits per level)
+- **auraLevels** [48] - Aura caster levels (UINT8 per aura slot)
 
-- **auraApplications** [12] - Aura stack counts
-  - Each UINT32 contains 4 aura stacks (8 bits per stack)
+- **auraApplications** [48] - Aura stack counts (UINT8 per aura slot)
 
 ### Resistances (UINT32 arrays)
 - **resistances** [7] - Resistance values for all schools

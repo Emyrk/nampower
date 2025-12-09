@@ -30,6 +30,8 @@ set(SOURCE_FILES
         dbc_fields.cpp
         unit_fields.hpp
         unit_fields.cpp
+        auras.hpp
+        auras.cpp
 )
 
 add_library(${DLL_NAME} SHARED ${SOURCE_FILES})

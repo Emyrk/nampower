@@ -122,6 +122,8 @@ enum class Offsets : std::uint32_t {
     LoadScriptFunctions = 0x00490250,
     FrameScript_RegisterFunction = 0x00704120,
     FrameScript_CreateEvents = 0X00703D90,
+    Framescript_SetEventCount = 0X007053B0,
+    Framescript_EventObject_Data = 0x00CEEF68,
 
     // Existing script functions
     GetGUIDFromName = 0X00515970,
@@ -130,6 +132,8 @@ enum class Offsets : std::uint32_t {
     Script_SetCVar = 0x00488C10,
     Script_RunScript = 0x0048B980,
     Script_SpellStopCasting = 0x006E6E80,
+
+    SStrDupA = 0X0064A620,
 
     lua_state_ptr = 0x7040D0,
 
@@ -166,13 +170,15 @@ enum class Offsets : std::uint32_t {
 
     QueueEventStringPtr = 0X00BE175C, // unused event 369 0x171
     CastEventStringPtr = 0X00BE1A08, // unused event 540 0x21C
-    SpellDamageEventSelfStringPtr = 0X00BE1A2C, // unused event 549 0x225
-    SpellDamageEventOtherStringPtr = 0X00BE1A30, // unused event 550 0x226
 
     GetBuffByIndex = 0X004E4430,
 
     CGUnit_C_ClearCastingSpell = 0x0060d040,
     CGUnit_C_ClearSpellEffect = 0x00614150,
+    CGUnit_C_OnAuraRemoved = 0x00612320,
+    CGUnit_C_OnAuraAdded = 0x006123f0,
+    CGUnit_C_OnAuraAddedStack = 0x0062b800,
+    UnitCombatLogUnitDead = 0x0062c160,
 
     CGPlayer_C_OnAttackIconPressed = 0X006131A0,
 

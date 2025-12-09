@@ -1145,6 +1145,18 @@ namespace game {
         SPELL_CAST_EVENT = 540,
         SPELL_DAMAGE_EVENT_SELF = 549,
         SPELL_DAMAGE_EVENT_OTHER = 550,
+
+        DEBUFF_ADDED_SELF = 551,
+        DEBUFF_REMOVED_SELF = 552,
+        DEBUFF_ADDED_OTHER = 553,
+        DEBUFF_REMOVED_OTHER = 554,
+
+        BUFF_ADDED_SELF = 555,
+        BUFF_REMOVED_SELF = 556,
+        BUFF_ADDED_OTHER = 557,
+        BUFF_REMOVED_OTHER = 558,
+
+        UNIT_DIED = 559,
     };
 
     enum TypeMask {
@@ -1293,8 +1305,8 @@ namespace game {
         uint32_t flags;                          // Size:1
         uint32_t aura[48];                       // Size:48
         uint32_t auraFlags[6];                   // Size:6
-        uint32_t auraLevels[12];                 // Size:12
-        uint32_t auraApplications[12];           // Size:12
+        uint8_t auraLevels[48];                  // Size:48
+        uint8_t auraApplications[48];            // Size:48
         uint32_t auraState;                      // Size:1
         uint32_t baseAttackTime;                 // Size:1
         uint32_t offhandAttackTime;              // Size:1

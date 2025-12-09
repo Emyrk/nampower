@@ -333,6 +333,8 @@ namespace Nampower {
                 castType,
                 guidStr,
                 itemId);
+
+        delete[] guidStr;
     }
 
     void clearCastingSpell() {

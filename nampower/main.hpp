@@ -30,8 +30,8 @@ namespace Nampower {
     constexpr uint32_t BUFFER_DECREASE_FREQUENCY = 10000; // time in ms between changes to lower buffer
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 13;
-    constexpr uint32_t PATCH_VERSION = 1;
+    constexpr uint32_t MINOR_VERSION = 14;
+    constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
@@ -111,6 +111,7 @@ namespace Nampower {
     using LoadScriptFunctionsT = void (__stdcall *)();
     using FrameScript_RegisterFunctionT = void (__fastcall *)(char *name, uintptr_t *func);
     using FrameScript_CreateEventsT = void (__fastcall *)(int param_1, uint32_t maxEventId);
+    using FramescriptSetEventCountT = void (__fastcall *)(void *thisPtr, void *dummy_edx, uint32_t count);
 
     using LuaGetContextT = uintptr_t *(__fastcall *)(void);
     using LuaGetTableT = void (__fastcall *)(uintptr_t *luaState, int globalsIndex);

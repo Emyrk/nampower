@@ -543,6 +543,54 @@ Cursive:RegisterEvent("SPELL_DAMAGE_EVENT_SELF",
     end);
 ```
 
+#### Buff/Debuff Events
+New events fire whenever a buff or debuff is added or removed on you or any other unit that the client tracks.
+
+Events:
+```
+BUFF_ADDED_SELF
+BUFF_REMOVED_SELF
+BUFF_ADDED_OTHER
+BUFF_REMOVED_OTHER
+DEBUFF_ADDED_SELF
+DEBUFF_REMOVED_SELF
+DEBUFF_ADDED_OTHER
+DEBUFF_REMOVED_OTHER
+```
+
+All eight events pass the same parameters:
+1.  string guid - unit guid like "0xF5300000000000A5"
+2.  int slot - 1-based Lua slot index for the buff/debuff (skips empty slots to match UnitBuff/UnitDebuff ordering)
+3.  int spellId
+4.  int stackCount - current stack count for the aura (1 for a new aura; 0 when fully removed)
+5.  int auraLevel - caster level for the aura from UnitFields.auraLevels (uint8 per slot, 48 entries)
+
+Buff stack gains also fire the appropriate *_ADDED_* events.
+
+Example:
+```
+local function onAuraEvent(eventName, guid, slot, spellId, stacks, auraLevel)
+    DEFAULT_CHAT_FRAME:AddMessage(string.format("[%s] %s slot=%d spell=%d stacks=%d level=%d", eventName, guid, slot, spellId, stacks, auraLevel))
+end
+
+for _, eventName in ipairs({"BUFF_ADDED_SELF", "BUFF_REMOVED_SELF", "DEBUFF_ADDED_OTHER", "DEBUFF_REMOVED_OTHER"}) do
+    frame:RegisterEvent(eventName, function(...) onAuraEvent(eventName, ...) end)
+end
+```
+
+#### UNIT_DIED
+Fires when a unit death is recorded in the combat log.
+
+Parameters:
+1.  string guid - guid of the unit that died
+
+Example:
+```
+frame:RegisterEvent("UNIT_DIED", function(guid)
+    DEFAULT_CHAT_FRAME:AddMessage("Unit died: " .. guid)
+end)
+```
+
 ### Bug Reporting
 If you encounter any bugs please report them in the issues tab.  Please include the nampower_debug.txt file in the same directory as your WoW.exe to help me diagnose the issue.  If you are able to reproduce the bug please include the steps to reproduce it.  In a future version once bugs are ironed out I'll make logging optional.
 
