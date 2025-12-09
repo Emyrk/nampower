@@ -38,9 +38,9 @@ namespace Nampower {
 
             uint32_t spellId = 0;
             if (type == 0) {
-                spellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownSpells) + slot * 4);
+                spellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownSpells) + slot * 4);
             } else if (type == 1) {
-                spellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownPetSpells) + slot * 4);
+                spellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownPetSpells) + slot * 4);
             } else {
                 return false;
             }
@@ -94,10 +94,10 @@ namespace Nampower {
         uint32_t spellId = 0;
         if (spellSlot < 1024) {
             if (bookType == 0) {
-                spellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownSpells) +
+                spellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownSpells) +
                                                         spellSlot * 4);
             } else {
-                spellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownPetSpells) +
+                spellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownPetSpells) +
                                                         spellSlot * 4);
             }
         }
@@ -115,9 +115,9 @@ namespace Nampower {
             }
             uint32_t slotSpellId = 0;
             if (bookType == 0) {
-                slotSpellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownSpells) + slot * 4);
+                slotSpellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownSpells) + slot * 4);
             } else {
-                slotSpellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownPetSpells) + slot * 4);
+                slotSpellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownPetSpells) + slot * 4);
             }
             return slotSpellId == expectedId;
         };

@@ -25,6 +25,7 @@ struct UserSettings {
     bool preventRightClickPvPAttack;
 
     bool doubleCastToEndChannelEarly;
+    bool quickcastOnDoubleCast;
 
     bool spamProtectionEnabled;
 

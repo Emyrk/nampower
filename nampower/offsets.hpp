@@ -43,6 +43,7 @@ enum class Offsets : std::uint32_t {
     Language = 0xC0E080,
     SpellDb = 0xC0D780,
     CursorMode = 0xBE2C4C,
+    CursorType = 0X00BE2C2C,
     SpellIsTargeting = 0xCECAC0,
     CastingItemIdPtr = 0X00CECAB0,
     CastingSpellId = 0xCECA88,
@@ -61,6 +62,7 @@ enum class Offsets : std::uint32_t {
 
     CGSpellBook_mKnownSpells = 0xB700F0,
     CGSpellBook_mKnownPetSpells = 0XB6F098,
+    CGSpellBook_CastSpell = 0x004b3300,
 
     IsSpellInRangeOfUnit = 0X004E56F0,
     CancelSpell = 0x6E4940,

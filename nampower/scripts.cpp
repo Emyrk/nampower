@@ -314,10 +314,10 @@ namespace Nampower {
             if (spellSlot > 0 && spellSlot < 1024) {
                 uint32_t spellId = 0;
                 if (bookType == 0) {
-                    spellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownSpells) +
+                    spellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownSpells) +
                                                             spellSlot * 4);
                 } else {
-                    spellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownPetSpells) +
+                    spellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownPetSpells) +
                                                             spellSlot * 4);
                 }
                 lua_pushnumber(luaState, spellId);

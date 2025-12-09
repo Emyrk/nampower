@@ -83,6 +83,7 @@ SET NP_TargetingQueueWindowMs "1000"
 
 - `NP_RetryServerRejectedSpells` - Whether to retry spells that are rejected by the server for these reasons: SPELL_FAILED_ITEM_NOT_READY, SPELL_FAILED_NOT_READY, SPELL_FAILED_SPELL_IN_PROGRESS.  0 to disable, 1 to enable. Default is 1.
 - `NP_QuickcastTargetingSpells` - Whether to enable quick casting for ALL spells with terrain targeting.  This will cause the spell to instantly cast on your cursor without waiting for you to confirm the targeting circle.  Queuing targeting spells will use quickcasting regardless of this value.  0 to disable, 1 to enable. Default is 0.
+- `NP_QuickcastOnDoubleCast` - Whether to allow casting targeting spells by attempting to cast them twice in quick succession, as opposed to the default client behavior which cancels the targeting indicator on double cast.  This provides an alternative way to quickcast targeting spells without enabling it for all targeting spells.  0 to disable, 1 to enable. Default is 0.
 - `NP_ReplaceMatchingNonGcdCategory` - Whether to replace any queued non gcd spell when a new non gcd spell with the same StartRecoveryCategory is cast (more explanation below).  0 to disable, 1 to enable. Default is 0.
 - `NP_OptimizeBufferUsingPacketTimings` - Whether to attempt to optimize your buffer using your latency and server packet timings (more explanation below).  0 to disable, 1 to enable. Default is 0.
 

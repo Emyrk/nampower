@@ -17,6 +17,8 @@ namespace Nampower {
 
     void TriggerSpellQueuedEvent(QueueEvents queueEventCode, uint32_t spellId);
 
+    void CGSpellBook_CastSpellHook(hadesmem::PatchDetourBase *detour, uint32_t spellSlot, int bookType, uint64_t target);
+
     bool Spell_C_CastSpellHook(hadesmem::PatchDetourBase *detour, uint32_t *casterUnit, uint32_t spellId, uintptr_t *item,
                                std::uint64_t guid);
 

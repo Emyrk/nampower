@@ -30,7 +30,7 @@ namespace Nampower {
     constexpr uint32_t BUFFER_DECREASE_FREQUENCY = 10000; // time in ms between changes to lower buffer
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 14;
+    constexpr uint32_t MINOR_VERSION = 15;
     constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
@@ -68,6 +68,7 @@ namespace Nampower {
 
     using RangeCheckSelectedT = bool (__fastcall *)(uintptr_t *playerUnit, const game::SpellRec *,
                                                     std::uint64_t targetGuid, char ignoreErrors);
+    using CGSpellBook_CastSpellT = void (__fastcall *)(uint32_t spellSlot, int bookType, uint64_t target);
     using CastSpellT = bool (__fastcall *)(uintptr_t *playerUnit, uint32_t spellId, uintptr_t *item,
                                            std::uint64_t targetGuid);
     using SendCastT = void (__fastcall *)(game::SpellCast *, char unk);

@@ -90,6 +90,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<FramescriptSetEventCountT >> gSetEventCountDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<SetCVarT>> gSetCVarDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGSpellBook_CastSpellT>> gCGSpellBook_CastSpellDetour;
     std::unique_ptr<hadesmem::PatchDetour<CastSpellT>> gCastDetour;
     std::unique_ptr<hadesmem::PatchDetour<SendCastT>> gSendCastDetour;
     std::unique_ptr<hadesmem::PatchDetour<CancelSpellT>> gCancelSpellDetour;
@@ -613,6 +614,10 @@ namespace Nampower {
             gUserSettings.doubleCastToEndChannelEarly = atoi(value) != 0;
             DEBUG_LOG("Set NP_DoubleCastToEndChannelEarly to " << gUserSettings.doubleCastToEndChannelEarly);
 
+        } else if (strcmp(cvar, "NP_QuickcastOnDoubleCast") == 0) {
+            gUserSettings.quickcastOnDoubleCast = atoi(value) != 0;
+            DEBUG_LOG("Set NP_QuickcastOnDoubleCast to " << gUserSettings.quickcastOnDoubleCast);
+
         } else if (strcmp(cvar, "NP_SpamProtectionEnabled") == 0) {
             gUserSettings.spamProtectionEnabled = atoi(value) != 0;
             DEBUG_LOG("Set NP_SpamProtectionEnabled to " << gUserSettings.spamProtectionEnabled);
@@ -757,6 +762,7 @@ namespace Nampower {
         gUserSettings.preventRightClickPvPAttack = true;
 
         gUserSettings.doubleCastToEndChannelEarly = false;
+        gUserSettings.quickcastOnDoubleCast = false;
 
         gUserSettings.spamProtectionEnabled = true;
 
@@ -1002,6 +1008,16 @@ namespace Nampower {
                      0,  // unk2
                      0); // unk3
 
+        char NP_QuickcastOnDoubleCast[] = "NP_QuickcastOnDoubleCast";
+        CVarRegister(NP_QuickcastOnDoubleCast, // name
+                     nullptr, // help
+                     0,  // unk1
+                     gUserSettings.quickcastOnDoubleCast ? defaultTrue : defaultFalse, // default value address
+                     nullptr, // callback
+                     1, // category
+                     0,  // unk2
+                     0); // unk3
+
         char NP_SpamProtectionEnabled[] = "NP_SpamProtectionEnabled";
         CVarRegister(NP_SpamProtectionEnabled, // name
                      nullptr, // help
@@ -1086,6 +1102,7 @@ namespace Nampower {
         const hadesmem::Process process(::GetCurrentProcessId());
 
         gSetCVarDetour = createHook<SetCVarT>(process, Offsets::Script_SetCVar, &Script_SetCVarHook);
+        gCGSpellBook_CastSpellDetour = createHook<CGSpellBook_CastSpellT>(process, Offsets::CGSpellBook_CastSpell, &CGSpellBook_CastSpellHook);
         gCastDetour = createHook<CastSpellT>(process, Offsets::Spell_C_CastSpell, &Spell_C_CastSpellHook);
         gSendCastDetour = createHook<SendCastT>(process, Offsets::SendCast, &SendCastHook);
         gCancelSpellDetour = createHook<CancelSpellT>(process, Offsets::CancelSpell, &CancelSpellHook);
