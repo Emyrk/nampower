@@ -359,42 +359,86 @@ namespace Nampower {
 
         // check for double cast to trigger quickcast on targeting spells
         if (gUserSettings.quickcastOnDoubleCast) {
-            // check if needs_targets set
-            auto s_needTargets = *reinterpret_cast<uint32_t *>(Offsets::SpellNeedsTargets);
-            if (s_needTargets & game::SpellCastTargetFlags::TARGET_FLAG_SOURCE_LOCATION ||
-                s_needTargets & game::SpellCastTargetFlags::TARGET_FLAG_DEST_LOCATION) {
+            auto currentTime = GetTime();
 
-                uint32_t spellId = 0;
-                if (bookType == 0) {
-                    spellId = *reinterpret_cast<uint32_t *>(
-                        static_cast<uint32_t>(Offsets::CGSpellBook_mKnownSpells) + spellSlot * 4);
-                } else if (bookType == 1) {
-                    spellId = *reinterpret_cast<uint32_t *>(
-                        static_cast<uint32_t>(Offsets::CGSpellBook_mKnownPetSpells) + spellSlot * 4);
-                } else {
-                    // call original
-                    cgSpellBookCastSpell(spellSlot, bookType, target);
+            uint32_t spellId = 0;
+            if (bookType == 0) {
+                spellId = *reinterpret_cast<uint32_t *>(
+                    static_cast<uint32_t>(Offsets::CGSpellBook_mKnownSpells) + spellSlot * 4);
+            } else if (bookType == 1) {
+                spellId = *reinterpret_cast<uint32_t *>(
+                    static_cast<uint32_t>(Offsets::CGSpellBook_mKnownPetSpells) + spellSlot * 4);
+            } else {
+                // call original
+                cgSpellBookCastSpell(spellSlot, bookType, target);
+                return;
+            }
+
+            if (IsTargetingTerrainSpell() && spellId > 0) {
+                if (gCastData.channeling || EffectiveCastEndMs() >= currentTime) {
+                    // if we are already casting block action as that will interrupt
                     return;
                 }
 
-                if (spellId > 0) {
-                    // check if aoe spell targeting is active
-                    if (gLastCastData.attemptSpellId == spellId){
-                        auto spell = game::GetSpellInfo(spellId);
-                        auto spellName = game::GetSpellName(spellId);
+                // check if aoe spell targeting is active
+                if (gLastCastData.attemptSpellId == spellId) {
+                    auto spell = game::GetSpellInfo(spellId);
+                    auto spellName = game::GetSpellName(spellId);
 
-                        // don't mess with summon guardian
-                        if (spell->Effect[0] != game::SPELL_EFFECT_SUMMON_GUARDIAN) {
-                            DEBUG_LOG("Double cast detected for targeting spell " << spellName << ", triggering quickcast");
-                            TriggerQuickcast();
-                            return; // don't cast again
+                    // don't mess with summon guardian
+                    if (spell->Effect[0] != game::SPELL_EFFECT_SUMMON_GUARDIAN) {
+                        DEBUG_LOG(
+                            "CastSpell double cast detected for targeting spell " << spellName <<
+                            ", triggering quickcast");
+                        TriggerQuickcast();
+                        return; // don't cast again
+                    }
+                }
+            }
+        }
+        cgSpellBookCastSpell(spellSlot, bookType, target);
+    }
+
+    void CGActionBar_UseActionHook(hadesmem::PatchDetourBase *detour, uint32_t actionSlot, int param_2, int param_3) {
+        if (-1 > actionSlot && actionSlot < 120) {
+            uint32_t refValue = 0;
+
+            typedef uint32_t (__fastcall *GetSpellIdFromActionT)(uint32_t actionSlot, uint32_t *refParam);
+            auto getSpellIdFromAction = reinterpret_cast<GetSpellIdFromActionT>(Offsets::GetSpellIdFromAction);
+
+            uint32_t spellId = getSpellIdFromAction(actionSlot, &refValue);
+            if (spellId > 0) {
+                // check for double cast to trigger quickcast on targeting spells
+                if (gUserSettings.quickcastOnDoubleCast) {
+                    auto currentTime = GetTime();
+
+                    if (IsTargetingTerrainSpell() && spellId > 0) {
+                        if (gCastData.channeling || EffectiveCastEndMs() >= currentTime) {
+                            // if we are already casting block action as that will interrupt
+                            return;
+                        }
+
+                        // check if aoe spell targeting is active
+                        if (gLastCastData.attemptSpellId == spellId) {
+                            auto spell = game::GetSpellInfo(spellId);
+                            auto spellName = game::GetSpellName(spellId);
+
+                            // don't mess with summon guardian
+                            if (spell->Effect[0] != game::SPELL_EFFECT_SUMMON_GUARDIAN) {
+                                DEBUG_LOG(
+                                    "Use action double cast detected for targeting spell " << spellName <<
+                                    ", triggering quickcast");
+                                TriggerQuickcast();
+                                return; // don't cast again
+                            }
                         }
                     }
                 }
             }
-
-            cgSpellBookCastSpell(spellSlot, bookType, target);
         }
+
+        auto const useAction = detour->GetTrampolineT<CGActionBar_UseActionT>();
+        return useAction(actionSlot, param_2, param_3);
     }
 
     bool

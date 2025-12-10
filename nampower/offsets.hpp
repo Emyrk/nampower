@@ -64,6 +64,10 @@ enum class Offsets : std::uint32_t {
     CGSpellBook_mKnownPetSpells = 0XB6F098,
     CGSpellBook_CastSpell = 0x004b3300,
 
+    CGActionBar_UseAction = 0x004E5EE0,
+    CGActionBar_mSlotActions = 0X004E5F52,
+    GetSpellIdFromAction = 0x004E5A50,
+
     IsSpellInRangeOfUnit = 0X004E56F0,
     CancelSpell = 0x6E4940,
     CancelAutoRepeatSpell = 0X006EA080,

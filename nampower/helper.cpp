@@ -271,4 +271,10 @@ namespace Nampower {
     void SetNameplateDistance(float distance) {
         *reinterpret_cast<float *>(Offsets::NameplateDistance) = distance * distance;
     }
+
+    bool IsTargetingTerrainSpell() {
+        const auto s_needTargets = *reinterpret_cast<uint32_t *>(Offsets::SpellNeedsTargets);
+        return (s_needTargets & game::SpellCastTargetFlags::TARGET_FLAG_SOURCE_LOCATION) ||
+               (s_needTargets & game::SpellCastTargetFlags::TARGET_FLAG_DEST_LOCATION);
+    }
 }

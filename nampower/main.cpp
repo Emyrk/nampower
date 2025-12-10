@@ -124,6 +124,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT>> gSpellNonMeleeDmgLogHandlerDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<CGPlayer_C_OnAttackIconPressedT>> gCGPlayer_C_OnAttackIconPressedDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGActionBar_UseActionT>> gCGActionBar_UseActionDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraRemovedT>> gCGUnit_C_OnAuraRemovedDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraAddedT>> gCGUnit_C_OnAuraAddedDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraAddedStackT>> gCGUnit_C_OnAuraAddedStackDetour;
@@ -1060,6 +1061,7 @@ namespace Nampower {
 
         loadUserVar("NP_RetryServerRejectedSpells");
         loadUserVar("NP_QuickcastTargetingSpells");
+        loadUserVar("NP_QuickcastOnDoubleCast");
         loadUserVar("NP_ReplaceMatchingNonGcdCategory");
         loadUserVar("NP_OptimizeBufferUsingPacketTimings");
 
@@ -1103,6 +1105,7 @@ namespace Nampower {
 
         gSetCVarDetour = createHook<SetCVarT>(process, Offsets::Script_SetCVar, &Script_SetCVarHook);
         gCGSpellBook_CastSpellDetour = createHook<CGSpellBook_CastSpellT>(process, Offsets::CGSpellBook_CastSpell, &CGSpellBook_CastSpellHook);
+        gCGActionBar_UseActionDetour = createHook<CGActionBar_UseActionT>(process, Offsets::CGActionBar_UseAction, &CGActionBar_UseActionHook);
         gCastDetour = createHook<CastSpellT>(process, Offsets::Spell_C_CastSpell, &Spell_C_CastSpellHook);
         gSendCastDetour = createHook<SendCastT>(process, Offsets::SendCast, &SendCastHook);
         gCancelSpellDetour = createHook<CancelSpellT>(process, Offsets::CancelSpell, &CancelSpellHook);

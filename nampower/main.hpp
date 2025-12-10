@@ -31,7 +31,7 @@ namespace Nampower {
 
     constexpr uint32_t MAJOR_VERSION = 2;
     constexpr uint32_t MINOR_VERSION = 15;
-    constexpr uint32_t PATCH_VERSION = 0;
+    constexpr uint32_t PATCH_VERSION = 1;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
@@ -100,6 +100,7 @@ namespace Nampower {
     using Spell_C_GetSpellModifiersT = void (__fastcall *)(const game::SpellRec *spellRec, int *returnVal, game::SpellModOp modOp);
 
     using CGPlayer_C_OnAttackIconPressedT = int (__fastcall *)(uintptr_t *this_ptr, void *dummy_edx, uint64_t guid);
+    using CGActionBar_UseActionT = void (__fastcall *)(uint32_t param_1, int param_2, int param_3);
 
     using GetSpellSlotAndTypeT = uint32_t (__fastcall *)(const char *, uint32_t *);
     using GetSpellSlotFromLuaT = uint32_t (__fastcall *)(int param_1, uint32_t *slot, uint32_t *type);

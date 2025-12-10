@@ -19,6 +19,8 @@ namespace Nampower {
 
     void CGSpellBook_CastSpellHook(hadesmem::PatchDetourBase *detour, uint32_t spellSlot, int bookType, uint64_t target);
 
+    void CGActionBar_UseActionHook(hadesmem::PatchDetourBase *detour, uint32_t actionSlot, int param_2, int param_3);
+
     bool Spell_C_CastSpellHook(hadesmem::PatchDetourBase *detour, uint32_t *casterUnit, uint32_t spellId, uintptr_t *item,
                                std::uint64_t guid);
 

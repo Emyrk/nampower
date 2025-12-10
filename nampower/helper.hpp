@@ -23,6 +23,8 @@ namespace Nampower {
 
     bool SpellIsAttackTradeskillOrEnchant(const game::SpellRec *spell);
 
+    bool IsTargetingTerrainSpell();
+
     uint32_t GetGcdOrCooldownForSpell(uint32_t spellId);
 
     uint32_t GetRemainingGcdOrCooldownForSpell(uint32_t spellId);
