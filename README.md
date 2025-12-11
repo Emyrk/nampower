@@ -474,7 +474,7 @@ NampowerSettings:RegisterEvent("SPELL_QUEUE_EVENT", spellQueueEvent)
 ```
 
 #### SPELL_CAST_EVENT
-New event you can register in game to get updates when spells are cast with some additional information.
+Event you can register in game to get updates when you cast spells with some additional information.  This will only fire for spells you (and certain pets) initiated.
 
 The event is `SPELL_CAST_EVENT` and has 5 parameters:
 1.  int success - 1 if cast succeeded, 0 if failed
