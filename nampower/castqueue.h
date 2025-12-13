@@ -105,6 +105,24 @@ namespace Nampower {
             return nullptr;
         }
 
+        bool removeSpellId(uint32_t spellId) {
+            for (int i = 0; i < size; i++) {
+                int index = (front + i) % maxSize;
+                if (queue[index].spellId == spellId) {
+                    // Shift all elements after this one forward
+                    for (int j = i; j < size - 1; j++) {
+                        int currentIndex = (front + j) % maxSize;
+                        int nextIndex = (front + j + 1) % maxSize;
+                        queue[currentIndex] = queue[nextIndex];
+                    }
+                    rear = (rear - 1 + maxSize) % maxSize;
+                    size--;
+                    return true;
+                }
+            }
+            return false;
+        }
+
         CastSpellParams *findOldestWaitingForServerSpellId(uint32_t spellId) {
             for (int i = size - 1; i >= 0; i--) {
                 int index = (front + i) % maxSize;

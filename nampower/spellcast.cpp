@@ -448,6 +448,9 @@ namespace Nampower {
         // save the detour to allow quickly calling this hook
         castSpellDetour = detour;
 
+        // it is possible when spamming to attempt to cast before queues are processed
+        processQueues();
+
         if (item == nullptr && casterUnit != game::GetObjectPtr(game::ClntObjMgrGetActivePlayerGuid())) {
             DEBUG_LOG("Ignoring non active player cast of spell " << game::GetSpellName(spellId) << " " << spellId);
             // just call original function if caster is not the active player
@@ -493,13 +496,6 @@ namespace Nampower {
                     DEBUG_LOG("Double cast detected for " << spellName << ", ending channel early");
                     gCastData.cancelChannelNextTick = true;
                 }
-            }
-        }
-
-        if (gCastData.nonGcdSpellQueued && spellOnGcd) {
-            // it is possible when spamming to attempt to cast before non gcd spells are processed, process queue first
-            if (processQueues()) {
-                return false;
             }
         }
 
