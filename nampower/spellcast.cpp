@@ -412,7 +412,7 @@ namespace Nampower {
                 if (gUserSettings.quickcastOnDoubleCast) {
                     auto currentTime = GetTime();
 
-                    if (IsTargetingTerrainSpell() && spellId > 0) {
+                    if (IsTargetingTerrainSpell()) {
                         if (gCastData.channeling || EffectiveCastEndMs() >= currentTime) {
                             // if we are already casting block action as that will interrupt
                             return;

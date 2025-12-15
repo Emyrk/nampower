@@ -25,8 +25,7 @@ namespace Nampower {
             auto const lua_tostring = reinterpret_cast<lua_tostringT>(Offsets::lua_tostring);
             auto const unitName = lua_tostring(luaState, 1);
 
-            auto const getGUIDFromName = reinterpret_cast<GetGUIDFromNameT>(Offsets::GetGUIDFromName);
-            auto const guid = getGUIDFromName(unitName);
+            auto const guid = GetUnitGuidFromString(unitName);
             if (guid) {
                 DEBUG_LOG("Spell target unit " << unitName << " guid " << guid);
                 // update all cast params so we don't have to figure out which one to use

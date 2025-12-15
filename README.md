@@ -151,6 +151,231 @@ local delay = GetItemStatsField(19019, "delay")
 print("Weapon speed: " .. (delay / 1000) .. " seconds") -- 1.9 seconds
 ```
 
+#### FindPlayerItemSlot(itemId or itemName)
+Searches the player's inventory for an item by ID or name and returns its location.
+
+**Parameters:**
+- `itemId` (number): The item ID to search for, OR
+- `itemName` (string): The item name to search for (case-insensitive)
+
+**Returns:**
+- 1st param (number or nil): Bag index where the item was found
+  - `nil` = Equipped item (check 2nd param for equipment slot 0-18)
+  - `0` = Inventory pack
+  - `1-4` = Regular bags
+  - `-1` = Bank item slots
+  - `5-9` = Bank bags
+  - `-2` = Keyring
+- 2nd param (number): Slot number within the bag (or equipment slot if 1st param is nil)
+  - For equipped items: 0-18 (equipment slots are 0-indexed)
+  - For bag 0, -1, -2: Returns **relative slot position** (1-indexed, 0-based within bag + 1)
+    - Bag 0: slots 1-16 (corresponding to absolute slots 23-38)
+    - Bag -1: slots 1-24 (corresponding to absolute bank slots 39-62)
+    - Bag -2: slots 1-16 (corresponding to absolute keyring slots 81-96)
+  - For regular bags (1-4) and bank bags (5-9): Returns 1-indexed slot within the bag
+- Returns `nil,nil` if the item is not found
+
+**Examples:**
+```lua
+-- Find Thunderfury in player inventory
+local bag, slot = FindPlayerItemSlot(19019)
+if bag then
+    print("Found in bag " .. bag .. " slot " .. slot)
+    if bag == -1 or (bag >= 5 and bag <= 9) then
+        print("Item is in bank")
+    end
+elseif bag == nil and slot then
+    print("Item is equipped in slot " .. slot)
+else
+    print("Item not found")
+end
+
+-- Find item by name (uses cache for performance after first lookup)
+local bag, slot = FindPlayerItemSlot("Hearthstone")
+if slot then
+    if bag == nil then
+        print("Hearthstone is equipped in slot " .. slot)
+    elseif bag == 0 then
+        print("Hearthstone is in inventory pack slot " .. slot .. " (1-16)")
+    elseif bag == -1 then
+        print("Hearthstone is in bank slot " .. slot .. " (1-24)")
+    elseif bag == -2 then
+        print("Hearthstone is in keyring slot " .. slot .. " (1-16)")
+    else
+        print("Hearthstone is in bag " .. bag .. " slot " .. slot)
+    end
+end
+```
+
+#### GetEquippedItems(unitToken)
+Returns a table containing all equipped items for the specified unit.
+
+**Parameters:**
+- `unitToken` (string): Can be a standard unit token ("player", "target", "pet", etc.) or a GUID string
+
+**Returns:**
+- A Lua table with equipment slot indices as keys (0-18) and item info tables as values
+- Returns nil if the unit cannot be found or inspected
+
+For the player, item info includes:
+- `itemId`: The item's ID
+- `stackCount`: Number of items in the stack
+- `duration`: Item duration in milliseconds
+- `spellCharges`: Table of spell charges (indices 1-5)
+- `flags`: Item flags
+- `permanentEnchantId`: Permanent enchantment ID
+- `tempEnchantId`: Temporary enchantment ID
+- `tempEnchantmentTimeLeftMs`: Time remaining on temp enchant in milliseconds
+- `tempEnchantmentCharges`: Charges remaining on temp enchant
+- `durability`: Current durability
+- `maxDurability`: Maximum durability
+
+For other inspected units (limited data):
+- `itemId`: The item's ID
+- `permanentEnchantId`: Permanent enchantment ID
+- `tempEnchantId`: Temporary enchantment ID
+
+**Examples:**
+```lua
+-- Get all equipped items for your target
+local items = GetEquippedItems("target")
+if items then
+    for slot, itemInfo in pairs(items) do
+        print("Slot " .. slot .. ": Item ID " .. itemInfo.itemId)
+        if itemInfo.permanentEnchantId and itemInfo.permanentEnchantId > 0 then
+            print("  Permanent enchant: " .. itemInfo.permanentEnchantId)
+        end
+    end
+end
+
+-- Check player's weapon durability
+local items = GetEquippedItems("player")
+if items and items[15] then -- slot 15 is main hand
+    local weapon = items[15]
+    print("Weapon durability: " .. weapon.durability .. "/" .. weapon.maxDurability)
+end
+```
+
+#### GetEquippedItem(unitToken, slot)
+Returns item info for a specific equipment slot on the specified unit.
+
+**Parameters:**
+- `unitToken` (string): Can be a standard unit token ("player", "target", "pet", etc.) or a GUID string
+- `slot` (number): Equipment slot number (0-18)
+  - 1 = Head, 2 = Neck, 3 = Shoulder, 4 = Shirt, 5 = Chest
+  - 6 = Waist, 7 = Legs, 8 = Feet, 9 = Wrist, 10 = Hands
+  - 11 = Finger 1, 12 = Finger 2, 13 = Trinket 1, 14 = Trinket 2
+  - 15 = Back, 16 = Main Hand, 17 = Off Hand, 18 = Ranged, 19 = Tabard
+
+**Returns:**
+- A Lua table containing the item info (same fields as GetEquippedItems)
+- Returns nil if the slot is empty, unit cannot be found, or unit cannot be inspected
+
+**Examples:**
+```lua
+-- Check target's main hand weapon
+local weapon = GetEquippedItem("target", 16)
+if weapon then
+    print("Target has weapon: " .. weapon.itemId)
+else
+    print("Target has no main hand weapon")
+end
+
+-- Check your own helmet
+local helm = GetEquippedItem("player", 1)
+if helm and helm.durability then
+    local durabilityPercent = (helm.durability / helm.maxDurability) * 100
+    print("Helmet durability: " .. string.format("%.1f%%", durabilityPercent))
+end
+```
+
+#### GetBagItems()
+Returns a nested table containing all items in all bags (including bank if open).
+
+**Returns:**
+- A Lua table with bag indices as keys and bag contents as values
+- Each bag contains **1-indexed** slot numbers as keys and item info tables as values
+- Bag indices:
+  - 0 = Inventory pack (16 slots)
+  - 1-4 = Regular bags
+  - -1 = Bank item slots (24 slots, only if bank is open)
+  - 5-9 = Bank bags (only if bank is open)
+  - -2 = Keyring
+
+Item info table fields (same as GetEquippedItems for player):
+- `itemId`, `stackCount`, `duration`, `spellCharges`, `flags`
+- `permanentEnchantId`, `tempEnchantId`, `tempEnchantmentTimeLeftMs`, `tempEnchantmentCharges`
+- `durability`, `maxDurability`
+
+**Examples:**
+```lua
+-- Get all items in all bags
+local allItems = GetBagItems()
+for bagIndex, bagContents in pairs(allItems) do
+    print("Bag " .. bagIndex .. ":")
+    for slot, itemInfo in pairs(bagContents) do
+        print("  Slot " .. slot .. ": " .. itemInfo.itemId .. " (x" .. itemInfo.stackCount .. ")")
+    end
+end
+
+-- Count total number of a specific item
+local function CountItem(itemId)
+    local total = 0
+    local allItems = GetBagItems()
+    for bagIndex, bagContents in pairs(allItems) do
+        for slot, itemInfo in pairs(bagContents) do
+            if itemInfo.itemId == itemId then
+                total = total + itemInfo.stackCount
+            end
+        end
+    end
+    return total
+end
+
+local soulShardCount = CountItem(6265)
+print("Soul Shards: " .. soulShardCount)
+```
+
+#### GetBagItem(bagIndex, slot)
+Returns item info for a specific slot in a specific bag.
+
+**Parameters:**
+- `bagIndex` (number): The bag to check
+  - 0 = Inventory pack
+  - 1-4 = Regular bags
+  - -1 = Bank item slots or buyback slots
+  - 5-9 = Bank bags (requires bank to be open)
+  - -2 = Keyring
+- `slot` (number): **1-indexed** slot number within the bag
+
+**Returns:**
+- A Lua table containing the item info (same fields as GetBagItems)
+- Returns nil if the slot is empty or invalid
+
+**Examples:**
+```lua
+-- Get item in first slot of first bag
+local item = GetBagItem(1, 1)
+if item then
+    print("Item ID: " .. item.itemId)
+    print("Stack count: " .. item.stackCount)
+else
+    print("Slot is empty")
+end
+
+-- Check durability of an item in inventory pack
+local item = GetBagItem(0, 1)
+if item and item.durability then
+    print("Durability: " .. item.durability .. "/" .. item.maxDurability)
+end
+
+-- Check if a specific bank slot has an item (bank must be open)
+local bankItem = GetBagItem(-1, 1)
+if bankItem then
+    print("Bank slot 1 contains: " .. bankItem.itemId)
+end
+```
+
 #### GetSpellRec(spellId)
 Returns a Lua table containing all fields for the spell's `SpellRec` record (including localized `name` and `rank`). Returns nil if the spell cannot be found.
 

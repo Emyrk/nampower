@@ -61,6 +61,7 @@ namespace Nampower {
 
     bool gForceQueueCast;
     bool gNoQueueCast;
+    bool gQueuesProcessed;
 
     bool lastCastUsedServerDelay;
 
@@ -415,7 +416,9 @@ namespace Nampower {
     }
 
     bool processQueues() {
-        if (!gCastData.channeling) {
+        if (!gCastData.channeling && !gQueuesProcessed) {
+            gQueuesProcessed = true;
+
             // check for high priority script
             if (RunQueuedScript(1)) {
                 // script ran, stop processing
@@ -496,6 +499,8 @@ namespace Nampower {
             }
         }
 
+        gQueuesProcessed = true;
+
         // Process item export if active (low priority, runs when nothing else is queued)
         // ProcessItemExport()
 
@@ -550,6 +555,8 @@ namespace Nampower {
 
         // process any queued spells/scripts
         processQueues();
+
+        gQueuesProcessed = false;
 
         return iSceneEnd(ptr);
     }
@@ -1274,6 +1281,7 @@ namespace Nampower {
         char getItemILevel[] = "GetItemLevel";
         RegisterLuaFunction(getItemILevel, reinterpret_cast<uintptr_t *>(Script_GetItemLevel));
 
+        // 2.14 additions
         char getItemStats[] = "GetItemStats";
         RegisterLuaFunction(getItemStats, reinterpret_cast<uintptr_t *>(Script_GetItemStats));
 
@@ -1294,6 +1302,22 @@ namespace Nampower {
 
         char getSpellModifiers[] = "GetSpellModifiers";
         RegisterLuaFunction(getSpellModifiers, reinterpret_cast<uintptr_t *>(Script_GetSpellModifiers));
+
+        // 2.16 additions
+        char findPlayerItemSlot[] = "FindPlayerItemSlot";
+        RegisterLuaFunction(findPlayerItemSlot, reinterpret_cast<uintptr_t *>(FindPlayerItemSlot));
+
+        char getEquippedItems[] = "GetEquippedItems";
+        RegisterLuaFunction(getEquippedItems, reinterpret_cast<uintptr_t *>(GetEquippedItems));
+
+        char getEquippedItem[] = "GetEquippedItem";
+        RegisterLuaFunction(getEquippedItem, reinterpret_cast<uintptr_t *>(GetEquippedItem));
+
+        char getBagItems[] = "GetBagItems";
+        RegisterLuaFunction(getBagItems, reinterpret_cast<uintptr_t *>(GetBagItems));
+
+        char getBagItem[] = "GetBagItem";
+        RegisterLuaFunction(getBagItem, reinterpret_cast<uintptr_t *>(GetBagItem));
     }
 
     std::once_flag loadFlag;

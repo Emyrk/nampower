@@ -13,6 +13,20 @@
 #include <string>
 
 namespace Nampower {
+    // Lua function pointers
+    lua_errorT lua_error = reinterpret_cast<lua_errorT>(Offsets::lua_error);
+    lua_gettopT lua_gettop = reinterpret_cast<lua_gettopT>(Offsets::lua_gettop);
+    lua_isstringT lua_isstring = reinterpret_cast<lua_isstringT>(Offsets::lua_isstring);
+    lua_isnumberT lua_isnumber = reinterpret_cast<lua_isnumberT>(Offsets::lua_isnumber);
+    lua_tostringT lua_tostring = reinterpret_cast<lua_tostringT>(Offsets::lua_tostring);
+    lua_tonumberT lua_tonumber = reinterpret_cast<lua_tonumberT>(Offsets::lua_tonumber);
+    lua_pushnumberT lua_pushnumber = reinterpret_cast<lua_pushnumberT>(Offsets::lua_pushnumber);
+    lua_pushstringT lua_pushstring = reinterpret_cast<lua_pushstringT>(Offsets::lua_pushstring);
+    lua_pushbooleanT lua_pushboolean = reinterpret_cast<lua_pushbooleanT>(Offsets::lua_pushboolean);
+    lua_pushnilT lua_pushnil = reinterpret_cast<lua_pushnilT>(Offsets::lua_pushnil);
+    lua_newtableT lua_newtable = reinterpret_cast<lua_newtableT>(Offsets::lua_newtable);
+    lua_settableT lua_settable = reinterpret_cast<lua_settableT>(Offsets::lua_settable);
+
 
     uint32_t GetSpellSlotAndTypeForName(const char *spellName, uint32_t *spellType) {
         struct CachedEntry {
@@ -261,6 +275,33 @@ namespace Nampower {
         char *guidStr = new char[21]; // 2 for 0x prefix, 18 for the number, and 1 for '\0'
         std::snprintf(guidStr, 21, "0x%016llX", static_cast<unsigned long long>(guid));
         return guidStr;
+    }
+
+    uint64_t GetUnitGuidFromString(const char *unitToken) {
+        if (!unitToken) {
+            return 0;
+        }
+
+        // Check if it's a GUID string (starts with "0x" or "0X")
+        if (strncmp(unitToken, "0x", 2) == 0 || strncmp(unitToken, "0X", 2) == 0) {
+            return std::stoull(unitToken, nullptr, 16);
+        } else {
+            // Get GUID from unit token
+            auto const getGUIDFromName = reinterpret_cast<GetGUIDFromNameT>(Offsets::GetGUIDFromName);
+            return getGUIDFromName(unitToken);
+        }
+    }
+
+    uint64_t GetUnitGuidFromLuaParam(uintptr_t *luaState, int paramIndex) {
+        if (lua_isnumber(luaState, paramIndex)) {
+            // Parameter is a GUID number
+            return static_cast<uint64_t>(lua_tonumber(luaState, paramIndex));
+        } else if (lua_isstring(luaState, paramIndex)) {
+            // Parameter is a unit token or GUID string
+            const char *unitToken = lua_tostring(luaState, paramIndex);
+            return GetUnitGuidFromString(unitToken);
+        }
+        return 0;
     }
 
     float GetNameplateDistance() {

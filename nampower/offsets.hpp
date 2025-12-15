@@ -51,6 +51,7 @@ enum class Offsets : std::uint32_t {
     SpellNeedsTargets = 0X00CECAC0,
     VisualSpellId = 0X00CEAC58,
     CasterGuid = 0X00CEAC50,
+    BankGuid = 0X00BDD038,
     GetSpellSlotAndType = 0X004B3950,
     GetSpellSlotFromLua = 0X004B3EC0,
     OsGetAsyncTimeMs = 0X0042B790,
@@ -181,6 +182,10 @@ enum class Offsets : std::uint32_t {
 
     CGUnit_C_ClearCastingSpell = 0x0060d040,
     CGUnit_C_ClearSpellEffect = 0x00614150,
+    CGUnit_C_GetEquippedItemAtSlot = 0x005f0d60,
+    CGBag_C_GetItemAtSlot = 0x006228a0,
+    GetContainerGuid = 0x004f93e0,
+    CanInspectUnit = 0x004944a0,
     CGUnit_C_OnAuraRemoved = 0x00612320,
     CGUnit_C_OnAuraAdded = 0x006123f0,
     CGUnit_C_OnAuraAddedStack = 0x0062b800,

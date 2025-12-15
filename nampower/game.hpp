@@ -186,13 +186,141 @@ namespace game {
         MAX_ITEM_FLAG = 32768
     };
 
+
+    typedef enum OBJECT_TYPE_MASK {
+        TYPE_OBJECT = 1,
+        TYPE_ITEM = 2,
+        TYPE_CONTAINER = 4,
+        TYPE_UNIT = 8,
+        TYPE_PLAYER = 16,
+        TYPE_GAMEOBJECT = 32,
+        TYPE_DYNAMICOBJECT = 64,
+        TYPE_CORPSE = 128,
+        TYPE_AIGROUP = 256,
+        TYPE_AREATRIGGER = 512
+    } OBJECT_TYPE_MASK;
+
+
+    struct CGObjectData {
+        uint64_t m_guid;
+        OBJECT_TYPE_MASK m_type;
+        int m_entryID;
+        float m_scale;
+        uint32_t pad;
+    };
+
+    struct ObjectFields {
+        uint64_t guid;
+        uint32_t type;
+        uint32_t entry;
+        uint32_t scaleX;
+        uint32_t padding;
+    };
+
+    struct ItemEnchantment {
+        int id;
+        int duration;
+        int charges;
+    };
+
+    struct CGObject {
+        void *vftable;
+        uintptr_t *m_data;
+        CGObjectData *m_obj;
+    };
+
+    struct ItemFields {
+        uint64_t owner;
+        uint64_t contained;
+        uint64_t creator;
+        uint64_t giftCreator;
+        uint32_t stackCount;
+        uint32_t duration;
+        uint32_t spellCharges[5];
+        uint32_t flags;
+        ItemEnchantment permEnchantmentSlot;
+        ItemEnchantment tempEnchantmentSlot;
+        ItemEnchantment maxInspectedEnchantmentSlot;
+        ItemEnchantment propEnchantmentSlot0;
+        ItemEnchantment propEnchantmentSlot1;
+        ItemEnchantment propEnchantmentSlot2;
+        ItemEnchantment propEnchantmentSlot3;
+        uint32_t propertySeed;
+        uint32_t randomPropertiesId;
+        uint32_t itemTextId;
+        uint32_t durability;
+        uint32_t maxDurability;
+    };
+
     struct CGItem_C {
-        uint32_t m_unk;
-        uint32_t m_flags;
-        uintptr_t *m_itemInfo;
-        uint32_t m_expirationTime;
-        uint32_t m_enchantmentExpiration[5];
-        uintptr_t *m_soundsRec;
+        CGObject object;
+        int32_t field1;
+        int32_t field2;
+        int32_t field3;
+        int32_t field4;
+        int32_t field5;
+        int32_t field6;
+        int32_t field7;
+        int32_t field8;
+        int32_t field9;
+        int32_t field10;
+        int32_t field11;
+        int32_t field12;
+        int32_t field13;
+        int32_t field14;
+        int32_t field15;
+        int32_t field16;
+        int32_t field17;
+        int32_t field18;
+        int32_t field19;
+        int32_t field20;
+        int32_t field21;
+        int32_t field22;
+        int32_t field23;
+        int32_t field24;
+        int32_t field25;
+        int32_t field26;
+        int32_t field27;
+        int32_t field28;
+        int32_t field29;
+        int32_t field30;
+        int32_t field31;
+        int32_t field32;
+        int32_t field33;
+        int32_t field34;
+        int32_t field35;
+        int32_t field36;
+        int32_t field37;
+        int32_t field38;
+        int32_t field39;
+        int32_t field40;
+        int32_t field41;
+        int32_t field42;
+        int32_t field43;
+        int32_t field44;
+        int32_t field45;
+        int32_t field46;
+        int32_t field47;
+        int32_t field48;
+        int32_t field49;
+        int32_t field50;
+        int32_t field51;
+        int32_t field52;
+        int32_t field53;
+        int32_t field54;
+        int32_t field55;
+        int32_t field56;
+        int32_t field57;
+        int32_t field58;
+        int32_t field59;
+        int32_t field60;
+        int32_t field61;
+        int32_t field62;
+        int32_t field63;
+        int32_t field64;
+        int32_t field65;
+        int32_t field66;
+        ItemFields *itemFields;
     };
 
     struct __declspec(align(4)) ItemStats_C {
@@ -253,6 +381,15 @@ namespace game {
         int m_bagFamily;
     };
 #pragma pack(pop)
+
+    struct CGItem {
+        uintptr_t *unkPtr;
+        uint32_t unk;
+        uint32_t itemId;
+        uint32_t permanentEnchantId;
+        uint32_t tempEnchantId;
+    };
+
 
     enum SpellEffects {
         SPELL_EFFECT_NONE = 0,
@@ -396,121 +533,121 @@ namespace game {
 
 
     enum SpellCastResult : std::uint8_t {
-        SPELL_FAILED_AFFECTING_COMBAT = 0,           // 0x0
-        SPELL_FAILED_ALREADY_AT_FULL_HEALTH = 1,     // 0x1
-        SPELL_FAILED_ALREADY_AT_FULL_MANA = 2,       // 0x2
-        SPELL_FAILED_ALREADY_BEING_TAMED = 3,        // 0x3
-        SPELL_FAILED_ALREADY_HAVE_CHARM = 4,         // 0x4
-        SPELL_FAILED_ALREADY_HAVE_SUMMON = 5,        // 0x5
-        SPELL_FAILED_ALREADY_OPEN = 6,               // 0x6
+        SPELL_FAILED_AFFECTING_COMBAT = 0, // 0x0
+        SPELL_FAILED_ALREADY_AT_FULL_HEALTH = 1, // 0x1
+        SPELL_FAILED_ALREADY_AT_FULL_MANA = 2, // 0x2
+        SPELL_FAILED_ALREADY_BEING_TAMED = 3, // 0x3
+        SPELL_FAILED_ALREADY_HAVE_CHARM = 4, // 0x4
+        SPELL_FAILED_ALREADY_HAVE_SUMMON = 5, // 0x5
+        SPELL_FAILED_ALREADY_OPEN = 6, // 0x6
         SPELL_FAILED_MORE_POWERFUL_SPELL_ACTIVE = 7, // 0x7
-        SPELL_FAILED_BAD_IMPLICIT_TARGETS = 9,       // 0x9
-        SPELL_FAILED_BAD_TARGETS = 10,               // 0xA
-        SPELL_FAILED_CANT_BE_CHARMED = 11,           // 0xB
-        SPELL_FAILED_CANT_BE_DISENCHANTED = 12,      // 0xC
-        SPELL_FAILED_CANT_BE_PROSPECTED = 13,        // 0xD
-        SPELL_FAILED_CANT_CAST_ON_TAPPED = 14,       // 0xE
+        SPELL_FAILED_BAD_IMPLICIT_TARGETS = 9, // 0x9
+        SPELL_FAILED_BAD_TARGETS = 10, // 0xA
+        SPELL_FAILED_CANT_BE_CHARMED = 11, // 0xB
+        SPELL_FAILED_CANT_BE_DISENCHANTED = 12, // 0xC
+        SPELL_FAILED_CANT_BE_PROSPECTED = 13, // 0xD
+        SPELL_FAILED_CANT_CAST_ON_TAPPED = 14, // 0xE
         SPELL_FAILED_CANT_DUEL_WHILE_INVISIBLE = 15, // 0xF
         SPELL_FAILED_CANT_DUEL_WHILE_STEALTHED = 16, // 0x10
-        SPELL_FAILED_CANT_TOO_CLOSE_TO_ENEMY = 17,   // 0x11
-        SPELL_FAILED_CANT_DO_THAT_YET = 18,          // 0x12
-        SPELL_FAILED_CASTER_DEAD = 19,               // 0x13
-        SPELL_FAILED_CHARMED = 20,                   // 0x14
-        SPELL_FAILED_CHEST_IN_USE = 21,              // 0x15
-        SPELL_FAILED_CONFUSED = 22,                  // 0x16
-        SPELL_FAILED_DONT_REPORT = 23,               // 0x17
-        SPELL_FAILED_EQUIPPED_ITEM = 24,             // 0x18
-        SPELL_FAILED_EQUIPPED_ITEM_CLASS = 25,       // 0x19
+        SPELL_FAILED_CANT_TOO_CLOSE_TO_ENEMY = 17, // 0x11
+        SPELL_FAILED_CANT_DO_THAT_YET = 18, // 0x12
+        SPELL_FAILED_CASTER_DEAD = 19, // 0x13
+        SPELL_FAILED_CHARMED = 20, // 0x14
+        SPELL_FAILED_CHEST_IN_USE = 21, // 0x15
+        SPELL_FAILED_CONFUSED = 22, // 0x16
+        SPELL_FAILED_DONT_REPORT = 23, // 0x17
+        SPELL_FAILED_EQUIPPED_ITEM = 24, // 0x18
+        SPELL_FAILED_EQUIPPED_ITEM_CLASS = 25, // 0x19
         SPELL_FAILED_EQUIPPED_ITEM_CLASS_MAINHAND = 26, // 0x1A
-        SPELL_FAILED_EQUIPPED_ITEM_CLASS_OFFHAND = 27,  // 0x1B
-        SPELL_FAILED_ERROR = 28,                     // 0x1C
-        SPELL_FAILED_FIZZLE = 29,                    // 0x1D
-        SPELL_FAILED_FLEEING = 30,                   // 0x1E
-        SPELL_FAILED_FOOD_LOWLEVEL = 31,             // 0x1F
-        SPELL_FAILED_HIGHLEVEL = 32,                 // 0x20
-        SPELL_FAILED_IMMUNE = 34,                    // 0x22
-        SPELL_FAILED_INTERRUPTED = 35,               // 0x23
-        SPELL_FAILED_INTERRUPTED_COMBAT = 36,        // 0x24
-        SPELL_FAILED_ITEM_ALREADY_ENCHANTED = 37,    // 0x25
-        SPELL_FAILED_ITEM_GONE = 38,                 // 0x26
+        SPELL_FAILED_EQUIPPED_ITEM_CLASS_OFFHAND = 27, // 0x1B
+        SPELL_FAILED_ERROR = 28, // 0x1C
+        SPELL_FAILED_FIZZLE = 29, // 0x1D
+        SPELL_FAILED_FLEEING = 30, // 0x1E
+        SPELL_FAILED_FOOD_LOWLEVEL = 31, // 0x1F
+        SPELL_FAILED_HIGHLEVEL = 32, // 0x20
+        SPELL_FAILED_IMMUNE = 34, // 0x22
+        SPELL_FAILED_INTERRUPTED = 35, // 0x23
+        SPELL_FAILED_INTERRUPTED_COMBAT = 36, // 0x24
+        SPELL_FAILED_ITEM_ALREADY_ENCHANTED = 37, // 0x25
+        SPELL_FAILED_ITEM_GONE = 38, // 0x26
         SPELL_FAILED_ENCHANT_NOT_EXISTING_ITEM = 39, // 0x27
-        SPELL_FAILED_ITEM_NOT_READY = 40,            // 0x28
-        SPELL_FAILED_LEVEL_REQUIREMENT = 41,         // 0x29
-        SPELL_FAILED_LINE_OF_SIGHT = 42,             // 0x2A
-        SPELL_FAILED_LOWLEVEL = 43,                  // 0x2B
-        SPELL_FAILED_SKILL_NOT_HIGH_ENOUGH = 44,     // 0x2C
-        SPELL_FAILED_MAINHAND_EMPTY = 45,            // 0x2D
-        SPELL_FAILED_MOVING = 46,                    // 0x2E
-        SPELL_FAILED_NEED_AMMO = 47,                 // 0x2F
-        SPELL_FAILED_NEED_REQUIRES_SOMETHING = 48,   // 0x30
-        SPELL_FAILED_NEED_EXOTIC_AMMO = 49,          // 0x31
-        SPELL_FAILED_NOPATH = 50,                    // 0x32
-        SPELL_FAILED_NOT_BEHIND = 51,                // 0x33
-        SPELL_FAILED_NOT_FISHABLE = 52,              // 0x34
-        SPELL_FAILED_NOT_HERE = 53,                  // 0x35
-        SPELL_FAILED_NOT_INFRONT = 54,               // 0x36
-        SPELL_FAILED_NOT_IN_CONTROL = 55,            // 0x37
-        SPELL_FAILED_NOT_KNOWN = 56,                 // 0x38
-        SPELL_FAILED_NOT_MOUNTED = 57,               // 0x39
-        SPELL_FAILED_NOT_ON_TAXI = 58,               // 0x3A
-        SPELL_FAILED_NOT_ON_TRANSPORT = 59,          // 0x3B
-        SPELL_FAILED_NOT_READY = 60,                 // 0x3C
-        SPELL_FAILED_NOT_SHAPESHIFT = 61,            // 0x3D
-        SPELL_FAILED_NOT_STANDING = 62,              // 0x3E
-        SPELL_FAILED_NOT_TRADEABLE = 63,             // 0x3F
-        SPELL_FAILED_NOT_TRADING = 64,               // 0x40
-        SPELL_FAILED_NOT_UNSHEATHED = 65,            // 0x41
-        SPELL_FAILED_NOT_WHILE_GHOST = 66,           // 0x42
-        SPELL_FAILED_NO_AMMO = 67,                   // 0x43
-        SPELL_FAILED_NO_CHARGES_REMAIN = 68,         // 0x44
-        SPELL_FAILED_NO_CHAMPION = 69,               // 0x45
-        SPELL_FAILED_NO_COMBO_POINTS = 70,           // 0x46
-        SPELL_FAILED_NO_DUELING = 71,                // 0x47
-        SPELL_FAILED_NO_ENDURANCE = 72,              // 0x48
-        SPELL_FAILED_NO_FISH = 73,                   // 0x49
+        SPELL_FAILED_ITEM_NOT_READY = 40, // 0x28
+        SPELL_FAILED_LEVEL_REQUIREMENT = 41, // 0x29
+        SPELL_FAILED_LINE_OF_SIGHT = 42, // 0x2A
+        SPELL_FAILED_LOWLEVEL = 43, // 0x2B
+        SPELL_FAILED_SKILL_NOT_HIGH_ENOUGH = 44, // 0x2C
+        SPELL_FAILED_MAINHAND_EMPTY = 45, // 0x2D
+        SPELL_FAILED_MOVING = 46, // 0x2E
+        SPELL_FAILED_NEED_AMMO = 47, // 0x2F
+        SPELL_FAILED_NEED_REQUIRES_SOMETHING = 48, // 0x30
+        SPELL_FAILED_NEED_EXOTIC_AMMO = 49, // 0x31
+        SPELL_FAILED_NOPATH = 50, // 0x32
+        SPELL_FAILED_NOT_BEHIND = 51, // 0x33
+        SPELL_FAILED_NOT_FISHABLE = 52, // 0x34
+        SPELL_FAILED_NOT_HERE = 53, // 0x35
+        SPELL_FAILED_NOT_INFRONT = 54, // 0x36
+        SPELL_FAILED_NOT_IN_CONTROL = 55, // 0x37
+        SPELL_FAILED_NOT_KNOWN = 56, // 0x38
+        SPELL_FAILED_NOT_MOUNTED = 57, // 0x39
+        SPELL_FAILED_NOT_ON_TAXI = 58, // 0x3A
+        SPELL_FAILED_NOT_ON_TRANSPORT = 59, // 0x3B
+        SPELL_FAILED_NOT_READY = 60, // 0x3C
+        SPELL_FAILED_NOT_SHAPESHIFT = 61, // 0x3D
+        SPELL_FAILED_NOT_STANDING = 62, // 0x3E
+        SPELL_FAILED_NOT_TRADEABLE = 63, // 0x3F
+        SPELL_FAILED_NOT_TRADING = 64, // 0x40
+        SPELL_FAILED_NOT_UNSHEATHED = 65, // 0x41
+        SPELL_FAILED_NOT_WHILE_GHOST = 66, // 0x42
+        SPELL_FAILED_NO_AMMO = 67, // 0x43
+        SPELL_FAILED_NO_CHARGES_REMAIN = 68, // 0x44
+        SPELL_FAILED_NO_CHAMPION = 69, // 0x45
+        SPELL_FAILED_NO_COMBO_POINTS = 70, // 0x46
+        SPELL_FAILED_NO_DUELING = 71, // 0x47
+        SPELL_FAILED_NO_ENDURANCE = 72, // 0x48
+        SPELL_FAILED_NO_FISH = 73, // 0x49
         SPELL_FAILED_NO_ITEMS_WHILE_SHAPESHIFTED = 74, // 0x4A
-        SPELL_FAILED_NO_MOUNTS_ALLOWED = 75,         // 0x4B
-        SPELL_FAILED_NO_PET = 76,                    // 0x4C
-        SPELL_FAILED_NO_POWER = 77,                  // 0x4D
-        SPELL_FAILED_NOTHING_TO_DISPEL = 78,         // 0x4E
-        SPELL_FAILED_NOTHING_TO_STEAL = 79,          // 0x4F
-        SPELL_FAILED_ONLY_ABOVEWATER = 80,           // 0x50
-        SPELL_FAILED_ONLY_DAYTIME = 81,              // 0x51
-        SPELL_FAILED_ONLY_INDOORS = 82,              // 0x52
-        SPELL_FAILED_ONLY_MOUNTED = 83,              // 0x53
-        SPELL_FAILED_ONLY_NIGHTTIME = 84,            // 0x54
-        SPELL_FAILED_ONLY_OUTDOORS = 85,             // 0x55
-        SPELL_FAILED_ONLY_SHAPESHIFT = 86,           // 0x56
-        SPELL_FAILED_ONLY_STEALTHED = 87,            // 0x57
-        SPELL_FAILED_ONLY_UNDERWATER = 88,           // 0x58
-        SPELL_FAILED_OUT_OF_RANGE = 89,              // 0x59
-        SPELL_FAILED_PACIFIED = 90,                  // 0x5A
-        SPELL_FAILED_POSSESSED = 91,                 // 0x5B
-        SPELL_FAILED_REQUIRES_AREA = 93,             // 0x5D
-        SPELL_FAILED_REQUIRES_SPELL_FOCUS = 94,      // 0x5E
-        SPELL_FAILED_ROOTED = 95,                    // 0x5F
-        SPELL_FAILED_SILENCED = 96,                  // 0x60
-        SPELL_FAILED_SPELL_IN_PROGRESS = 97,         // 0x61
-        SPELL_FAILED_SPELL_LEARNED = 98,             // 0x62
-        SPELL_FAILED_SPELL_UNAVAILABLE = 99,         // 0x63
-        SPELL_FAILED_STUNNED = 100,                  // 0x64
-        SPELL_FAILED_TARGETS_DEAD = 101,             // 0x65
-        SPELL_FAILED_TARGET_AFFECTING_COMBAT = 102,  // 0x66
-        SPELL_FAILED_TARGET_AURASTATE = 103,         // 0x67
-        SPELL_FAILED_TARGET_DUELING = 104,           // 0x68
-        SPELL_FAILED_TARGET_ENEMY = 105,             // 0x69
-        SPELL_FAILED_TARGET_ENRAGED = 106,           // 0x6A
-        SPELL_FAILED_TARGET_FRIENDLY = 107,          // 0x6B
-        SPELL_FAILED_TARGET_IN_COMBAT = 108,         // 0x6C
-        SPELL_FAILED_TARGET_IS_PLAYER = 109,         // 0x6D
-        SPELL_FAILED_TARGET_NOT_DEAD = 110,          // 0x6E
-        SPELL_FAILED_TARGET_NOT_IN_PARTY = 111,      // 0x6F
-        SPELL_FAILED_TARGET_NOT_LOOTED = 112,        // 0x70
-        SPELL_FAILED_TARGET_NOT_PLAYER = 113,        // 0x71
-        SPELL_FAILED_TARGET_NO_POCKETS = 114,        // 0x72
-        SPELL_FAILED_TARGET_NO_WEAPONS = 115,        // 0x73
-        SPELL_FAILED_TARGET_UNSKINNABLE = 116,       // 0x74
-        SPELL_FAILED_THIRST_SATIATED = 117,          // 0x75
+        SPELL_FAILED_NO_MOUNTS_ALLOWED = 75, // 0x4B
+        SPELL_FAILED_NO_PET = 76, // 0x4C
+        SPELL_FAILED_NO_POWER = 77, // 0x4D
+        SPELL_FAILED_NOTHING_TO_DISPEL = 78, // 0x4E
+        SPELL_FAILED_NOTHING_TO_STEAL = 79, // 0x4F
+        SPELL_FAILED_ONLY_ABOVEWATER = 80, // 0x50
+        SPELL_FAILED_ONLY_DAYTIME = 81, // 0x51
+        SPELL_FAILED_ONLY_INDOORS = 82, // 0x52
+        SPELL_FAILED_ONLY_MOUNTED = 83, // 0x53
+        SPELL_FAILED_ONLY_NIGHTTIME = 84, // 0x54
+        SPELL_FAILED_ONLY_OUTDOORS = 85, // 0x55
+        SPELL_FAILED_ONLY_SHAPESHIFT = 86, // 0x56
+        SPELL_FAILED_ONLY_STEALTHED = 87, // 0x57
+        SPELL_FAILED_ONLY_UNDERWATER = 88, // 0x58
+        SPELL_FAILED_OUT_OF_RANGE = 89, // 0x59
+        SPELL_FAILED_PACIFIED = 90, // 0x5A
+        SPELL_FAILED_POSSESSED = 91, // 0x5B
+        SPELL_FAILED_REQUIRES_AREA = 93, // 0x5D
+        SPELL_FAILED_REQUIRES_SPELL_FOCUS = 94, // 0x5E
+        SPELL_FAILED_ROOTED = 95, // 0x5F
+        SPELL_FAILED_SILENCED = 96, // 0x60
+        SPELL_FAILED_SPELL_IN_PROGRESS = 97, // 0x61
+        SPELL_FAILED_SPELL_LEARNED = 98, // 0x62
+        SPELL_FAILED_SPELL_UNAVAILABLE = 99, // 0x63
+        SPELL_FAILED_STUNNED = 100, // 0x64
+        SPELL_FAILED_TARGETS_DEAD = 101, // 0x65
+        SPELL_FAILED_TARGET_AFFECTING_COMBAT = 102, // 0x66
+        SPELL_FAILED_TARGET_AURASTATE = 103, // 0x67
+        SPELL_FAILED_TARGET_DUELING = 104, // 0x68
+        SPELL_FAILED_TARGET_ENEMY = 105, // 0x69
+        SPELL_FAILED_TARGET_ENRAGED = 106, // 0x6A
+        SPELL_FAILED_TARGET_FRIENDLY = 107, // 0x6B
+        SPELL_FAILED_TARGET_IN_COMBAT = 108, // 0x6C
+        SPELL_FAILED_TARGET_IS_PLAYER = 109, // 0x6D
+        SPELL_FAILED_TARGET_NOT_DEAD = 110, // 0x6E
+        SPELL_FAILED_TARGET_NOT_IN_PARTY = 111, // 0x6F
+        SPELL_FAILED_TARGET_NOT_LOOTED = 112, // 0x70
+        SPELL_FAILED_TARGET_NOT_PLAYER = 113, // 0x71
+        SPELL_FAILED_TARGET_NO_POCKETS = 114, // 0x72
+        SPELL_FAILED_TARGET_NO_WEAPONS = 115, // 0x73
+        SPELL_FAILED_TARGET_UNSKINNABLE = 116, // 0x74
+        SPELL_FAILED_THIRST_SATIATED = 117, // 0x75
         SPELL_FAILED_TOO_CLOSE = 118
     };
 
@@ -550,140 +687,161 @@ namespace game {
     };
 
     enum SpellAttributesEx {
-        SPELL_ATTR_EX_DISMISS_PET_FIRST = 0x00000001,            // 0 For spells without this flag client doesn't allow to summon pet if caster has a pet
-        SPELL_ATTR_EX_USE_ALL_MANA = 0x00000002,            // 1 Use all power (Only paladin Lay of Hands and Bunyanize)
-        SPELL_ATTR_EX_IS_CHANNELED = 0x00000004,            // 2
-        SPELL_ATTR_EX_NO_REDIRECTION = 0x00000008,            // 3
-        SPELL_ATTR_EX_NO_SKILL_INCREASE = 0x00000010,            // 4 Only assigned to stealth spells for some reason
-        SPELL_ATTR_EX_ALLOW_WHILE_STEALTHED = 0x00000020,            // 5 Does not break stealth
-        SPELL_ATTR_EX_IS_SELF_CHANNELED = 0x00000040,            // 6
-        SPELL_ATTR_EX_NO_REFLECTION = 0x00000080,            // 7
-        SPELL_ATTR_EX_ONLY_PEACEFUL_TARGETS = 0x00000100,            // 8 Target must not be in combat
-        SPELL_ATTR_EX_INITIATES_COMBAT = 0x00000200,            // 9 Enables Auto-Attack
-        SPELL_ATTR_EX_NO_THREAT = 0x00000400,            // 10
-        SPELL_ATTR_EX_AURA_UNIQUE = 0x00000800,            // 11
-        SPELL_ATTR_EX_FAILURE_BREAKS_STEALTH = 0x00001000,            // 12
-        SPELL_ATTR_EX_TOGGLE_FARSIGHT = 0x00002000,            // 13
-        SPELL_ATTR_EX_TRACK_TARGET_IN_CHANNEL = 0x00004000,            // 14 Client automatically forces player to face target when channeling
-        SPELL_ATTR_EX_IMMUNITY_PURGES_EFFECT = 0x00008000,            // 15 Remove auras on immunity
-        SPELL_ATTR_EX_IMMUNITY_TO_HOSTILE_AND_FRIENDLY_EFFECTS = 0x00010000, // 16 Aura that provides immunity prevents positive effects too
-        SPELL_ATTR_EX_NO_AUTOCAST_AI = 0x00020000,            // 17
-        SPELL_ATTR_EX_PREVENTS_ANIM = 0x00040000,            // 18 Stun, polymorph, daze, sleep
-        SPELL_ATTR_EX_EXCLUDE_CASTER = 0x00080000,            // 19
-        SPELL_ATTR_EX_FINISHING_MOVE_DAMAGE = 0x00100000,            // 20 Uses combo points
-        SPELL_ATTR_EX_THREAT_ONLY_ON_MISS = 0x00200000,            // 21
-        SPELL_ATTR_EX_FINISHING_MOVE_DURATION = 0x00400000,            // 22 Uses combo points (in 4.x not required combo point target selected)
-        SPELL_ATTR_EX_IGNORE_CASTER_AND_TARGET_RESTRICTIONS = 0x00800000,    // 23 Skips all cast checks, moved to AttributesEx3 after 1.10 (100% correlation)
-        SPELL_ATTR_EX_SPECIAL_SKILLUP = 0x01000000,            // 24 Only fishing spells
-        SPELL_ATTR_EX_UNK25 = 0x02000000,            // 25 Different in vanilla
-        SPELL_ATTR_EX_REQUIRE_ALL_TARGETS = 0x04000000,            // 26
-        SPELL_ATTR_EX_DISCOUNT_POWER_ON_MISS = 0x08000000,            // 27 All these spells refund power on parry or deflect
-        SPELL_ATTR_EX_NO_AURA_ICON = 0x10000000,            // 28 Client doesn't display these spells in aura bar
-        SPELL_ATTR_EX_NAME_IN_CHANNEL_BAR = 0x20000000,            // 29 Spell name is displayed in cast bar instead of 'channeling' text
-        SPELL_ATTR_EX_COMBO_ON_BLOCK = 0x40000000,            // 30 Overpower
-        SPELL_ATTR_EX_CAST_WHEN_LEARNED = 0x80000000             // 31
+        SPELL_ATTR_EX_DISMISS_PET_FIRST = 0x00000001,
+        // 0 For spells without this flag client doesn't allow to summon pet if caster has a pet
+        SPELL_ATTR_EX_USE_ALL_MANA = 0x00000002, // 1 Use all power (Only paladin Lay of Hands and Bunyanize)
+        SPELL_ATTR_EX_IS_CHANNELED = 0x00000004, // 2
+        SPELL_ATTR_EX_NO_REDIRECTION = 0x00000008, // 3
+        SPELL_ATTR_EX_NO_SKILL_INCREASE = 0x00000010, // 4 Only assigned to stealth spells for some reason
+        SPELL_ATTR_EX_ALLOW_WHILE_STEALTHED = 0x00000020, // 5 Does not break stealth
+        SPELL_ATTR_EX_IS_SELF_CHANNELED = 0x00000040, // 6
+        SPELL_ATTR_EX_NO_REFLECTION = 0x00000080, // 7
+        SPELL_ATTR_EX_ONLY_PEACEFUL_TARGETS = 0x00000100, // 8 Target must not be in combat
+        SPELL_ATTR_EX_INITIATES_COMBAT = 0x00000200, // 9 Enables Auto-Attack
+        SPELL_ATTR_EX_NO_THREAT = 0x00000400, // 10
+        SPELL_ATTR_EX_AURA_UNIQUE = 0x00000800, // 11
+        SPELL_ATTR_EX_FAILURE_BREAKS_STEALTH = 0x00001000, // 12
+        SPELL_ATTR_EX_TOGGLE_FARSIGHT = 0x00002000, // 13
+        SPELL_ATTR_EX_TRACK_TARGET_IN_CHANNEL = 0x00004000,
+        // 14 Client automatically forces player to face target when channeling
+        SPELL_ATTR_EX_IMMUNITY_PURGES_EFFECT = 0x00008000, // 15 Remove auras on immunity
+        SPELL_ATTR_EX_IMMUNITY_TO_HOSTILE_AND_FRIENDLY_EFFECTS = 0x00010000,
+        // 16 Aura that provides immunity prevents positive effects too
+        SPELL_ATTR_EX_NO_AUTOCAST_AI = 0x00020000, // 17
+        SPELL_ATTR_EX_PREVENTS_ANIM = 0x00040000, // 18 Stun, polymorph, daze, sleep
+        SPELL_ATTR_EX_EXCLUDE_CASTER = 0x00080000, // 19
+        SPELL_ATTR_EX_FINISHING_MOVE_DAMAGE = 0x00100000, // 20 Uses combo points
+        SPELL_ATTR_EX_THREAT_ONLY_ON_MISS = 0x00200000, // 21
+        SPELL_ATTR_EX_FINISHING_MOVE_DURATION = 0x00400000,
+        // 22 Uses combo points (in 4.x not required combo point target selected)
+        SPELL_ATTR_EX_IGNORE_CASTER_AND_TARGET_RESTRICTIONS = 0x00800000,
+        // 23 Skips all cast checks, moved to AttributesEx3 after 1.10 (100% correlation)
+        SPELL_ATTR_EX_SPECIAL_SKILLUP = 0x01000000, // 24 Only fishing spells
+        SPELL_ATTR_EX_UNK25 = 0x02000000, // 25 Different in vanilla
+        SPELL_ATTR_EX_REQUIRE_ALL_TARGETS = 0x04000000, // 26
+        SPELL_ATTR_EX_DISCOUNT_POWER_ON_MISS = 0x08000000, // 27 All these spells refund power on parry or deflect
+        SPELL_ATTR_EX_NO_AURA_ICON = 0x10000000, // 28 Client doesn't display these spells in aura bar
+        SPELL_ATTR_EX_NAME_IN_CHANNEL_BAR = 0x20000000,
+        // 29 Spell name is displayed in cast bar instead of 'channeling' text
+        SPELL_ATTR_EX_COMBO_ON_BLOCK = 0x40000000, // 30 Overpower
+        SPELL_ATTR_EX_CAST_WHEN_LEARNED = 0x80000000 // 31
     };
 
     enum SpellAttributesEx2 {
-        SPELL_ATTR_EX2_ALLOW_DEAD_TARGET = 0x00000001,            // 0 Can target dead unit or corpse
-        SPELL_ATTR_EX2_NO_SHAPESHIFT_UI = 0x00000002,            // 1
-        SPELL_ATTR_EX2_IGNORE_LINE_OF_SIGHT = 0x00000004,            // 2
-        SPELL_ATTR_EX2_ALLOW_LOW_LEVEL_BUFF = 0x00000008,            // 3
-        SPELL_ATTR_EX2_USE_SHAPESHIFT_BAR = 0x00000010,            // 4 Client displays icon in stance bar when learned, even if not shapeshift
-        SPELL_ATTR_EX2_AUTO_REPEAT = 0x00000020,            // 5
-        SPELL_ATTR_EX2_CANNOT_CAST_ON_TAPPED = 0x00000040,            // 6 Target must be tapped by caster
-        SPELL_ATTR_EX2_DO_NOT_REPORT_SPELL_FAILURE = 0x00000080,            // 7
-        SPELL_ATTR_EX2_UNK8 = 0x00000100,            // 8 Unused
-        SPELL_ATTR_EX2_UNK9 = 0x00000200,            // 9 Unused
-        SPELL_ATTR_EX2_SPECIAL_TAMING_FLAG = 0x00000400,            // 10
-        SPELL_ATTR_EX2_NO_TARGET_PER_SECOND_COSTS = 0x00000800,            // 11
-        SPELL_ATTR_EX2_CHAIN_FROM_CASTER = 0x00001000,            // 12
-        SPELL_ATTR_EX2_ENCHANT_OWN_ITEM_ONLY = 0x00002000,            // 13
-        SPELL_ATTR_EX2_ALLOW_WHILE_INVISIBLE = 0x00004000,            // 14
-        SPELL_ATTR_EX2_ENABLE_AFTER_PARRY = 0x00008000,            // 15 Deprecated in patch 1.8 and moved to CasterAuraState
-        SPELL_ATTR_EX2_NO_ACTIVE_PETS = 0x00010000,            // 16
-        SPELL_ATTR_EX2_DO_NOT_RESET_COMBAT_TIMERS = 0x00020000,            // 17 Don't reset timers for melee autoattacks (swings) or ranged autoattacks (autoshoots)
-        SPELL_ATTR_EX2_REQ_DEAD_PET = 0x00040000,            // 18 Only Revive pet has it
-        SPELL_ATTR_EX2_ALLOW_WHILE_NOT_SHAPESHIFTED = 0x00080000,            // 19 Does not necessary need shapeshift (pre-3.x not have passive spells with this attribute)
-        SPELL_ATTR_EX2_INITIATE_COMBAT_POST_CAST = 0x00100000,            // 20 Client will send CMSG_ATTACK_SWING after SMSG_SPELL_GO
-        SPELL_ATTR_EX2_FAIL_ON_ALL_TARGETS_IMMUNE = 0x00200000,            // 21 For ice blocks, pala immunity buffs, priest absorb shields
-        SPELL_ATTR_EX2_NO_INITIAL_THREAT = 0x00400000,            // 22
-        SPELL_ATTR_EX2_PROC_COOLDOWN_ON_FAILURE = 0x00800000,            // 23
-        SPELL_ATTR_EX2_ITEM_CAST_WITH_OWNER_SKILL = 0x01000000,            // 24 NYI
-        SPELL_ATTR_EX2_DONT_BLOCK_MANA_REGEN = 0x02000000,            // 25
-        SPELL_ATTR_EX2_NO_SCHOOL_IMMUNITIES = 0x04000000,            // 26
-        SPELL_ATTR_EX2_IGNORE_WEAPONSKILL = 0x08000000,            // 27 NYI (only fishing has it)
-        SPELL_ATTR_EX2_NOT_AN_ACTION = 0x10000000,            // 28
-        SPELL_ATTR_EX2_CANT_CRIT = 0x20000000,            // 29
-        SPELL_ATTR_EX2_ACTIVE_THREAT = 0x40000000,            // 30 Caster is put in combat for 5.5 seconds on cast at enemy unit
-        SPELL_ATTR_EX2_RETAIN_ITEM_CAST = 0x80000000             // 31 Food or Drink Buff (like Well Fed)
+        SPELL_ATTR_EX2_ALLOW_DEAD_TARGET = 0x00000001, // 0 Can target dead unit or corpse
+        SPELL_ATTR_EX2_NO_SHAPESHIFT_UI = 0x00000002, // 1
+        SPELL_ATTR_EX2_IGNORE_LINE_OF_SIGHT = 0x00000004, // 2
+        SPELL_ATTR_EX2_ALLOW_LOW_LEVEL_BUFF = 0x00000008, // 3
+        SPELL_ATTR_EX2_USE_SHAPESHIFT_BAR = 0x00000010,
+        // 4 Client displays icon in stance bar when learned, even if not shapeshift
+        SPELL_ATTR_EX2_AUTO_REPEAT = 0x00000020, // 5
+        SPELL_ATTR_EX2_CANNOT_CAST_ON_TAPPED = 0x00000040, // 6 Target must be tapped by caster
+        SPELL_ATTR_EX2_DO_NOT_REPORT_SPELL_FAILURE = 0x00000080, // 7
+        SPELL_ATTR_EX2_UNK8 = 0x00000100, // 8 Unused
+        SPELL_ATTR_EX2_UNK9 = 0x00000200, // 9 Unused
+        SPELL_ATTR_EX2_SPECIAL_TAMING_FLAG = 0x00000400, // 10
+        SPELL_ATTR_EX2_NO_TARGET_PER_SECOND_COSTS = 0x00000800, // 11
+        SPELL_ATTR_EX2_CHAIN_FROM_CASTER = 0x00001000, // 12
+        SPELL_ATTR_EX2_ENCHANT_OWN_ITEM_ONLY = 0x00002000, // 13
+        SPELL_ATTR_EX2_ALLOW_WHILE_INVISIBLE = 0x00004000, // 14
+        SPELL_ATTR_EX2_ENABLE_AFTER_PARRY = 0x00008000, // 15 Deprecated in patch 1.8 and moved to CasterAuraState
+        SPELL_ATTR_EX2_NO_ACTIVE_PETS = 0x00010000, // 16
+        SPELL_ATTR_EX2_DO_NOT_RESET_COMBAT_TIMERS = 0x00020000,
+        // 17 Don't reset timers for melee autoattacks (swings) or ranged autoattacks (autoshoots)
+        SPELL_ATTR_EX2_REQ_DEAD_PET = 0x00040000, // 18 Only Revive pet has it
+        SPELL_ATTR_EX2_ALLOW_WHILE_NOT_SHAPESHIFTED = 0x00080000,
+        // 19 Does not necessary need shapeshift (pre-3.x not have passive spells with this attribute)
+        SPELL_ATTR_EX2_INITIATE_COMBAT_POST_CAST = 0x00100000,
+        // 20 Client will send CMSG_ATTACK_SWING after SMSG_SPELL_GO
+        SPELL_ATTR_EX2_FAIL_ON_ALL_TARGETS_IMMUNE = 0x00200000,
+        // 21 For ice blocks, pala immunity buffs, priest absorb shields
+        SPELL_ATTR_EX2_NO_INITIAL_THREAT = 0x00400000, // 22
+        SPELL_ATTR_EX2_PROC_COOLDOWN_ON_FAILURE = 0x00800000, // 23
+        SPELL_ATTR_EX2_ITEM_CAST_WITH_OWNER_SKILL = 0x01000000, // 24 NYI
+        SPELL_ATTR_EX2_DONT_BLOCK_MANA_REGEN = 0x02000000, // 25
+        SPELL_ATTR_EX2_NO_SCHOOL_IMMUNITIES = 0x04000000, // 26
+        SPELL_ATTR_EX2_IGNORE_WEAPONSKILL = 0x08000000, // 27 NYI (only fishing has it)
+        SPELL_ATTR_EX2_NOT_AN_ACTION = 0x10000000, // 28
+        SPELL_ATTR_EX2_CANT_CRIT = 0x20000000, // 29
+        SPELL_ATTR_EX2_ACTIVE_THREAT = 0x40000000, // 30 Caster is put in combat for 5.5 seconds on cast at enemy unit
+        SPELL_ATTR_EX2_RETAIN_ITEM_CAST = 0x80000000 // 31 Food or Drink Buff (like Well Fed)
     };
 
     enum SpellAttributesEx3 {
-        SPELL_ATTR_EX3_PVP_ENABLING = 0x00000001,            // 0 Spell landed counts as hostile action against enemy even if it doesn't trigger combat state, propagates PvP flags
-        SPELL_ATTR_EX3_NO_PROC_EQUIP_REQUIREMENT = 0x00000002,            // 1
-        SPELL_ATTR_EX3_NO_CASTING_BAR_TEXT = 0x00000004,            // 2
-        SPELL_ATTR_EX3_COMPLETELY_BLOCKED = 0x00000008,            // 3 All effects prevented on block
-        SPELL_ATTR_EX3_NO_RES_TIMER = 0x00000010,            // 4 Corpse reclaim delay does not apply to accepting resurrection (only Rebirth has it)
-        SPELL_ATTR_EX3_NO_DURABILITY_LOSS = 0x00000020,            // 5
-        SPELL_ATTR_EX3_NO_AVOIDANCE = 0x00000040,            // 6 Persistent Area Aura not removed on leaving radius
-        SPELL_ATTR_EX3_DOT_STACKING_RULE = 0x00000080,            // 7 Create a separate (de)buff stack for each caster
-        SPELL_ATTR_EX3_ONLY_ON_PLAYER = 0x00000100,            // 8 Can target only players
-        SPELL_ATTR_EX3_NOT_A_PROC = 0x00000200,            // 9 Aura periodic trigger is not evaluated as triggered
-        SPELL_ATTR_EX3_REQUIRES_MAIN_HAND_WEAPON = 0x00000400,            // 10
-        SPELL_ATTR_EX3_ONLY_BATTLEGROUNDS = 0x00000800,            // 11
-        SPELL_ATTR_EX3_ONLY_ON_GHOSTS = 0x00001000,            // 12
-        SPELL_ATTR_EX3_HIDE_CHANNEL_BAR = 0x00002000,            // 13 Client will not display channeling bar
-        SPELL_ATTR_EX3_HIDE_IN_RAID_FILTER = 0x00004000,            // 14 Only "Honorless Target" has this flag
-        SPELL_ATTR_EX3_NORMAL_RANGED_ATTACK = 0x00008000,            // 15 Spells with this attribute are processed as ranged attacks in client
-        SPELL_ATTR_EX3_SUPPRESS_CASTER_PROCS = 0x00010000,            // 16
-        SPELL_ATTR_EX3_SUPPRESS_TARGET_PROCS = 0x00020000,            // 17
-        SPELL_ATTR_EX3_ALWAYS_HIT = 0x00040000,            // 18 Spell should always hit its target
-        SPELL_ATTR_EX3_INSTANT_TARGET_PROCS = 0x00080000,            // 19 Related to spell batching
-        SPELL_ATTR_EX3_ALLOW_AURA_WHILE_DEAD = 0x00100000,            // 20 Death persistent spells
-        SPELL_ATTR_EX3_ONLY_PROC_OUTDOORS = 0x00200000,            // 21
-        SPELL_ATTR_EX3_CASTING_CANCELS_AUTOREPEAT = 0x00400000,            // 22 NYI (only Shoot with Wand has it)
-        SPELL_ATTR_EX3_NO_DAMAGE_HISTORY = 0x00800000,            // 23 NYI
-        SPELL_ATTR_EX3_REQUIRES_OFFHAND_WEAPON = 0x01000000,            // 24
-        SPELL_ATTR_EX3_TREAT_AS_PERIODIC = 0x02000000,            // 25 Does not cause spell pushback
-        SPELL_ATTR_EX3_CAN_PROC_FROM_PROCS = 0x04000000,            // 26 Auras with this attribute can proc off procced spells (periodic triggers etc)
-        SPELL_ATTR_EX3_ONLY_PROC_ON_CASTER = 0x08000000,            // 27
-        SPELL_ATTR_EX3_IGNORE_CASTER_AND_TARGET_RESTRICTIONS = 0x10000000,   // 28 Skips all cast checks, moved from AttributesEx after 1.10 (100% correlation)
-        SPELL_ATTR_EX3_IGNORE_CASTER_MODIFIERS = 0x20000000,            // 29
-        SPELL_ATTR_EX3_DO_NOT_DISPLAY_RANGE = 0x40000000,            // 30
-        SPELL_ATTR_EX3_NOT_ON_AOE_IMMUNE = 0x80000000             // 31
+        SPELL_ATTR_EX3_PVP_ENABLING = 0x00000001,
+        // 0 Spell landed counts as hostile action against enemy even if it doesn't trigger combat state, propagates PvP flags
+        SPELL_ATTR_EX3_NO_PROC_EQUIP_REQUIREMENT = 0x00000002, // 1
+        SPELL_ATTR_EX3_NO_CASTING_BAR_TEXT = 0x00000004, // 2
+        SPELL_ATTR_EX3_COMPLETELY_BLOCKED = 0x00000008, // 3 All effects prevented on block
+        SPELL_ATTR_EX3_NO_RES_TIMER = 0x00000010,
+        // 4 Corpse reclaim delay does not apply to accepting resurrection (only Rebirth has it)
+        SPELL_ATTR_EX3_NO_DURABILITY_LOSS = 0x00000020, // 5
+        SPELL_ATTR_EX3_NO_AVOIDANCE = 0x00000040, // 6 Persistent Area Aura not removed on leaving radius
+        SPELL_ATTR_EX3_DOT_STACKING_RULE = 0x00000080, // 7 Create a separate (de)buff stack for each caster
+        SPELL_ATTR_EX3_ONLY_ON_PLAYER = 0x00000100, // 8 Can target only players
+        SPELL_ATTR_EX3_NOT_A_PROC = 0x00000200, // 9 Aura periodic trigger is not evaluated as triggered
+        SPELL_ATTR_EX3_REQUIRES_MAIN_HAND_WEAPON = 0x00000400, // 10
+        SPELL_ATTR_EX3_ONLY_BATTLEGROUNDS = 0x00000800, // 11
+        SPELL_ATTR_EX3_ONLY_ON_GHOSTS = 0x00001000, // 12
+        SPELL_ATTR_EX3_HIDE_CHANNEL_BAR = 0x00002000, // 13 Client will not display channeling bar
+        SPELL_ATTR_EX3_HIDE_IN_RAID_FILTER = 0x00004000, // 14 Only "Honorless Target" has this flag
+        SPELL_ATTR_EX3_NORMAL_RANGED_ATTACK = 0x00008000,
+        // 15 Spells with this attribute are processed as ranged attacks in client
+        SPELL_ATTR_EX3_SUPPRESS_CASTER_PROCS = 0x00010000, // 16
+        SPELL_ATTR_EX3_SUPPRESS_TARGET_PROCS = 0x00020000, // 17
+        SPELL_ATTR_EX3_ALWAYS_HIT = 0x00040000, // 18 Spell should always hit its target
+        SPELL_ATTR_EX3_INSTANT_TARGET_PROCS = 0x00080000, // 19 Related to spell batching
+        SPELL_ATTR_EX3_ALLOW_AURA_WHILE_DEAD = 0x00100000, // 20 Death persistent spells
+        SPELL_ATTR_EX3_ONLY_PROC_OUTDOORS = 0x00200000, // 21
+        SPELL_ATTR_EX3_CASTING_CANCELS_AUTOREPEAT = 0x00400000, // 22 NYI (only Shoot with Wand has it)
+        SPELL_ATTR_EX3_NO_DAMAGE_HISTORY = 0x00800000, // 23 NYI
+        SPELL_ATTR_EX3_REQUIRES_OFFHAND_WEAPON = 0x01000000, // 24
+        SPELL_ATTR_EX3_TREAT_AS_PERIODIC = 0x02000000, // 25 Does not cause spell pushback
+        SPELL_ATTR_EX3_CAN_PROC_FROM_PROCS = 0x04000000,
+        // 26 Auras with this attribute can proc off procced spells (periodic triggers etc)
+        SPELL_ATTR_EX3_ONLY_PROC_ON_CASTER = 0x08000000, // 27
+        SPELL_ATTR_EX3_IGNORE_CASTER_AND_TARGET_RESTRICTIONS = 0x10000000,
+        // 28 Skips all cast checks, moved from AttributesEx after 1.10 (100% correlation)
+        SPELL_ATTR_EX3_IGNORE_CASTER_MODIFIERS = 0x20000000, // 29
+        SPELL_ATTR_EX3_DO_NOT_DISPLAY_RANGE = 0x40000000, // 30
+        SPELL_ATTR_EX3_NOT_ON_AOE_IMMUNE = 0x80000000 // 31
     };
 
     enum SpellAttributesEx4 {
-        SPELL_ATTR_EX4_IGNORE_RESISTANCES = 0x00000001,            // 0 From TC 3.3.5, but not present in 1.12 native DBCs. Add it with spell_mod to prevent a spell from being resisted.
-        SPELL_ATTR_EX4_CLASS_TRIGGER_ONLY_ON_TARGET = 0x00000002,            // 1
-        SPELL_ATTR_EX4_AURA_EXPIRES_OFFLINE = 0x00000004,            // 2 Aura continues to expire while player is offline
-        SPELL_ATTR_EX4_NO_HELPFUL_THREAT = 0x00000008,            // 3
-        SPELL_ATTR_EX4_NO_HARMFUL_THREAT = 0x00000010,            // 4
-        SPELL_ATTR_EX4_ALLOW_CLIENT_TARGETING = 0x00000020,            // 5 NYI
-        SPELL_ATTR_EX4_CANNOT_BE_STOLEN = 0x00000040,            // 6 Unused
-        SPELL_ATTR_EX4_CAN_CAST_WHILE_CASTING = 0x00000080,            // 7 NYI (does not seem to work client side either)
-        SPELL_ATTR_EX4_IGNORE_DAMAGE_TAKEN_MODIFIERS = 0x00000100,            // 8
-        SPELL_ATTR_EX4_COMBAT_FEEDBACK_WHEN_USABLE = 0x00000200,            // 9 Initially disabled / Trigger activate from event (Execute, Riposte, Deep Freeze...)
+        SPELL_ATTR_EX4_IGNORE_RESISTANCES = 0x00000001,
+        // 0 From TC 3.3.5, but not present in 1.12 native DBCs. Add it with spell_mod to prevent a spell from being resisted.
+        SPELL_ATTR_EX4_CLASS_TRIGGER_ONLY_ON_TARGET = 0x00000002, // 1
+        SPELL_ATTR_EX4_AURA_EXPIRES_OFFLINE = 0x00000004, // 2 Aura continues to expire while player is offline
+        SPELL_ATTR_EX4_NO_HELPFUL_THREAT = 0x00000008, // 3
+        SPELL_ATTR_EX4_NO_HARMFUL_THREAT = 0x00000010, // 4
+        SPELL_ATTR_EX4_ALLOW_CLIENT_TARGETING = 0x00000020, // 5 NYI
+        SPELL_ATTR_EX4_CANNOT_BE_STOLEN = 0x00000040, // 6 Unused
+        SPELL_ATTR_EX4_CAN_CAST_WHILE_CASTING = 0x00000080, // 7 NYI (does not seem to work client side either)
+        SPELL_ATTR_EX4_IGNORE_DAMAGE_TAKEN_MODIFIERS = 0x00000100, // 8
+        SPELL_ATTR_EX4_COMBAT_FEEDBACK_WHEN_USABLE = 0x00000200,
+        // 9 Initially disabled / Trigger activate from event (Execute, Riposte, Deep Freeze...)
     };
 
-// Custom flags assigned in the db
+    // Custom flags assigned in the db
     enum SpellAttributesCustom {
         SPELL_CUSTOM_NONE = 0x000,
-        SPELL_CUSTOM_ALLOW_STACK_BETWEEN_CASTER = 0x001,     // For example 'Siphon Soul' must be able to stack between the warlocks on a mob
+        SPELL_CUSTOM_ALLOW_STACK_BETWEEN_CASTER = 0x001,
+        // For example 'Siphon Soul' must be able to stack between the warlocks on a mob
         SPELL_CUSTOM_NEGATIVE = 0x002,
         SPELL_CUSTOM_POSITIVE = 0x004,
         SPELL_CUSTOM_CHAN_NO_DIST_LIMIT = 0x008,
-        SPELL_CUSTOM_FIXED_DAMAGE = 0x010,     // Not affected by damage/healing done bonus
+        SPELL_CUSTOM_FIXED_DAMAGE = 0x010, // Not affected by damage/healing done bonus
         SPELL_CUSTOM_IGNORE_ARMOR = 0x020,
-        SPELL_CUSTOM_BEHIND_TARGET = 0x040,     // For spells that require the caster to be behind the target
-        SPELL_CUSTOM_FACE_TARGET = 0x080,     // For spells that require the target to be in front of the caster
-        SPELL_CUSTOM_SINGLE_TARGET_AURA = 0x100,     // Aura applied by spell can only be on 1 target at a time
-        SPELL_CUSTOM_AURA_APPLY_BREAKS_STEALTH = 0x200,     // Stealth is removed when this aura is applied
-        SPELL_CUSTOM_NOT_REMOVED_ON_EVADE = 0x400,     // Aura persists after creature evades
-        SPELL_CUSTOM_SEND_CHANNEL_VISUAL = 0x800,     // Will periodically send the channeling spell visual kit
-        SPELL_CUSTOM_SEPARATE_AURA_PER_CASTER = 0x1000,    // Each caster has his own aura slot, instead of replacing others
+        SPELL_CUSTOM_BEHIND_TARGET = 0x040, // For spells that require the caster to be behind the target
+        SPELL_CUSTOM_FACE_TARGET = 0x080, // For spells that require the target to be in front of the caster
+        SPELL_CUSTOM_SINGLE_TARGET_AURA = 0x100, // Aura applied by spell can only be on 1 target at a time
+        SPELL_CUSTOM_AURA_APPLY_BREAKS_STEALTH = 0x200, // Stealth is removed when this aura is applied
+        SPELL_CUSTOM_NOT_REMOVED_ON_EVADE = 0x400, // Aura persists after creature evades
+        SPELL_CUSTOM_SEND_CHANNEL_VISUAL = 0x800, // Will periodically send the channeling spell visual kit
+        SPELL_CUSTOM_SEPARATE_AURA_PER_CASTER = 0x1000,
+        // Each caster has his own aura slot, instead of replacing others
     };
+
     enum SpellTarget {
         TARGET_NONE = 1,
         TARGET_UNIT_CASTER = 2,
@@ -752,26 +910,25 @@ namespace game {
     };
 
     // SpellEntry::Targets
-    enum SpellCastTargetFlags
-    {
-        TARGET_FLAG_SELF            = 0x00000000,
-        TARGET_FLAG_UNUSED1         = 0x00000001,               // not used in any spells (can be set dynamically)
-        TARGET_FLAG_UNIT            = 0x00000002,               // pguid
-        TARGET_FLAG_UNUSED2         = 0x00000004,               // not used in any spells (can be set dynamically)
-        TARGET_FLAG_UNUSED3         = 0x00000008,               // not used in any spells (can be set dynamically)
-        TARGET_FLAG_ITEM            = 0x00000010,               // pguid
-        TARGET_FLAG_SOURCE_LOCATION = 0x00000020,               // 3 float
-        TARGET_FLAG_DEST_LOCATION   = 0x00000040,               // 3 float
-        TARGET_FLAG_OBJECT_UNK      = 0x00000080,               // used in 7 spells only
-        TARGET_FLAG_UNIT_UNK        = 0x00000100,               // looks like self target (389 spells)
-        TARGET_FLAG_PVP_CORPSE      = 0x00000200,               // pguid
-        TARGET_FLAG_UNIT_CORPSE     = 0x00000400,               // 10 spells (gathering professions)
-        TARGET_FLAG_OBJECT          = 0x00000800,               // pguid, 0 spells
-        TARGET_FLAG_TRADE_ITEM      = 0x00001000,               // pguid, 0 spells
-        TARGET_FLAG_STRING          = 0x00002000,               // string, 0 spells
-        TARGET_FLAG_UNK1            = 0x00004000,               // 199 spells, opening object/lock
-        TARGET_FLAG_CORPSE          = 0x00008000,               // pguid, resurrection spells
-        TARGET_FLAG_UNK2            = 0x00010000,               // pguid, not used in any spells (can be set dynamically)
+    enum SpellCastTargetFlags {
+        TARGET_FLAG_SELF = 0x00000000,
+        TARGET_FLAG_UNUSED1 = 0x00000001, // not used in any spells (can be set dynamically)
+        TARGET_FLAG_UNIT = 0x00000002, // pguid
+        TARGET_FLAG_UNUSED2 = 0x00000004, // not used in any spells (can be set dynamically)
+        TARGET_FLAG_UNUSED3 = 0x00000008, // not used in any spells (can be set dynamically)
+        TARGET_FLAG_ITEM = 0x00000010, // pguid
+        TARGET_FLAG_SOURCE_LOCATION = 0x00000020, // 3 float
+        TARGET_FLAG_DEST_LOCATION = 0x00000040, // 3 float
+        TARGET_FLAG_OBJECT_UNK = 0x00000080, // used in 7 spells only
+        TARGET_FLAG_UNIT_UNK = 0x00000100, // looks like self target (389 spells)
+        TARGET_FLAG_PVP_CORPSE = 0x00000200, // pguid
+        TARGET_FLAG_UNIT_CORPSE = 0x00000400, // 10 spells (gathering professions)
+        TARGET_FLAG_OBJECT = 0x00000800, // pguid, 0 spells
+        TARGET_FLAG_TRADE_ITEM = 0x00001000, // pguid, 0 spells
+        TARGET_FLAG_STRING = 0x00002000, // string, 0 spells
+        TARGET_FLAG_UNK1 = 0x00004000, // 199 spells, opening object/lock
+        TARGET_FLAG_CORPSE = 0x00008000, // pguid, resurrection spells
+        TARGET_FLAG_UNK2 = 0x00010000, // pguid, not used in any spells (can be set dynamically)
     };
 
     enum Events : std::uint32_t {
@@ -1188,7 +1345,7 @@ namespace game {
         SPELLMOD_CRIT_DAMAGE_BONUS = 15,
         SPELLMOD_RESIST_MISS_CHANCE = 16,
         SPELLMOD_JUMP_TARGETS = 17,
-        SPELLMOD_CHANCE_OF_SUCCESS = 18,                   // Only used with SPELL_AURA_ADD_FLAT_MODIFIER and affects proc spells
+        SPELLMOD_CHANCE_OF_SUCCESS = 18, // Only used with SPELL_AURA_ADD_FLAT_MODIFIER and affects proc spells
         SPELLMOD_ACTIVATION_TIME = 19,
         SPELLMOD_EFFECT_PAST_FIRST = 20,
         SPELLMOD_CASTING_TIME_OLD = 21,
@@ -1218,139 +1375,146 @@ namespace game {
 
     class CDuration {
     public:
-        char m_DurationIndex;                //0x0000
-        __int32 m_Duration;                    //0x0004
-        char unknown[4];                    //0x0008
-        __int32 m_Duration2;                    //0x000C
+        char m_DurationIndex; //0x0000
+        __int32 m_Duration; //0x0004
+        char unknown[4]; //0x0008
+        __int32 m_Duration2; //0x000C
 
         __int32 GetDuration() {
             return ((m_Duration / 1000) / 60);
         }
-    };//Size=0x0010
+    }; //Size=0x0010
 
     class CSpellCastingTime {
     public:
-        __int32 m_CastingTimeIndex;                //0x0000
-        __int32 m_CastTime;                    //0x0004
-        char m_0x0008[4];                    //0x0008
-        __int32 m_CastTime2;                    //0x000C
-
-    };//Size=0x0010
+        __int32 m_CastingTimeIndex; //0x0000
+        __int32 m_CastTime; //0x0004
+        char m_0x0008[4]; //0x0008
+        __int32 m_CastTime2; //0x000C
+    }; //Size=0x0010
 
     enum UnitFlags {
         UNIT_FLAG_NONE = 0x00000000,
-        UNIT_FLAG_UNK_0 = 0x00000001,           // Movement checks disabled, likely paired with loss of client control packet.
-        UNIT_FLAG_SPAWNING = 0x00000002,           // not attackable
+        UNIT_FLAG_UNK_0 = 0x00000001, // Movement checks disabled, likely paired with loss of client control packet.
+        UNIT_FLAG_SPAWNING = 0x00000002, // not attackable
         UNIT_FLAG_DISABLE_MOVE = 0x00000004,
-        UNIT_FLAG_PLAYER_CONTROLLED = 0x00000008,           // players, pets, totems, guardians, companions, charms, any units associated with players
-        UNIT_FLAG_PET_RENAME = 0x00000010,           // Old pet rename: moved to UNIT_FIELD_BYTES_2,2 in TBC+
-        UNIT_FLAG_PET_ABANDON = 0x00000020,           // Old pet abandon: moved to UNIT_FIELD_BYTES_2,2 in TBC+
+        UNIT_FLAG_PLAYER_CONTROLLED = 0x00000008,
+        // players, pets, totems, guardians, companions, charms, any units associated with players
+        UNIT_FLAG_PET_RENAME = 0x00000010, // Old pet rename: moved to UNIT_FIELD_BYTES_2,2 in TBC+
+        UNIT_FLAG_PET_ABANDON = 0x00000020, // Old pet abandon: moved to UNIT_FIELD_BYTES_2,2 in TBC+
         UNIT_FLAG_UNK_6 = 0x00000040,
-        UNIT_FLAG_IMMUNE_TO_PLAYER = 0x00000100,           // Target is immune to players
-        UNIT_FLAG_IMMUNE_TO_NPC = 0x00000200,           // Target is immune to creatures
+        UNIT_FLAG_IMMUNE_TO_PLAYER = 0x00000100, // Target is immune to players
+        UNIT_FLAG_IMMUNE_TO_NPC = 0x00000200, // Target is immune to creatures
         UNIT_FLAG_PVP = 0x00001000,
-        UNIT_FLAG_SILENCED = 0x00002000,           // silenced, 2.1.1
+        UNIT_FLAG_SILENCED = 0x00002000, // silenced, 2.1.1
         UNIT_FLAG_UNK_14 = 0x00004000,
         UNIT_FLAG_USE_SWIM_ANIMATION = 0x00008000,
-        UNIT_FLAG_NON_ATTACKABLE_2 = 0x00010000,           // removes attackable icon, if on yourself, cannot assist self but can cast TARGET_UNIT_CASTER spells - added by SPELL_AURA_MOD_UNATTACKABLE
+        UNIT_FLAG_NON_ATTACKABLE_2 = 0x00010000,
+        // removes attackable icon, if on yourself, cannot assist self but can cast TARGET_UNIT_CASTER spells - added by SPELL_AURA_MOD_UNATTACKABLE
         UNIT_FLAG_PACIFIED = 0x00020000,
-        UNIT_FLAG_STUNNED = 0x00040000,           // Unit is a subject to stun, turn and strafe movement disabled
+        UNIT_FLAG_STUNNED = 0x00040000, // Unit is a subject to stun, turn and strafe movement disabled
         UNIT_FLAG_IN_COMBAT = 0x00080000,
-        UNIT_FLAG_TAXI_FLIGHT = 0x00100000,           // Unit is on taxi, paired with a duplicate loss of client control packet (likely a legacy serverside hack). Disables any spellcasts not allowed in taxi flight client-side.
-        UNIT_FLAG_CONFUSED = 0x00400000,           // Unit is a subject to confused movement, movement checks disabled, paired with loss of client control packet.
-        UNIT_FLAG_FLEEING = 0x00800000,           // Unit is a subject to fleeing movement, movement checks disabled, paired with loss of client control packet.
-        UNIT_FLAG_POSSESSED = 0x01000000,           // Unit is under remote control by another unit, movement checks disabled, paired with loss of client control packet. New master is allowed to use melee attack and can't select this unit via mouse in the world (as if it was own character).
+        UNIT_FLAG_TAXI_FLIGHT = 0x00100000,
+        // Unit is on taxi, paired with a duplicate loss of client control packet (likely a legacy serverside hack). Disables any spellcasts not allowed in taxi flight client-side.
+        UNIT_FLAG_CONFUSED = 0x00400000,
+        // Unit is a subject to confused movement, movement checks disabled, paired with loss of client control packet.
+        UNIT_FLAG_FLEEING = 0x00800000,
+        // Unit is a subject to fleeing movement, movement checks disabled, paired with loss of client control packet.
+        UNIT_FLAG_POSSESSED = 0x01000000,
+        // Unit is under remote control by another unit, movement checks disabled, paired with loss of client control packet. New master is allowed to use melee attack and can't select this unit via mouse in the world (as if it was own character).
         UNIT_FLAG_NOT_SELECTABLE = 0x02000000,
         UNIT_FLAG_SKINNABLE = 0x04000000,
-        UNIT_FLAG_AURAS_VISIBLE = 0x08000000,           // magic detect
+        UNIT_FLAG_AURAS_VISIBLE = 0x08000000, // magic detect
         UNIT_FLAG_SHEATHE = 0x40000000,
-        UNIT_FLAG_IMMUNE = 0x80000000,           // Immune to damage
+        UNIT_FLAG_IMMUNE = 0x80000000, // Immune to damage
 
         // [-ZERO] TBC enumerations [?]
-        UNIT_FLAG_NOT_ATTACKABLE_1 = 0x00000080,           // ?? (UNIT_FLAG_PLAYER_CONTROLLED | UNIT_FLAG_NOT_ATTACKABLE_1) is NON_PVP_ATTACKABLE
-        UNIT_FLAG_LOOTING = 0x00000400,           // loot animation
-        UNIT_FLAG_PET_IN_COMBAT = 0x00000800,           // in combat?, 2.0.8
-        UNIT_FLAG_DISARMED = 0x00200000,           // disable melee spells casting..., "Required melee weapon" added to melee spells tooltip.
+        UNIT_FLAG_NOT_ATTACKABLE_1 = 0x00000080,
+        // ?? (UNIT_FLAG_PLAYER_CONTROLLED | UNIT_FLAG_NOT_ATTACKABLE_1) is NON_PVP_ATTACKABLE
+        UNIT_FLAG_LOOTING = 0x00000400, // loot animation
+        UNIT_FLAG_PET_IN_COMBAT = 0x00000800, // in combat?, 2.0.8
+        UNIT_FLAG_DISARMED = 0x00200000,
+        // disable melee spells casting..., "Required melee weapon" added to melee spells tooltip.
 
         UNIT_FLAG_UNK_28 = 0x10000000,
-        UNIT_FLAG_UNK_29 = 0x20000000,           // used in Feing Death spell
+        UNIT_FLAG_UNK_29 = 0x20000000, // used in Feing Death spell
     };
 
     typedef struct UnitFields {
-        uint64_t charm;                          // Size:2
-        uint64_t summon;                         // Size:2
-        uint64_t charmedBy;                      // Size:2
-        uint64_t summonedBy;                     // Size:2
-        uint64_t createdBy;                      // Size:2
-        uint64_t target;                         // Size:2
-        uint64_t persuaded;                      // Size:2
-        uint64_t channelObject;                  // Size:2
-        uint32_t health;                         // Size:1
-        uint32_t power1;                         // Size:1
-        uint32_t power2;                         // Size:1
-        uint32_t power3;                         // Size:1
-        uint32_t power4;                         // Size:1
-        uint32_t power5;                         // Size:1
-        uint32_t maxHealth;                      // Size:1
-        uint32_t maxPower1;                      // Size:1
-        uint32_t maxPower2;                      // Size:1
-        uint32_t maxPower3;                      // Size:1
-        uint32_t maxPower4;                      // Size:1
-        uint32_t maxPower5;                      // Size:1
-        uint32_t level;                          // Size:1
-        uint32_t factionTemplate;                // Size:1
-        uint32_t bytes0;                         // Size:1
-        uint32_t virtualItemDisplay[3];          // Size:3
-        uint32_t virtualItemInfo[6];             // Size:6
-        uint32_t flags;                          // Size:1
-        uint32_t aura[48];                       // Size:48
-        uint32_t auraFlags[6];                   // Size:6
-        uint8_t auraLevels[48];                  // Size:48
-        uint8_t auraApplications[48];            // Size:48
-        uint32_t auraState;                      // Size:1
-        uint32_t baseAttackTime;                 // Size:1
-        uint32_t offhandAttackTime;              // Size:1
-        uint32_t rangedAttackTime;               // Size:1
-        float boundingRadius;                    // Size:1
-        float combatReach;                       // Size:1
-        uint32_t displayId;                      // Size:1
-        uint32_t nativeDisplayId;                // Size:1
-        uint32_t mountDisplayId;                 // Size:1
-        float minDamage;                         // Size:1
-        float maxDamage;                         // Size:1
-        float minOffhandDamage;                  // Size:1
-        float maxOffhandDamage;                  // Size:1
-        uint32_t bytes1;                         // Size:1
-        uint32_t petNumber;                      // Size:1
-        uint32_t petNameTimestamp;               // Size:1
-        uint32_t petExperience;                  // Size:1
-        uint32_t petNextLevelExp;                // Size:1
-        uint32_t dynamicFlags;                   // Size:1
-        uint32_t channelSpell;                   // Size:1
-        float modCastSpeed;                      // Size:1 (Float in 1.12+)
-        uint32_t createdBySpell;                 // Size:1
-        uint32_t npcFlags;                       // Size:1
-        uint32_t npcEmoteState;                  // Size:1
-        uint32_t trainingPoints;                 // Size:1
-        uint32_t stat0;                          // Size:1
-        uint32_t stat1;                          // Size:1
-        uint32_t stat2;                          // Size:1
-        uint32_t stat3;                          // Size:1
-        uint32_t stat4;                          // Size:1
-        uint32_t resistances[7];                 // Size:7
-        uint32_t baseMana;                       // Size:1
-        uint32_t baseHealth;                     // Size:1
-        uint32_t bytes2;                         // Size:1
-        uint32_t attackPower;                    // Size:1
-        uint32_t attackPowerMods;                // Size:1
-        float attackPowerMultiplier;             // Size:1
-        uint32_t rangedAttackPower;              // Size:1
-        uint32_t rangedAttackPowerMods;          // Size:1
-        float rangedAttackPowerMultiplier;       // Size:1
-        float minRangedDamage;                   // Size:1
-        float maxRangedDamage;                   // Size:1
-        float powerCostModifier[7];              // Size:7
-        float powerCostMultiplier[7];            // Size:7
+        uint64_t charm; // Size:2
+        uint64_t summon; // Size:2
+        uint64_t charmedBy; // Size:2
+        uint64_t summonedBy; // Size:2
+        uint64_t createdBy; // Size:2
+        uint64_t target; // Size:2
+        uint64_t persuaded; // Size:2
+        uint64_t channelObject; // Size:2
+        uint32_t health; // Size:1
+        uint32_t power1; // Size:1
+        uint32_t power2; // Size:1
+        uint32_t power3; // Size:1
+        uint32_t power4; // Size:1
+        uint32_t power5; // Size:1
+        uint32_t maxHealth; // Size:1
+        uint32_t maxPower1; // Size:1
+        uint32_t maxPower2; // Size:1
+        uint32_t maxPower3; // Size:1
+        uint32_t maxPower4; // Size:1
+        uint32_t maxPower5; // Size:1
+        uint32_t level; // Size:1
+        uint32_t factionTemplate; // Size:1
+        uint32_t bytes0; // Size:1
+        uint32_t virtualItemDisplay[3]; // Size:3
+        uint32_t virtualItemInfo[6]; // Size:6
+        uint32_t flags; // Size:1
+        uint32_t aura[48]; // Size:48
+        uint32_t auraFlags[6]; // Size:6
+        uint8_t auraLevels[48]; // Size:48
+        uint8_t auraApplications[48]; // Size:48
+        uint32_t auraState; // Size:1
+        uint32_t baseAttackTime; // Size:1
+        uint32_t offhandAttackTime; // Size:1
+        uint32_t rangedAttackTime; // Size:1
+        float boundingRadius; // Size:1
+        float combatReach; // Size:1
+        uint32_t displayId; // Size:1
+        uint32_t nativeDisplayId; // Size:1
+        uint32_t mountDisplayId; // Size:1
+        float minDamage; // Size:1
+        float maxDamage; // Size:1
+        float minOffhandDamage; // Size:1
+        float maxOffhandDamage; // Size:1
+        uint32_t bytes1; // Size:1
+        uint32_t petNumber; // Size:1
+        uint32_t petNameTimestamp; // Size:1
+        uint32_t petExperience; // Size:1
+        uint32_t petNextLevelExp; // Size:1
+        uint32_t dynamicFlags; // Size:1
+        uint32_t channelSpell; // Size:1
+        float modCastSpeed; // Size:1 (Float in 1.12+)
+        uint32_t createdBySpell; // Size:1
+        uint32_t npcFlags; // Size:1
+        uint32_t npcEmoteState; // Size:1
+        uint32_t trainingPoints; // Size:1
+        uint32_t stat0; // Size:1
+        uint32_t stat1; // Size:1
+        uint32_t stat2; // Size:1
+        uint32_t stat3; // Size:1
+        uint32_t stat4; // Size:1
+        uint32_t resistances[7]; // Size:7
+        uint32_t baseMana; // Size:1
+        uint32_t baseHealth; // Size:1
+        uint32_t bytes2; // Size:1
+        uint32_t attackPower; // Size:1
+        uint32_t attackPowerMods; // Size:1
+        float attackPowerMultiplier; // Size:1
+        uint32_t rangedAttackPower; // Size:1
+        uint32_t rangedAttackPowerMods; // Size:1
+        float rangedAttackPowerMultiplier; // Size:1
+        float minRangedDamage; // Size:1
+        float maxRangedDamage; // Size:1
+        float powerCostModifier[7]; // Size:7
+        float powerCostMultiplier[7]; // Size:7
     } UnitFields;
 
     uintptr_t *GetObjectPtr(std::uint64_t guid);
@@ -1366,6 +1530,10 @@ namespace game {
     const SpellRec *GetSpellInfo(uint32_t spellId);
 
     uint32_t GetItemId(CGItem_C *item);
+
+    uintptr_t *GetObjectVFTable(uintptr_t *unit);
+
+    uintptr_t *GetPlayerInventoryPtr(uintptr_t *playerUnit);
 
     const char *GetSpellName(uint32_t spellId);
 

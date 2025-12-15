@@ -103,9 +103,17 @@ namespace game {
     }
 
     uint32_t GetItemId(CGItem_C *item) {
-        uintptr_t *itemInfo = item->m_itemInfo;
+        return item->object.m_obj->m_entryID;
+    }
 
-        return *reinterpret_cast<uint32_t *>(itemInfo + 3); // item id offset
+    uintptr_t *GetObjectVFTable(uintptr_t *unit) {
+        // Dereference once to get vtable pointer
+        return *reinterpret_cast<uintptr_t **>(unit);
+    }
+
+    uintptr_t *GetPlayerInventoryPtr(uintptr_t *playerUnit) {
+        // Access inventory at byte offset 0x1d38
+        return playerUnit + 0x74E;
     }
 
     const char *GetSpellName(uint32_t spellId) {

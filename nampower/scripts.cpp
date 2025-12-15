@@ -11,22 +11,6 @@
 #include <cstring>
 
 namespace Nampower {
-    auto const lua_error = reinterpret_cast<lua_errorT>(Offsets::lua_error);
-
-    auto const lua_gettop = reinterpret_cast<lua_gettopT>(Offsets::lua_gettop);
-    auto const lua_isstring = reinterpret_cast<lua_isstringT>(Offsets::lua_isstring);
-    auto const lua_isnumber = reinterpret_cast<lua_isnumberT>(Offsets::lua_isnumber);
-
-    auto const lua_tostring = reinterpret_cast<lua_tostringT>(Offsets::lua_tostring);
-    auto const lua_tonumber = reinterpret_cast<lua_tonumberT>(Offsets::lua_tonumber);
-
-    // Export Lua functions for dbc_fields.hpp templates
-    lua_pushnumberT lua_pushnumber = reinterpret_cast<lua_pushnumberT>(Offsets::lua_pushnumber);
-    lua_pushstringT lua_pushstring = reinterpret_cast<lua_pushstringT>(Offsets::lua_pushstring);
-    lua_pushnilT lua_pushnil = reinterpret_cast<lua_pushnilT>(Offsets::lua_pushnil);
-    lua_newtableT lua_newtable = reinterpret_cast<lua_newtableT>(Offsets::lua_newtable);
-    lua_settableT lua_settable = reinterpret_cast<lua_settableT>(Offsets::lua_settable);
-
     bool gScriptQueued;
     int gScriptPriority = 1;
     char *queuedScript;
@@ -112,14 +96,7 @@ namespace Nampower {
                     target = defaultTarget;
                 }
 
-                uint64_t targetGUID;
-                if (strncmp(target, "0x", 2) == 0 || strncmp(target, "0X", 2) == 0) {
-                    // already a guid
-                    targetGUID = std::stoull(target, nullptr, 16);
-                } else {
-                    auto const getGUIDFromName = reinterpret_cast<GetGUIDFromNameT>(Offsets::GetGUIDFromName);
-                    targetGUID = getGUIDFromName(target);
-                }
+                uint64_t targetGUID = GetUnitGuidFromString(target);
 
                 auto playerUnit = game::GetObjectPtr(game::ClntObjMgrGetActivePlayerGuid());
 
@@ -462,9 +439,6 @@ namespace Nampower {
 
         uint32_t itemId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
 
-        // Load item if not cached
-        LoadItem(itemId);
-
         // Get from cache
         game::ItemStats_C *item = GetItemStats(itemId);
         if (!item) {
@@ -549,9 +523,6 @@ namespace Nampower {
 
         uint32_t itemId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
         const char *fieldName = lua_tostring(luaState, 2);
-
-        // Load item if not cached
-        LoadItem(itemId);
 
         // Get from cache
         game::ItemStats_C *item = GetItemStats(itemId);
@@ -753,16 +724,7 @@ namespace Nampower {
         }
 
         const char *unitToken = lua_tostring(luaState, 1);
-        uint64_t guid;
-
-        // Check if it's a GUID string (starts with "0x" or "0X")
-        if (strncmp(unitToken, "0x", 2) == 0 || strncmp(unitToken, "0X", 2) == 0) {
-            guid = std::stoull(unitToken, nullptr, 16);
-        } else {
-            // Get GUID from unit token
-            auto const getGUIDFromName = reinterpret_cast<GetGUIDFromNameT>(Offsets::GetGUIDFromName);
-            guid = getGUIDFromName(unitToken);
-        }
+        uint64_t guid = GetUnitGuidFromString(unitToken);
 
         if (guid == 0) {
             lua_pushnil(luaState);
@@ -808,16 +770,7 @@ namespace Nampower {
         const char *unitToken = lua_tostring(luaState, 1);
         const char *fieldName = lua_tostring(luaState, 2);
 
-        uint64_t guid;
-
-        // Check if it's a GUID string (starts with "0x" or "0X")
-        if (strncmp(unitToken, "0x", 2) == 0 || strncmp(unitToken, "0X", 2) == 0) {
-            guid = std::stoull(unitToken, nullptr, 16);
-        } else {
-            // Get GUID from unit token
-            auto const getGUIDFromName = reinterpret_cast<GetGUIDFromNameT>(Offsets::GetGUIDFromName);
-            guid = getGUIDFromName(unitToken);
-        }
+        uint64_t guid = GetUnitGuidFromString(unitToken);
 
         if (guid == 0) {
             lua_pushnil(luaState);

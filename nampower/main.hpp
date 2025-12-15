@@ -30,8 +30,8 @@ namespace Nampower {
     constexpr uint32_t BUFFER_DECREASE_FREQUENCY = 10000; // time in ms between changes to lower buffer
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 15;
-    constexpr uint32_t PATCH_VERSION = 1;
+    constexpr uint32_t MINOR_VERSION = 16;
+    constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
@@ -65,6 +65,7 @@ namespace Nampower {
     extern CastQueue gCastHistory;
 
     extern bool gScriptQueued;
+    extern bool gQueuesProcessed;
 
     using RangeCheckSelectedT = bool (__fastcall *)(uintptr_t *playerUnit, const game::SpellRec *,
                                                     std::uint64_t targetGuid, char ignoreErrors);
@@ -129,6 +130,7 @@ namespace Nampower {
     using lua_tonumberT = double (__fastcall *)(uintptr_t *, int);
     using lua_pushnumberT = void (__fastcall *)(uintptr_t *, double);
     using lua_pushstringT = void (__fastcall *)(uintptr_t *, char *);
+    using lua_pushbooleanT = void (__fastcall *)(uintptr_t *, bool);
     using lua_pcallT = int (__fastcall *)(uintptr_t *, int nArgs, int nResults, int errFunction);
     using lua_pushnilT = void (__fastcall *)(uintptr_t *);
     using lua_errorT = void (__cdecl *)(uintptr_t *, const char *);
@@ -147,6 +149,11 @@ namespace Nampower {
     using CGUnit_C_ClearCastingSpellT = void (__thiscall *)(uintptr_t *unit, uint32_t param_1, int param_2,
                                                             int param_3);
     using CGUnit_C_ClearSpellEffectT = void (__thiscall *)(uintptr_t *unit, uint32_t param_1, int param_2);
+    using CGUnit_C_GetEquippedItemAtSlotT = game::CGItem * (__thiscall *)(uintptr_t *unit, uint32_t slot);
+    using CGBag_C_GetItemAtSlotT = game::CGItem_C * (__thiscall *)(uintptr_t *bag, uint32_t slot);
+    using CGUnit_C_GetBagT = uintptr_t * (__thiscall *)(uintptr_t *unit);
+    using CanInspectUnitT = bool (__fastcall *)(uintptr_t *unit);
+    using GetContainerGuidT = uint64_t (__fastcall *)(int32_t bagIndex);
 
     using GetBuffByIndexT = uintptr_t *(__fastcall *)(int index);
 
