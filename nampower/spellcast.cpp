@@ -222,6 +222,7 @@ namespace Nampower {
         }
 
         gCastData.castEndMs = castTime ? currentTime + castTime + bufferMs : 0;
+        gCastData.castSpellId = castTime ? spell->Id : 0;
         gCastData.bufferMs = bufferMs;
 
         // check if we can lower buffers
@@ -310,7 +311,7 @@ namespace Nampower {
         params->item = item;
         params->guid = guid;
 
-        params->gcDCategory = gcDCategory;
+        params->gcdCategory = gcDCategory;
         params->castTimeMs = castTimeMs;
         params->castStartTimeMs = castStartTimeMs;
         params->castType = castType;
@@ -740,6 +741,7 @@ namespace Nampower {
                 return false;
             } else {
                 gCastData.castEndMs = 0;
+                gCastData.castSpellId = 0;
             }
 
             // is there a Gcd?

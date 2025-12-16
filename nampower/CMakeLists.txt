@@ -22,8 +22,14 @@ set(SOURCE_FILES
         spellchannel.cpp
         spellevents.hpp
         spellevents.cpp
-        scripts.hpp
-        scripts.cpp
+        misc_scripts.hpp
+        misc_scripts.cpp
+        spell_scripts.hpp
+        spell_scripts.cpp
+        cooldown_scripts.hpp
+        cooldown_scripts.cpp
+        item_scripts.hpp
+        item_scripts.cpp
         items.hpp
         items.cpp
         dbc_fields.hpp

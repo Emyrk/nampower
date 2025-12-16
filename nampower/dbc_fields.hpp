@@ -56,7 +56,7 @@ namespace Nampower {
     // Initialize field maps (call once before using field lookups)
     void InitializeFieldMaps();
 
-    // Forward declarations for Lua functions (defined in offsets.hpp/scripts.cpp)
+    // Forward declarations for Lua functions (defined in offsets.hpp/misc_scripts.cpp/spell_scripts.cpp)
     using lua_pushnumberT = void (__fastcall *)(uintptr_t *, double);
     using lua_pushstringT = void (__fastcall *)(uintptr_t *, char *);
     using lua_newtableT = void (__fastcall *)(uintptr_t *);

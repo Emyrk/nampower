@@ -33,10 +33,14 @@
 #include "main.hpp"
 #include "spellevents.hpp"
 #include "spellcast.hpp"
-#include "scripts.hpp"
+#include "misc_scripts.hpp"
+#include "spell_scripts.hpp"
 #include "spellchannel.hpp"
 #include "helper.hpp"
 #include "items.hpp"
+#include "item_scripts.hpp"
+#include "cooldown_scripts.hpp"
+#include "item_scripts.hpp"
 #include "auras.hpp"
 
 #include <cstdint>
@@ -166,7 +170,7 @@ namespace Nampower {
 
     uintptr_t *GetLuaStatePtr() {
         typedef uintptr_t *(__fastcall *GETCONTEXT)(void);
-        static auto p_GetContext = reinterpret_cast<GETCONTEXT>(0x7040D0);
+        static auto p_GetContext = reinterpret_cast<GETCONTEXT>(Offsets::lua_state_ptr);
         return p_GetContext();
     }
 
@@ -316,6 +320,7 @@ namespace Nampower {
     void ResetCastFlags() {
         // don't reset delayEndMs
         gCastData.castEndMs = 0;
+        gCastData.castSpellId = 0;
         gCastData.gcdEndMs = 0;
         ResetChannelingFlags();
     }
@@ -1305,19 +1310,30 @@ namespace Nampower {
 
         // 2.16 additions
         char findPlayerItemSlot[] = "FindPlayerItemSlot";
-        RegisterLuaFunction(findPlayerItemSlot, reinterpret_cast<uintptr_t *>(FindPlayerItemSlot));
+        RegisterLuaFunction(findPlayerItemSlot, reinterpret_cast<uintptr_t *>(Script_FindPlayerItemSlot));
 
         char getEquippedItems[] = "GetEquippedItems";
-        RegisterLuaFunction(getEquippedItems, reinterpret_cast<uintptr_t *>(GetEquippedItems));
+        RegisterLuaFunction(getEquippedItems, reinterpret_cast<uintptr_t *>(Script_GetEquippedItems));
 
         char getEquippedItem[] = "GetEquippedItem";
-        RegisterLuaFunction(getEquippedItem, reinterpret_cast<uintptr_t *>(GetEquippedItem));
+        RegisterLuaFunction(getEquippedItem, reinterpret_cast<uintptr_t *>(Script_GetEquippedItem));
 
         char getBagItems[] = "GetBagItems";
-        RegisterLuaFunction(getBagItems, reinterpret_cast<uintptr_t *>(GetBagItems));
+        RegisterLuaFunction(getBagItems, reinterpret_cast<uintptr_t *>(Script_GetBagItems));
 
         char getBagItem[] = "GetBagItem";
-        RegisterLuaFunction(getBagItem, reinterpret_cast<uintptr_t *>(GetBagItem));
+        RegisterLuaFunction(getBagItem, reinterpret_cast<uintptr_t *>(Script_GetBagItem));
+
+        // 2.17 additions
+        char GetCastInfo[] = "GetCastInfo";
+        RegisterLuaFunction(GetCastInfo, reinterpret_cast<uintptr_t *>(Script_GetCastInfo));
+
+        char getSpellIdCooldown[] = "GetSpellIdCooldown";
+        RegisterLuaFunction(getSpellIdCooldown, reinterpret_cast<uintptr_t *>(Script_GetSpellIdCooldown));
+
+        char getItemIdCooldown[] = "GetItemIdCooldown";
+        RegisterLuaFunction(getItemIdCooldown, reinterpret_cast<uintptr_t *>(Script_GetItemIdCooldown));
+
     }
 
     std::once_flag loadFlag;

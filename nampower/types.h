@@ -79,7 +79,7 @@ struct CastSpellParams {
     /* *********************** */
 
     /* Additional data */
-    uint32_t gcDCategory; // comes from spell->StartRecoveryCategory
+    uint32_t gcdCategory; // comes from spell->StartRecoveryCategory
     uint32_t castTimeMs; // spell's cast time in ms
     uint32_t castStartTimeMs; // event time in ms
     CastType castType;
@@ -109,6 +109,8 @@ struct CastData {
     uint32_t attemptedCastTimeMs; // this ignoring on swing spells as they are independent
 
     uint32_t bufferMs;
+
+    uint32_t castSpellId; // spell id for the active cast (when castEndMs is active)
 
     bool onSwingQueued;
     bool pendingOnSwingCast;

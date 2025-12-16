@@ -57,4 +57,41 @@ namespace Nampower {
     float GetNameplateDistance();
 
     void SetNameplateDistance(float distance);
+
+    // Lua table helper functions
+    inline void PushTableValue(uintptr_t *luaState, char *key, uint32_t value) {
+        lua_pushstring(luaState, key);
+        lua_pushnumber(luaState, value);
+        lua_settable(luaState, -3);
+    }
+
+    inline void PushTableValue(uintptr_t *luaState, char *key, uint64_t value) {
+        lua_pushstring(luaState, key);
+        lua_pushnumber(luaState, static_cast<double>(value));
+        lua_settable(luaState, -3);
+    }
+
+    inline void PushTableValue(uintptr_t *luaState, char *key, double value) {
+        lua_pushstring(luaState, key);
+        lua_pushnumber(luaState, value);
+        lua_settable(luaState, -3);
+    }
+
+    inline void PushTableValue(uintptr_t *luaState, char *key, int32_t value) {
+        lua_pushstring(luaState, key);
+        lua_pushnumber(luaState, value);
+        lua_settable(luaState, -3);
+    }
+
+    inline void PushTableValue(uintptr_t *luaState, char *key, char *value) {
+        lua_pushstring(luaState, key);
+        lua_pushstring(luaState, value);
+        lua_settable(luaState, -3);
+    }
+
+    inline void PushTableValue(uintptr_t *luaState, char *key, const char *value) {
+        lua_pushstring(luaState, key);
+        lua_pushstring(luaState, const_cast<char *>(value));
+        lua_settable(luaState, -3);
+    }
 }

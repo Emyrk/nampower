@@ -16,9 +16,4 @@ namespace Nampower {
     bool ProcessItemExport();  // Process one item export per frame, returns true if still exporting
     game::ItemStats_C* GetItemStats(uint32_t itemId);
 
-    uint32_t FindPlayerItemSlot(uintptr_t *luaState);
-    uint32_t GetEquippedItems(uintptr_t *luaState);
-    uint32_t GetEquippedItem(uintptr_t *luaState);
-    uint32_t GetBagItem(uintptr_t *luaState);
-    uint32_t GetBagItems(uintptr_t *luaState);
 }

@@ -1,0 +1,15 @@
+//
+// Item-related Lua script bindings
+//
+
+#pragma once
+
+#include "main.hpp"
+
+namespace Nampower {
+    uint32_t Script_FindPlayerItemSlot(uintptr_t *luaState);
+    uint32_t Script_GetEquippedItems(uintptr_t *luaState);
+    uint32_t Script_GetEquippedItem(uintptr_t *luaState);
+    uint32_t Script_GetBagItem(uintptr_t *luaState);
+    uint32_t Script_GetBagItems(uintptr_t *luaState);
+}

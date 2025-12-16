@@ -1,5 +1,3 @@
-<b> Checkout the list button above this to easily navigate the readme </b>
-
 # v2.0.0 Changes
 
 Added spell queuing, automatic retry on error, and quickcasting with lots of customization.  
@@ -9,7 +7,7 @@ Some other key improvements over Namreeb's version:
 - Using high_resolution_clock instead of GetTickCount for faster timing on when to start casts
 - Fix broken cast animations when casting spells back to back
 
-### Compatability with other addons
+## Compatability with other addons
 Queuing can cause issues with some addons that also manage spell casting.  Quickheal/Healbot/Quiver do not work well with queuing.  Check github issues for other potential incompatibilities.
 If someone rewrites these addons to use guids from superwow that would likely fix all issues.
 
@@ -27,7 +25,7 @@ If all else fails can turn off queuing for a specific macro like so depending on
 /run SetCVar("NP_QueueCastTimeSpells", "1")
 /run SetCVar("NP_QueueInstantSpells", "1")
 ```
-### Installation
+## Installation
 Grab the latest nampower.dll from https://gitea.com/avitasia/nampower/releases and place in the same directory as WoW.exe.  You can also get the helper addon mentioned below and place that in Interface/Addons.
 
 <b>You will need launch the game with a launcher like Vanillafixes https://github.com/hannesmann/vanillafixes or Unitxp https://github.com/allfoxwy/UnitXP_SP3</b> to actually have the nampower dll get loaded.
@@ -38,12 +36,12 @@ If you would prefer to compile yourself you will need to get:
 
 CMakeLists.txt is currently looking for boost at `set(BOOST_INCLUDEDIR "C:/software/boost_1_80_0")` and hadesmem at `set(HADESMEM_ROOT "C:/software/hadesmem-v142-Debug-Win32")`.  Edit as needed.
 
-### Configuration
+## Configuration
 
-#### Configure with addon
+### Configure with addon
 There is a companion addon to make it easy to check/change the settings in game.  You can download it here - [nampowersettings](https://gitea.com/avitasia/nampowersettings).
 
-#### Manual Configuration
+### Manual Configuration
 The following CVars control the behavior of the spell queuing system:
 
 You can access CVars in game with `/run DEFAULT_CHAT_FRAME:AddMessage(GetCVar("CVarName"))`<br>
@@ -99,9 +97,9 @@ SET NP_TargetingQueueWindowMs "1000"
 
 - `NP_NameplateDistance` - The distance in yards to display nameplates.  Defaults to whatever was set by the game or vanilla tweaks.
 
-### Existing Lua Changes
+## Existing Lua Changes
 
-#### Improved flexibility on spellbook Lua functions
+### Improved flexibility on spellbook Lua functions
 These built-in Lua spell APIs now accept any of the following as their first argument: 1) spell slot (original behavior), 2) spell name, or 3) `spellId:number`. 
 
 Name and spellId lookups are cached internally and validated against current spellbook contents before reuse so you don't have to worry about performance implications or issues after respec'ing.
@@ -118,711 +116,35 @@ Examples:
 /run print(GetSpellTexture("Fireball")) -- name search
 ```
 
-### Custom Lua Functions
 
-### Spell/Item/Unit information
+## Custom Lua Functions
 
-#### GetItemStats(itemId)
-Returns a Lua table containing all fields for the item's `ItemStats` record (including localized `displayName` and `description`). Returns nil if the item cannot be found or loaded.
+For complete documentation of all custom Lua functions added by Nampower, see **[SCRIPTS.md](SCRIPTS.md)**.
 
-Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
+This includes functions for:
+- Spell/item/unit information (GetItemStats, GetSpellRec, GetUnitData, etc.)
+- Spell casting and queuing (QueueSpellByName, QueueScript, etc.)
+- Cast information (GetCastInfo, GetCurrentCastingInfo)
+- Cooldown tracking (GetSpellIdCooldown, GetItemIdCooldown)
+- Spell lookups and utilities
 
-#### GetItemStatsField(itemId, fieldName)
-Fast lookup for a single field on an item. Returns the requested field value; returns nil if the item is not found; raises a Lua error if the field name is invalid.
+## Custom Events
 
-Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
+For complete documentation of all custom events added by Nampower, see **[EVENTS.md](EVENTS.md)**.
 
-**Examples:**
-```lua
--- Get item name
-local name = GetItemStatsField(19019, "displayName")
-print(name) -- "Thunderfury, Blessed Blade of the Windseeker"
+Available events:
+- SPELL_QUEUE_EVENT - Fires when spells are queued or dequeued
+- SPELL_CAST_EVENT - Fires when you cast a spell with additional information
+- SPELL_DAMAGE_EVENT_SELF and SPELL_DAMAGE_EVENT_OTHER - Combat damage events
+- Buff/Debuff Events (BUFF_ADDED_SELF, BUFF_REMOVED_SELF, etc.)
+- UNIT_DIED - Fires when a unit dies
 
--- Get item level
-local ilvl = GetItemStatsField(22589, "itemLevel")
-print("Atiesh item level: " .. ilvl) -- 90
-
--- Get item quality (0=Poor, 1=Common, 2=Uncommon, 3=Rare, 4=Epic, 5=Legendary)
-local quality = GetItemStatsField(19019, "quality")
-print("Quality: " .. quality) -- 5 (Legendary)
-
--- Get item delay (weapon speed in milliseconds)
-local delay = GetItemStatsField(19019, "delay")
-print("Weapon speed: " .. (delay / 1000) .. " seconds") -- 1.9 seconds
-```
-
-#### FindPlayerItemSlot(itemId or itemName)
-Searches the player's inventory for an item by ID or name and returns its location.
-
-**Parameters:**
-- `itemId` (number): The item ID to search for, OR
-- `itemName` (string): The item name to search for (case-insensitive)
-
-**Returns:**
-- 1st param (number or nil): Bag index where the item was found
-  - `nil` = Equipped item (check 2nd param for equipment slot 0-18)
-  - `0` = Inventory pack
-  - `1-4` = Regular bags
-  - `-1` = Bank item slots
-  - `5-9` = Bank bags
-  - `-2` = Keyring
-- 2nd param (number): Slot number within the bag (or equipment slot if 1st param is nil)
-  - For equipped items: 0-18 (equipment slots are 0-indexed)
-  - For bag 0, -1, -2: Returns **relative slot position** (1-indexed, 0-based within bag + 1)
-    - Bag 0: slots 1-16 (corresponding to absolute slots 23-38)
-    - Bag -1: slots 1-24 (corresponding to absolute bank slots 39-62)
-    - Bag -2: slots 1-16 (corresponding to absolute keyring slots 81-96)
-  - For regular bags (1-4) and bank bags (5-9): Returns 1-indexed slot within the bag
-- Returns `nil,nil` if the item is not found
-
-**Examples:**
-```lua
--- Find Thunderfury in player inventory
-local bag, slot = FindPlayerItemSlot(19019)
-if bag then
-    print("Found in bag " .. bag .. " slot " .. slot)
-    if bag == -1 or (bag >= 5 and bag <= 9) then
-        print("Item is in bank")
-    end
-elseif bag == nil and slot then
-    print("Item is equipped in slot " .. slot)
-else
-    print("Item not found")
-end
-
--- Find item by name (uses cache for performance after first lookup)
-local bag, slot = FindPlayerItemSlot("Hearthstone")
-if slot then
-    if bag == nil then
-        print("Hearthstone is equipped in slot " .. slot)
-    elseif bag == 0 then
-        print("Hearthstone is in inventory pack slot " .. slot .. " (1-16)")
-    elseif bag == -1 then
-        print("Hearthstone is in bank slot " .. slot .. " (1-24)")
-    elseif bag == -2 then
-        print("Hearthstone is in keyring slot " .. slot .. " (1-16)")
-    else
-        print("Hearthstone is in bag " .. bag .. " slot " .. slot)
-    end
-end
-```
-
-#### GetEquippedItems(unitToken)
-Returns a table containing all equipped items for the specified unit.
-
-**Parameters:**
-- `unitToken` (string): Can be a standard unit token ("player", "target", "pet", etc.) or a GUID string
-
-**Returns:**
-- A Lua table with equipment slot indices as keys (0-18) and item info tables as values
-- Returns nil if the unit cannot be found or inspected
-
-For the player, item info includes:
-- `itemId`: The item's ID
-- `stackCount`: Number of items in the stack
-- `duration`: Item duration in milliseconds
-- `spellCharges`: Table of spell charges (indices 1-5)
-- `flags`: Item flags
-- `permanentEnchantId`: Permanent enchantment ID
-- `tempEnchantId`: Temporary enchantment ID
-- `tempEnchantmentTimeLeftMs`: Time remaining on temp enchant in milliseconds
-- `tempEnchantmentCharges`: Charges remaining on temp enchant
-- `durability`: Current durability
-- `maxDurability`: Maximum durability
-
-For other inspected units (limited data):
-- `itemId`: The item's ID
-- `permanentEnchantId`: Permanent enchantment ID
-- `tempEnchantId`: Temporary enchantment ID
-
-**Examples:**
-```lua
--- Get all equipped items for your target
-local items = GetEquippedItems("target")
-if items then
-    for slot, itemInfo in pairs(items) do
-        print("Slot " .. slot .. ": Item ID " .. itemInfo.itemId)
-        if itemInfo.permanentEnchantId and itemInfo.permanentEnchantId > 0 then
-            print("  Permanent enchant: " .. itemInfo.permanentEnchantId)
-        end
-    end
-end
-
--- Check player's weapon durability
-local items = GetEquippedItems("player")
-if items and items[15] then -- slot 15 is main hand
-    local weapon = items[15]
-    print("Weapon durability: " .. weapon.durability .. "/" .. weapon.maxDurability)
-end
-```
-
-#### GetEquippedItem(unitToken, slot)
-Returns item info for a specific equipment slot on the specified unit.
-
-**Parameters:**
-- `unitToken` (string): Can be a standard unit token ("player", "target", "pet", etc.) or a GUID string
-- `slot` (number): Equipment slot number (0-18)
-  - 1 = Head, 2 = Neck, 3 = Shoulder, 4 = Shirt, 5 = Chest
-  - 6 = Waist, 7 = Legs, 8 = Feet, 9 = Wrist, 10 = Hands
-  - 11 = Finger 1, 12 = Finger 2, 13 = Trinket 1, 14 = Trinket 2
-  - 15 = Back, 16 = Main Hand, 17 = Off Hand, 18 = Ranged, 19 = Tabard
-
-**Returns:**
-- A Lua table containing the item info (same fields as GetEquippedItems)
-- Returns nil if the slot is empty, unit cannot be found, or unit cannot be inspected
-
-**Examples:**
-```lua
--- Check target's main hand weapon
-local weapon = GetEquippedItem("target", 16)
-if weapon then
-    print("Target has weapon: " .. weapon.itemId)
-else
-    print("Target has no main hand weapon")
-end
-
--- Check your own helmet
-local helm = GetEquippedItem("player", 1)
-if helm and helm.durability then
-    local durabilityPercent = (helm.durability / helm.maxDurability) * 100
-    print("Helmet durability: " .. string.format("%.1f%%", durabilityPercent))
-end
-```
-
-#### GetBagItems()
-Returns a nested table containing all items in all bags (including bank if open).
-
-**Returns:**
-- A Lua table with bag indices as keys and bag contents as values
-- Each bag contains **1-indexed** slot numbers as keys and item info tables as values
-- Bag indices:
-  - 0 = Inventory pack (16 slots)
-  - 1-4 = Regular bags
-  - -1 = Bank item slots (24 slots, only if bank is open)
-  - 5-9 = Bank bags (only if bank is open)
-  - -2 = Keyring
-
-Item info table fields (same as GetEquippedItems for player):
-- `itemId`, `stackCount`, `duration`, `spellCharges`, `flags`
-- `permanentEnchantId`, `tempEnchantId`, `tempEnchantmentTimeLeftMs`, `tempEnchantmentCharges`
-- `durability`, `maxDurability`
-
-**Examples:**
-```lua
--- Get all items in all bags
-local allItems = GetBagItems()
-for bagIndex, bagContents in pairs(allItems) do
-    print("Bag " .. bagIndex .. ":")
-    for slot, itemInfo in pairs(bagContents) do
-        print("  Slot " .. slot .. ": " .. itemInfo.itemId .. " (x" .. itemInfo.stackCount .. ")")
-    end
-end
-
--- Count total number of a specific item
-local function CountItem(itemId)
-    local total = 0
-    local allItems = GetBagItems()
-    for bagIndex, bagContents in pairs(allItems) do
-        for slot, itemInfo in pairs(bagContents) do
-            if itemInfo.itemId == itemId then
-                total = total + itemInfo.stackCount
-            end
-        end
-    end
-    return total
-end
-
-local soulShardCount = CountItem(6265)
-print("Soul Shards: " .. soulShardCount)
-```
-
-#### GetBagItem(bagIndex, slot)
-Returns item info for a specific slot in a specific bag.
-
-**Parameters:**
-- `bagIndex` (number): The bag to check
-  - 0 = Inventory pack
-  - 1-4 = Regular bags
-  - -1 = Bank item slots or buyback slots
-  - 5-9 = Bank bags (requires bank to be open)
-  - -2 = Keyring
-- `slot` (number): **1-indexed** slot number within the bag
-
-**Returns:**
-- A Lua table containing the item info (same fields as GetBagItems)
-- Returns nil if the slot is empty or invalid
-
-**Examples:**
-```lua
--- Get item in first slot of first bag
-local item = GetBagItem(1, 1)
-if item then
-    print("Item ID: " .. item.itemId)
-    print("Stack count: " .. item.stackCount)
-else
-    print("Slot is empty")
-end
-
--- Check durability of an item in inventory pack
-local item = GetBagItem(0, 1)
-if item and item.durability then
-    print("Durability: " .. item.durability .. "/" .. item.maxDurability)
-end
-
--- Check if a specific bank slot has an item (bank must be open)
-local bankItem = GetBagItem(-1, 1)
-if bankItem then
-    print("Bank slot 1 contains: " .. bankItem.itemId)
-end
-```
-
-#### GetSpellRec(spellId)
-Returns a Lua table containing all fields for the spell's `SpellRec` record (including localized `name` and `rank`). Returns nil if the spell cannot be found.
-
-Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
-
-#### GetSpellRecField(spellId, fieldName)
-Fast lookup for a single field on a spell. Returns the requested field value; returns nil if the spell is not found; raises a Lua error if the field name is invalid.
-
-Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
-
-**Examples:**
-```lua
--- Get spell name
-local name = GetSpellRecField(116, "name")
-print(name) -- "Frostbolt"
-
--- Get spell rank
-local rank = GetSpellRecField(116, "rank")
-print(rank) -- "Rank 1"
-
--- Get spell cast time in milliseconds
-local castTime = GetSpellRecField(133, "castTime")
-print("Fireball cast time: " .. (castTime / 1000) .. " seconds") -- 3.5 seconds
-
--- Get spell range (max range in yards * 10, so divide by 10)
-local maxRange = GetSpellRecField(116, "rangeMax")
-print("Frostbolt max range: " .. (maxRange / 10) .. " yards") -- 30 yards
-
--- Get spell mana cost
-local manaCost = GetSpellRecField(116, "manaCost")
-print("Mana cost: " .. manaCost)
-
--- Get spell school (0=Physical, 1=Holy, 2=Fire, 3=Nature, 4=Frost, 5=Shadow, 6=Arcane)
-local school = GetSpellRecField(116, "school")
-print("School: " .. school) -- 4 (Frost)
-
--- Get spell icon ID
-local spellIconID = GetSpellRecField(116, "spellIconID")
-print("Icon ID: " .. spellIconID)
-```
-
-#### GetSpellModifiers(spellId, modifierType)
-Returns the current spell modifiers applied to a spell for the player. This includes buffs, talents, and other effects that modify spell behavior.
-
-**Parameters:**
-- `spellId` (number): The spell ID to check
-- `modifierType` (number): The type of modifier to check (see list below)
-
-**Returns:**
-- 1st param (number): Flat modification value (e.g., +50 damage)
-- 2nd param (number): Percent modification value (e.g., 10 for +10%)
-- 3rd param (number): Return value from the function (whether there was any percent or flat modifier)
-
-**Modifier Types:**
-- 0 = DAMAGE
-- 1 = DURATION
-- 2 = THREAT
-- 3 = ATTACK_POWER
-- 4 = CHARGES
-- 5 = RANGE
-- 6 = RADIUS
-- 7 = CRITICAL_CHANCE
-- 8 = ALL_EFFECTS
-- 9 = NOT_LOSE_CASTING_TIME
-- 10 = CASTING_TIME
-- 11 = COOLDOWN
-- 12 = SPEED
-- 14 = COST
-- 15 = CRIT_DAMAGE_BONUS
-- 16 = RESIST_MISS_CHANCE
-- 17 = JUMP_TARGETS
-- 18 = CHANCE_OF_SUCCESS
-- 19 = ACTIVATION_TIME
-- 20 = EFFECT_PAST_FIRST
-- 21 = CASTING_TIME_OLD
-- 22 = DOT
-- 23 = HASTE
-- 24 = SPELL_BONUS_DAMAGE
-- 27 = MULTIPLE_VALUE
-- 28 = RESIST_DISPEL_CHANCE
-
-**Example:**
-```lua
--- Check damage modifiers on Frostbolt (spell ID 116)
-local flatMod, percentMod, ret = GetSpellModifiers(116, 0)
-print("Flat damage bonus: " .. flatMod)
-print("Percent damage bonus: " .. percentMod .. "%")
-```
-
-#### GetUnitData(unitToken)
-Returns a Lua table containing all unit fields for the specified unit. This provides access to low-level unit data like health, mana, stats, auras, resistances, and more.
-
-**Parameters:**
-- `unitToken` (string): Can be a standard unit token ("player", "target", "pet", "mouseover", etc.) or a GUID string (e.g., "0xF5300000000000A5")
-
-**Returns:**
-- A Lua table containing all unit fields, or nil if the unit cannot be found
-
-Full field name lists are in [`UNIT_FIELDS.md`](UNIT_FIELDS.md).
-
-**Example:**
-```lua
--- Get all unit data for your current target
-local data = GetUnitData("target")
-if data then
-    print("Target health: " .. data.health .. "/" .. data.maxHealth)
-    print("Target level: " .. data.level)
-    print("Target display ID: " .. data.displayId)
-end
-
--- Using a GUID
-local data = GetUnitData("0xF5300000000000A5")
-```
-
-#### GetUnitField(unitToken, fieldName)
-Fast lookup for a single field on a unit. More efficient than GetUnitData when you only need one specific field.
-
-**Parameters:**
-- `unitToken` (string): Can be a standard unit token ("player", "target", "pet", "mouseover", etc.) or a GUID string
-- `fieldName` (string): The name of the field to retrieve
-
-**Returns:**
-- The requested field value; returns nil if the unit is not found; raises a Lua error if the field name is invalid
-- For array fields (like "aura", "resistances"), returns a Lua table with numeric indices
-
-Full field name lists are in [`UNIT_FIELDS.md`](UNIT_FIELDS.md).
-
-**Examples:**
-```lua
--- Get target's current health
-local health = GetUnitField("target", "health")
-print("Target health: " .. health)
-
--- Get player's current mana (power1)
-local mana = GetUnitField("player", "power1")
-print("Player mana: " .. mana)
-
--- Get all auras on target (returns a table)
-local auras = GetUnitField("target", "aura")
-for i, auraId in ipairs(auras) do
-    print("Aura " .. i .. ": " .. auraId)
-end
-
--- Get all resistances (returns a table)
-local resistances = GetUnitField("player", "resistances")
--- resistances[1] = armor, [2] = holy, [3] = fire, [4] = nature, [5] = frost, [6] = shadow, [7] = arcane
-```
-
-#### QueueSpellByName(spellName)
-Will force queue a spell regardless of the appropriate queue window.  If no spell is currently being cast it will be cast immediately.
-For example can make a macro with 
-```
-/run QueueSpellByName("Frostbolt");QueueSpellByName("Frostbolt")
-```
-to cast 2 frostbolts in a row.  Currently, can only queue 1 GCD spell at a time and 5 non gcd spells.  This means you can't do 3 frostbolts in a row with one macro.
-
-#### CastSpellByNameNoQueue(spellName)
-Will force a spell cast to never queue even if your settings would normally queue.  Can be used to fix addons that don't work with queued spells.
-
-#### QueueScript(script, [priority])
-Queues any arbitrary script using the same logic as a regular spell using NP_SpellQueueWindowMs as the window.  If no spell is being cast and you are not on the gcd the script will be run immediately.
-
-Priority is optional and defaults to 1.  
-Priority 1 means the script will run before any other queued spells.
-Priority 2 means the script will run after any queued non gcd spells but before any queued normal spells.
-Priority 3 means the script will run after any type of queued spells.
-
-Convert slash commands from other addons like `/equip` to their function form `SlashCmdList.EQUIP` to use them inside QueueScript.
-
-For example, you can equip a libram before casting a queued heal using
-```
-/run QueueScript('SlashCmdList.EQUIP("Libram of +heal")')
-```
-
-#### IsSpellInRange(spellName, [target]) or IsSpellInRange(spellId, [target])
-Takes a spell name or spell id and an optional target.  Target can the usual UNIT tokens like "player", "target", "mouseover", etc or a unit guid.
-
-If using spell name it must be a spell you have in your spellbook.  If using spell id it can be any spell id.
-
-Returns 1 if the spell is in range, 0 if not in range, and -1 if the spell is not valid for this check (must be TARGET_UNIT_PET, TARGET_UNIT_TARGET_ENEMY, TARGET_UNIT_TARGET_ALLY, TARGET_UNIT_TARGET_ANY).
-This is because this uses the same underlying function as `IsActionInRange` which returns 1 for spells that are not single target which can be misleading.
-
-Examples:
-```
-/run local result=IsSpellInRange("Frostbolt"); if result == 1 then print("In range") else if result == 0 then print("Out of range") else print("Not single target") end
-```
-
-#### IsSpellUsable(spellName) or IsSpellUsable(spellId)
-Takes a spell name or spell id.  
-
-Usable does not equal castable.  This is most often used to check if a reactive spell is usable.
-
-If using spell name it must be a spell you have in your spellbook.  If using spell id it can be any spell id.
-
-Returns: 
-
-1st param: 1 if the spell is usable, 0 if not usable.
-2nd param: Always 0 if spell is not usable for a different reason other than mana.  1 if out of mana, 0 if not out of mana.
-
-Examples:
-```
-/run local result=IsSpellUsable("Frostbolt"); if result == 1 then print("Frostbolt usable") else print("Frostbolt not usable") end
-```
-
-#### GetCurrentCastingInfo()
-Returns:
-
-1st param: Casting spell id or 0
-2nd param: Visual spell id or 0.  This won't always get cleared after a spell finishes.
-3rd param: Auto repeating spell id or 0.
-4th param: 1 if casting spell with a cast time, 0 if not.
-5th param: 1 if channeling, 0 if not.
-6th param: 1 if on swing spell is pending, 0 if not.
-7th param: 1 if auto attacking, 0 if not.
-
-For normal spells these will be the same.  For some spells like auto-repeating and channeling spells only the visual spell id will be set.
-
-Examples:
-```
-/run local castId,visId,autoId,casting,channeling,onswing,autoattack=GetCurrentCastingInfo();print(castId);print(visId);print(autoId);print(casting);print(channeling);print(onswing);print(autoattack);
-```
-
-#### GetSpellIdForName(spellName)
-Returns:
-
-1st param: the max rank spell id for a spell name if it exists in your spellbook.  Returns 0 if the spell is not in your spellbook.
-
-Examples:
-```
-/run local spellId=GetSpellIdForName("Frostbolt");print(spellId)
-/run local spellId=GetSpellIdForName("Frostbolt(Rank 1)");print(spellId)
-```
-
-#### GetSpellNameAndRankForId(id)
-Returns:
-
-1st param: the spell name for a spell id
-2nd param: the spell rank for a spell id as a string such as "Rank 1"
-
-Examples:
-```
-/run local spellName,spellRank=GetSpellNameAndRankForId(116);print(spellName);print(spellRank)
-prints "Frostbolt" and "Rank 1"
-```
-
-#### GetSpellSlotTypeIdForName(spellName)
-Returns:
-
-1st param: the 1 indexed (lua calls expect this) spell slot number for a spell name if it exists in your spellbook.  Returns 0 if the spell is not in your spellbook.
-2nd param: the book type of the spell, either "spell", "pet" or "unknown".
-3rd param: the spell id of the spell.  Returns 0 if the spell is not in your spellbook.
-
-Examples:
-```
-/run local slot, bookType, spellId=GetSpellSlotTypeIdForName("Frostbolt");print(slot);print(bookType);print(spellId)
-```
-
-#### GetNampowerVersion()
-Returns the current version of Nampower split into major, minor and patch numbers.
-
-So if version was v2.8.6 it would return 2, 8, 6 as integers.
-
-Examples:
-```
-/run local major, minor, patch=GetNampowerVersion();print(major);print(minor);print(patch)
-```
-
-The previous version of this `GetSpellSlotAndTypeForName` was removed as it was returning a 0 indexed slot number which was confusing to use in lua.
-
-#### GetItemLevel(itemId)
-Returns the item level of an item.  Returns an error if the item id is invalid.
-
-Examples:
-```
-/run local itemLevel=GetItemLevel(22589);print(itemLevel)
-should print 90 for atiesh
-```
-
-#### ChannelStopCastingNextTick()
-Will stop channeling early on the next tick if you have queue channeling spells enabled and try to cast a spell before the next tick (didn't know how to cancel channels without casting another spell).  Uses your ChannelLatencyReductionPercentage to determine when to stop the channel.
-
-### Custom Events
-
-#### SPELL_QUEUE_EVENT
-I've added a new event you can register in game to get updates when spells are added and popped from the queue.
-
-The event is `SPELL_QUEUE_EVENT` and has 2 parameters:
-1.  int eventCode - see below
-2.  int spellId
-
-Possible Event codes:
-```
- ON_SWING_QUEUED = 0
- ON_SWING_QUEUE_POPPED = 1
- NORMAL_QUEUED = 2
- NORMAL_QUEUE_POPPED = 3
- NON_GCD_QUEUED = 4
- NON_GCD_QUEUE_POPPED = 5
-```
-
-Example from NampowerSettings:
-```
-local ON_SWING_QUEUED = 0
-local ON_SWING_QUEUE_POPPED = 1
-local NORMAL_QUEUED = 2
-local NORMAL_QUEUE_POPPED = 3
-local NON_GCD_QUEUED = 4
-local NON_GCD_QUEUE_POPPED = 5
-
-local function spellQueueEvent(eventCode, spellId)
-	if eventCode == NORMAL_QUEUED or eventCode == NON_GCD_QUEUED then
-		local _, _, texture = SpellInfo(spellId) -- superwow function
-		Nampower.queued_spell.texture:SetTexture(texture)
-		Nampower.queued_spell:Show()
-	elseif eventCode == NORMAL_QUEUE_POPPED or eventCode == NON_GCD_QUEUE_POPPED then
-		Nampower.queued_spell:Hide()
-	end
-end
-
-NampowerSettings:RegisterEvent("SPELL_QUEUE_EVENT", spellQueueEvent)
-```
-
-#### SPELL_CAST_EVENT
-Event you can register in game to get updates when you cast spells with some additional information.  This will only fire for spells you (and certain pets) initiated.
-
-The event is `SPELL_CAST_EVENT` and has 5 parameters:
-1.  int success - 1 if cast succeeded, 0 if failed
-2.  int spellId
-3.  int castType - see below
-4.  string targetGuid - guid string like "0xF5300000000000A5"
-5.  int itemId - the id of the item that triggered the spell, 0 if it wasn't triggered by an item
- 
-Possible Cast Types:
-```
-NORMAL=1
-NON_GCD=2
-ON_SWING=3
-CHANNEL=4
-TARGETING=5 (targeting is the term I used for spells with terrain targeting)
-TARGETING_NON_GCD=6
-```
-
-targetGuid will be "0x000000000" unless an explicit target is specified which currently only happens in 2 circumstances:
-- It was specified as the 2nd param of CastSpellByName (added by superwow)
-- Mouseover casts that use SpellTargetUnit to specify a target
-
-Example (uses ace RegisterEvent):
-```
-Cursive:RegisterEvent("SPELL_CAST_EVENT", function(success, spellId, castType, targetGuid, itemId)
-	print(success)
-	print(spellId)
-	print(castType)
-	print(targetGuid)
-	print(itemId)
-end);
-```
-
-####  SPELL_DAMAGE_EVENT_SELF and SPELL_DAMAGE_EVENT_OTHER
-New events you can register in game to get updates whenever spell damage occurs. SPELL_DAMAGE_EVENT_SELF will only trigger for damage you deal, while SPELL_DAMAGE_EVENT_OTHER will only trigger for damage dealt by others.
-
-Both of these events have the following parameters:
-1.  string targetGuid - guid string like "0xF5300000000000A5"
-2.  string casterGuid - guid string like "0xF5300000000000A5"
-3.  int spellId
-4.  int amount - the amount of damage dealt.  If the 4th value in effectAuraStr is 89 (SPELL_AURA_PERIODIC_DAMAGE_PERCENT) I believe this is the percentage of health lost.
-5.  string mitigationStr - comma separated string containing "aborb,block,resist" amounts
-6.  int hitInfo - see below but generally 0 unless the spell was a crit in which case it will be 2
-7.  int spellSchool - the damage school of the spell, see below
-8.  string effectAuraStr - comma separated string containing the three spell effect numbers and the aura type (usually means a Dot but not all Dots will have an aura type) if applicable.  So "effect1,effect2,effect3,auraType"
-
-Spell hit info enum: https://github.com/vmangos/core/blob/94f05231d4f1b160468744d4caa398cf8b337c48/src/game/Spells/SpellDefines.h#L109 
-
-Spell school enum:  https://github.com/vmangos/core/blob/94f05231d4f1b160468744d4caa398cf8b337c48/src/game/Spells/SpellDefines.h#L641
-
-Spell effect enum: https://github.com/vmangos/core/blob/94f05231d4f1b160468744d4caa398cf8b337c48/src/game/Spells/SpellDefines.h#L142
-
-Aura type enum: https://github.com/vmangos/core/blob/94f05231d4f1b160468744d4caa398cf8b337c48/src/game/Spells/SpellAuraDefines.h#L43
-
-Example (uses ace RegisterEvent):
-```
-Cursive:RegisterEvent("SPELL_DAMAGE_EVENT_SELF",
-    function(targetGuidStr,
-             casterGuidStr,
-             spellId,
-             amount,
-             mitigationStr,
-             hitInfo,
-             spellSchool,
-             effectAuraStr)
-        print(targetGuidStr .. " " .. casterGuidStr .. " " .. tostring(spellId) .. " " .. tostring(amount) .. " " .. tostring(spellSchool) .. " " .. mitigationStr .. " " .. hitInfo .. " " .. effectAuraStr)
-    end);
-```
-
-#### Buff/Debuff Events
-New events fire whenever a buff or debuff is added or removed on you or any other unit that the client tracks.
-
-Events:
-```
-BUFF_ADDED_SELF
-BUFF_REMOVED_SELF
-BUFF_ADDED_OTHER
-BUFF_REMOVED_OTHER
-DEBUFF_ADDED_SELF
-DEBUFF_REMOVED_SELF
-DEBUFF_ADDED_OTHER
-DEBUFF_REMOVED_OTHER
-```
-
-All eight events pass the same parameters:
-1.  string guid - unit guid like "0xF5300000000000A5"
-2.  int slot - 1-based Lua slot index for the buff/debuff (skips empty slots to match UnitBuff/UnitDebuff ordering)
-3.  int spellId
-4.  int stackCount - current stack count for the aura (1 for a new aura; 0 when fully removed)
-5.  int auraLevel - caster level for the aura from UnitFields.auraLevels (uint8 per slot, 48 entries)
-
-Buff stack gains also fire the appropriate *_ADDED_* events.
-
-Example:
-```
-local function onAuraEvent(eventName, guid, slot, spellId, stacks, auraLevel)
-    DEFAULT_CHAT_FRAME:AddMessage(string.format("[%s] %s slot=%d spell=%d stacks=%d level=%d", eventName, guid, slot, spellId, stacks, auraLevel))
-end
-
-for _, eventName in ipairs({"BUFF_ADDED_SELF", "BUFF_REMOVED_SELF", "DEBUFF_ADDED_OTHER", "DEBUFF_REMOVED_OTHER"}) do
-    frame:RegisterEvent(eventName, function(...) onAuraEvent(eventName, ...) end)
-end
-```
-
-#### UNIT_DIED
-Fires when a unit death is recorded in the combat log.
-
-Parameters:
-1.  string guid - guid of the unit that died
-
-Example:
-```
-frame:RegisterEvent("UNIT_DIED", function(guid)
-    DEFAULT_CHAT_FRAME:AddMessage("Unit died: " .. guid)
-end)
-```
-
-### Bug Reporting
+## Bug Reporting
 If you encounter any bugs please report them in the issues tab.  Please include the nampower_debug.txt file in the same directory as your WoW.exe to help me diagnose the issue.  If you are able to reproduce the bug please include the steps to reproduce it.  In a future version once bugs are ironed out I'll make logging optional.
 
-### FAQ & Additional Info
+## FAQ & Additional Info
 
-#### How does queuing work?
+### How does queuing work?
 Trying to cast a spell within the appropriate window before your current spell finishes will queue your new spell.  
 The spell will be cast as soon as possible after the current spell finishes.  
 
@@ -843,7 +165,7 @@ Additionally the queuing system will ignore spells with any of the following att
 - SpellEffects::SPELL_EFFECT_OPEN_LOCK
 - SpellEffects::SPELL_EFFECT_OPEN_LOCK_ITEM
 
-#### Why do I need a buffer?
+### Why do I need a buffer?
 From my own testing it seems that a buffer is required on spells to avoid "This ability isn't ready yet"/"Another action in progress" errors.  
 By that I mean that if you cast a 1.5 second cast time spell every 1.5 seconds without your ping changing you will occasionally get
 errors from the server and your cast will get rejected.  If you have 150ms+ ping this can be very punishing.
@@ -860,12 +182,12 @@ This means that if you try to cast 2 non gcd spells in the same server tick only
 To avoid this happening there is `NP_NonGcdBufferTimeMs` which is added after each non gcd spell.  There might be more to
 it than this as using the normal buffer of 55ms was still resulting in skipped casts for me.  I found 100ms to be a safe value.
 
-#### GCD Spells
+### GCD Spells
 Only one gcd spell can be queued at a time.  Pressing a new gcd spell will replace any existing queued gcd spell.
 
 As of 5/13/2025 the server tick is now subtracted from the gcd timer so a buffer is no longer required for spells with a cast time at least ~50ms less than their gcd :)
 
-#### Non GCD Spells
+### Non GCD Spells
 Non gcd spells have special handling.  You can queue up to 6 non gcd spells, 
 and they will execute in the order queued with `NP_NonGcdBufferTimeMs` delay after each of them to help avoid server rejection.  
 The non gcd queue always has priority over queued normal spells.  
@@ -877,11 +199,11 @@ One notable exception is shaman totems that were changed to have separate catego
 
 This can be useful if you want to change your mind about the non gcd spell you have queued.  For example, if you queue a mana potion and decide you want to use LIP instead last minute.
 
-#### On hit Spells
+### On hit Spells
 Only one on hit spell can be queued at a time.  Pressing a new on hit spell will replace any existing queued on hit spell.  
 On hit spells have no effect on the gcd or non gcd queues as they are handled entirely separately and are resolved by your auto attack.
 
-#### Channeling Spells
+### Channeling Spells
 Channeling spells function differently than other spells in that the channel in the client actually begins when you receive 
 the CHANNEL_START packet from the server.  This means the client channel is happening 1/2 your latency after the server channel 
 and that server tick delay is already included in the cast, whereas regular spells are the other way around (the client is ahead of the server).  
@@ -893,7 +215,7 @@ having a tick cut off.  This is controlled by the cvar `NP_ChannelLatencyReducti
 Channeling spells can be interrupted outside the channel queue window by casting any spell if `NP_InterruptChannelsOutsideQueueWindow` is set to 1.  During the channel queue window
 you cannot interrupt the channel unless you turn off `NP_QueueChannelingSpells`.  You can always move to interrupt a channel at any time.
 
-#### Spells on Cooldown
+### Spells on Cooldown
 If using `NP_QueueSpellsOnCooldown` when you attempt to cast a spell that has a remaining cooldown of less than `NP_CooldownQueueWindowMs` it will be queued instead of failing with 'Spell not Ready Yet'.
 There is a separate queue of size 1 for normal spells and non gcd spells.  If something is in either of these cooldown queues and you try to cast a spell that is not on cooldown it will be cast immediately and clear the appropriate cooldown queue.
 
@@ -901,7 +223,7 @@ For example, if Fire Blast is on cooldown and I queue it and then try to cast Fi
 
 This currently doesn't work for item cooldowns as they work differently, will add in the future.
 
-#### NP_OptimizeBufferUsingPacketTimings
+### NP_OptimizeBufferUsingPacketTimings
 This feature will attempt to optimize your buffer on individual casts using your latency and server packet timings.  
 After you begin to cast a spell you will get a cast result packet back from the server letting you know if the cast was successful.
 The time between when you send your start cast packet and when you receive the cast result packet consists of:

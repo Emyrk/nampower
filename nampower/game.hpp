@@ -149,6 +149,27 @@ namespace game {
         char targetString[128];
     };
 
+    struct SpellHistoryEntry {
+        uint32_t field0_0x0;
+        uint32_t field4_0x4;
+        uint32_t spellID;
+        uint32_t itemID;
+        uint32_t recoveryStart;
+        uint32_t recoveryTime;
+        uint32_t category;
+        uint32_t categoryRecoveryStart;
+        uint32_t categoryRecoveryTime;
+        bool onHold;
+        uint8_t padding1;
+        uint8_t padding2;
+        uint8_t padding3;
+        uint32_t startRecoveryCategory;
+        uint32_t startRecoveryTime;
+        uint32_t field_unknown1;
+        uint32_t field_unknown2;
+        uint32_t field_unknown3;
+    };
+
     struct CSpriteClickEvent {
         unsigned __int64 objectGUID;
         unsigned int button;

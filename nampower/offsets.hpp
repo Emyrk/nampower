@@ -82,6 +82,7 @@ enum class Offsets : std::uint32_t {
     SendCast = 0x6E54F0,
     CreateCastbar = 0x6E7A53,
     CheckAndReportSpellInhibitFlags = 0x006094f0,
+    SpellHistories = 0X00CECAEC,
 
     LockedTargetGuid = 0x00B4E2D8,
     OnSpriteRightClick = 0x00492820,
