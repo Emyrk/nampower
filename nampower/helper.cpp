@@ -26,6 +26,9 @@ namespace Nampower {
     lua_pushnilT lua_pushnil = reinterpret_cast<lua_pushnilT>(Offsets::lua_pushnil);
     lua_newtableT lua_newtable = reinterpret_cast<lua_newtableT>(Offsets::lua_newtable);
     lua_settableT lua_settable = reinterpret_cast<lua_settableT>(Offsets::lua_settable);
+    luaL_refT luaL_ref = reinterpret_cast<luaL_refT>(Offsets::luaL_ref);
+    lua_rawgetiT lua_rawgeti = reinterpret_cast<lua_rawgetiT>(Offsets::lua_rawgeti);
+    luaL_unrefT luaL_unref = reinterpret_cast<luaL_unrefT>(Offsets::luaL_unref);
 
 
     uint32_t GetSpellSlotAndTypeForName(const char *spellName, uint32_t *spellType) {

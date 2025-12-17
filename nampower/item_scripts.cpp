@@ -14,6 +14,13 @@ namespace Nampower {
     // Local cache for item name lookups
     static std::unordered_map<std::string, uint32_t> itemNameToIdCache;
 
+    // Reusable table references to reduce memory allocations
+    static int basicItemInfoTableRef = LUA_REFNIL;
+    static int itemInfoTableRef = LUA_REFNIL;
+    static int equippedItemsTableRef = LUA_REFNIL;
+    static int bagItemsTableRef = LUA_REFNIL;
+    static int bagTableRef = LUA_REFNIL;
+
     // String keys used when pushing item data to Lua
     static char itemIdKey[] = "itemId";
     static char permanentEnchantIdKey[] = "permanentEnchantId";
@@ -101,7 +108,12 @@ namespace Nampower {
             return;
         }
 
-        lua_newtable(luaState);
+        // Get or create reusable table
+        if (basicItemInfoTableRef == LUA_REFNIL) {
+            lua_newtable(luaState);
+            basicItemInfoTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
+        }
+        lua_rawgeti(luaState, LUA_REGISTRYINDEX, basicItemInfoTableRef);
 
         PushTableValue(luaState, itemIdKey, cgItem->itemId);
         PushTableValue(luaState, permanentEnchantIdKey, cgItem->permanentEnchantId);
@@ -117,7 +129,12 @@ namespace Nampower {
         auto itemId = game::GetItemId(item);
         auto itemFields = item->itemFields;
 
-        lua_newtable(luaState);
+        // Get or create reusable table
+        if (itemInfoTableRef == LUA_REFNIL) {
+            lua_newtable(luaState);
+            itemInfoTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
+        }
+        lua_rawgeti(luaState, LUA_REGISTRYINDEX, itemInfoTableRef);
 
         PushTableValue(luaState, itemIdKey, itemId);
         PushTableValue(luaState, stackCountKey, itemFields->stackCount);
@@ -298,7 +315,12 @@ namespace Nampower {
             return 0;
         }
 
-        lua_newtable(luaState);
+        // Get or create reusable table
+        if (equippedItemsTableRef == LUA_REFNIL) {
+            lua_newtable(luaState);
+            equippedItemsTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
+        }
+        lua_rawgeti(luaState, LUA_REGISTRYINDEX, equippedItemsTableRef);
 
         auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
         bool isPlayer = (guid == playerGuid);
@@ -536,14 +558,25 @@ namespace Nampower {
         auto const getContainerGuid = reinterpret_cast<GetContainerGuidT>(Offsets::GetContainerGuid);
         auto const getBagItem = reinterpret_cast<CGBag_C_GetItemAtSlotT>(Offsets::CGBag_C_GetItemAtSlot);
 
-        lua_newtable(luaState);
+        // Get or create reusable table
+        if (bagItemsTableRef == LUA_REFNIL) {
+            lua_newtable(luaState);
+            bagItemsTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
+        }
+        lua_rawgeti(luaState, LUA_REGISTRYINDEX, bagItemsTableRef);
 
         auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
         auto player = game::GetObjectPtr(playerGuid);
         auto inventory = game::GetPlayerInventoryPtr(player);
 
         lua_pushnumber(luaState, static_cast<double>(0));
-        lua_newtable(luaState);
+
+        // Get or create reusable bag table
+        if (bagTableRef == LUA_REFNIL) {
+            lua_newtable(luaState);
+            bagTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
+        }
+        lua_rawgeti(luaState, LUA_REGISTRYINDEX, bagTableRef);
 
         for (uint32_t slot = 23; slot <= 38; slot++) {
             auto item = getBagItem(inventory, slot);
@@ -565,7 +598,7 @@ namespace Nampower {
             if (!bagPtr) continue;
 
             lua_pushnumber(luaState, static_cast<double>(bagIndex));
-            lua_newtable(luaState);
+            lua_rawgeti(luaState, LUA_REGISTRYINDEX, bagTableRef);
 
             auto bagSize = *bagPtr;
             for (uint32_t slot = 0; slot < bagSize; slot++) {
@@ -591,7 +624,7 @@ namespace Nampower {
                 if (!bagPtr) continue;
 
                 lua_pushnumber(luaState, static_cast<double>(bagIndex));
-                lua_newtable(luaState);
+                lua_rawgeti(luaState, LUA_REGISTRYINDEX, bagTableRef);
 
                 auto bagSize = *bagPtr;
                 for (uint32_t slot = 0; slot < bagSize; slot++) {

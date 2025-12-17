@@ -21,6 +21,14 @@ namespace Nampower {
     extern lua_pushnilT lua_pushnil;
     extern lua_newtableT lua_newtable;
     extern lua_settableT lua_settable;
+    extern luaL_refT luaL_ref;
+    extern lua_rawgetiT lua_rawgeti;
+    extern luaL_unrefT luaL_unref;
+
+    // Lua 5.0 constants
+    #ifndef LUA_REFNIL
+    #define LUA_REFNIL (-2)
+    #endif
 
     uint32_t GetSpellSlotAndTypeForName(const char *spellName, uint32_t *spellType);
 

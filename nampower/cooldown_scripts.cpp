@@ -6,6 +6,9 @@
 #include "offsets.hpp"
 
 namespace Nampower {
+    // Reusable table reference to reduce memory allocations
+    static int cooldownDetailTableRef = LUA_REFNIL;
+
     struct CooldownDetail {
         bool isOnCooldown = false;
         uint32_t cooldownRemainingMs = 0;
@@ -156,7 +159,12 @@ namespace Nampower {
         static char gcdCategoryRemainingMsKey[] = "gcdCategoryRemainingMs";
         static char isOnGcdCategoryCooldownKey[] = "isOnGcdCategoryCooldown";
 
-        lua_newtable(luaState);
+        // Get or create reusable table
+        if (cooldownDetailTableRef == LUA_REFNIL) {
+            lua_newtable(luaState);
+            cooldownDetailTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
+        }
+        lua_rawgeti(luaState, LUA_REGISTRYINDEX, cooldownDetailTableRef);
 
         // Overall cooldown status
         PushTableInt(luaState, isOnCooldownKey, detail.isOnCooldown ? 1 : 0);

@@ -5,6 +5,7 @@ This document describes all custom Lua functions and events added by Nampower.
 For installation, configuration, and general usage information, see the main [README.md](README.md).
 
 ## Table of Contents
+- [Performance Optimization - Table References](#performance-optimization---table-references)
 - [Custom Lua Functions](#custom-lua-functions)
   - [Spell/Item/Unit Information](#spellitemunit-information)
   - [Spell Casting and Queuing](#spell-casting-and-queuing)
@@ -12,17 +13,116 @@ For installation, configuration, and general usage information, see the main [RE
   - [Cooldown Information](#cooldown-information)
 ---
 
+## Performance Optimization - Table References
+
+Nampower functions that return tables use **reusable table references** to reduce memory allocations and improve performance. This means the same table object is reused across multiple function calls, with its contents updated each time.
+
+### Functions Using Reusable Table References
+
+The following functions use reusable table references:
+
+- **`GetCastInfo()`** - Returns cast information table
+- **`GetEquippedItems([unitToken])`** - Returns equipped items table
+- **`GetBagItems()`** - Returns bag items table
+- **`GetBagItem(bagIndex, slot)`** - Returns item info table
+- **`GetEquippedItem(unitToken, slot)`** - Returns item info table
+- **`GetSpellIdCooldown(spellId)`** - Returns cooldown detail table
+- **`GetItemIdCooldown(itemId)`** - Returns cooldown detail table
+- 
+- **`GetItemStats(itemId, [copy])`** - Returns item stats table
+- **`GetUnitData(unitToken, [copy])`** - Returns unit data table
+- **`GetSpellRec(spellId, [copy])`** - Returns spell record table
+- **`GetItemStatsField(itemId, fieldName, [copy])`** - Returns individual item field value
+- **`GetUnitField(unitToken, fieldName, [copy])`** - Returns individual unit field value
+- **`GetSpellRecField(spellId, fieldName, [copy])`** - Returns individual spell field value
+
+**Important:** When using these functions without the `copy` parameter, **immediately copy or extract** any values you need to store for later use. Do not store references to the returned tables themselves. Alternatively, pass `1` as the `copy` parameter to get an independent table that is safe to store.
+
+**Note:** Functions like `GetItemStats`, `GetUnitData`, and `GetSpellRec` also use reusable references for their nested array fields (e.g., `bonusStat`, `auras`, `EffectImplicitTargetA`). Each nested array field name has its own dedicated reference that is reused across calls.
+
+```lua
+-- ✓ SAFE - Extract values immediately
+local castInfo = GetCastInfo()
+if castInfo then
+    local spellId = castInfo.spellId
+    local castEnd = castInfo.castEndS
+    -- Use spellId and castEnd later
+end
+
+-- ✓ SAFE - Extract nested array values immediately
+local itemStats = GetItemStats(19019)
+if itemStats then
+    local bonusStats = {}
+    for i = 1, #itemStats.bonusStat do
+        bonusStats[i] = itemStats.bonusStat[i]
+    end
+    -- Now bonusStats is a safe independent copy
+end
+
+-- ✗ UNSAFE - Storing table references from the same function
+local cast1 = GetCastInfo()  -- Gets table reference
+-- ... later ...
+local cast2 = GetCastInfo()  -- Gets SAME table reference with new data
+-- cast1 and cast2 both point to the same table with cast2's data!
+
+-- ✗ UNSAFE - Storing nested array references
+local item1 = GetItemStats(19019)
+local item1BonusStats = item1.bonusStat  -- Stores reference to nested array
+local item2 = GetItemStats(22589)
+-- item1BonusStats was overwritten! The "bonusStat" nested array reference is reused
+
+-- ✓ SAFE - Using copy parameter for nested arrays
+local item1 = GetItemStats(19019, 1)  -- Pass 1 to get independent copy
+local item1BonusStats = item1.bonusStat  -- Safe to store, it's an independent copy
+local item2 = GetItemStats(22589, 1)  -- Another independent copy
+-- Both item1BonusStats and item2.bonusStat are independent tables
+```
+
+**Important for array field functions:** Each field name gets its own dedicated table reference, but the table is still reused across calls with the same field name. **Always extract values immediately - never store the table reference itself.** Alternatively, pass `1` as the `copy` parameter to get an independent table copy:
+
+```lua
+-- ✓ SAFE - Extract array values immediately
+local bonusStats = {}
+local tempTable = GetItemStatsField(itemId, "bonusStat")
+for i = 1, #tempTable do
+    bonusStats[i] = tempTable[i]
+end
+-- Now bonusStats is a safe independent copy
+
+-- ✓ EASIER - Use copy parameter to get independent table
+local bonusStats = GetItemStatsField(itemId, "bonusStat", 1)
+-- Safe to store, no manual copying needed!
+
+-- ✗ UNSAFE - Storing table references (even with different field names)
+local bonusStats = GetItemStatsField(itemId, "bonusStat")
+local bonusAmounts = GetItemStatsField(itemId, "bonusAmount")
+-- Later...
+local newBonusStats = GetItemStatsField(otherItemId, "bonusStat")
+-- bonusStats was overwritten! The "bonusStat" reference is reused across calls
+
+-- ✗ ALSO UNSAFE - Same field name, multiple calls
+local item1Stats = GetItemStatsField(19019, "bonusStat")
+local item2Stats = GetItemStatsField(22589, "bonusStat")
+-- item1Stats was immediately overwritten by the second call!
+```
+
+---
+
 ### Custom Lua Functions
 
 ### Spell/Item/Unit information
 
-#### GetItemStats(itemId)
-Returns a Lua table containing all fields for the item's `ItemStats` record (including localized `displayName` and `description`). Returns nil if the item cannot be found or loaded.
+#### GetItemStats(itemId, [copy])
+Returns a Lua table reference containing all fields for the item's `ItemStats` record (including localized `displayName` and `description`). Returns nil if the item cannot be found or loaded.
+
+**Optional parameter:** Pass `1` for `copy` to get an independent table copy instead of a reusable reference.
 
 Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
 
-#### GetItemStatsField(itemId, fieldName)
+#### GetItemStatsField(itemId, fieldName, [copy])
 Fast lookup for a single field on an item. Returns the requested field value; returns nil if the item is not found; raises a Lua error if the field name is invalid.
+
+**Optional parameter:** Pass `1` for `copy` to get an independent table copy (for array fields only).
 
 Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
 
@@ -102,13 +202,13 @@ end
 ```
 
 #### GetEquippedItems(unitToken)
-Returns a table containing all equipped items for the specified unit.
+Returns a table reference containing all equipped items for the specified unit.
 
 **Parameters:**
 - `unitToken` (string): Can be a standard unit token ("player", "target", "pet", etc.) or a GUID string
 
 **Returns:**
-- A Lua table with equipment slot indices as keys (0-18) and item info tables as values
+- A Lua table reference with equipment slot indices as keys (0-18) and item info tables as values
 - Returns nil if the unit cannot be found or inspected
 
 For the player, item info includes:
@@ -162,7 +262,7 @@ Returns item info for a specific equipment slot on the specified unit.
   - 15 = Back, 16 = Main Hand, 17 = Off Hand, 18 = Ranged, 19 = Tabard
 
 **Returns:**
-- A Lua table containing the item info (same fields as GetEquippedItems)
+- A Lua table reference containing the item info (same fields as GetEquippedItems)
 - Returns nil if the slot is empty, unit cannot be found, or unit cannot be inspected
 
 **Examples:**
@@ -184,10 +284,10 @@ end
 ```
 
 #### GetBagItems()
-Returns a nested table containing all items in all bags (including bank if open).
+Returns a nested table reference containing all items in all bags (including bank if open).
 
 **Returns:**
-- A Lua table with bag indices as keys and bag contents as values
+- A Lua table reference with bag indices as keys and bag contents as values
 - Each bag contains **1-indexed** slot numbers as keys and item info tables as values
 - Bag indices:
   - 0 = Inventory pack (16 slots)
@@ -243,7 +343,7 @@ Returns item info for a specific slot in a specific bag.
 - `slot` (number): **1-indexed** slot number within the bag
 
 **Returns:**
-- A Lua table containing the item info (same fields as GetBagItems)
+- A Lua table reference containing the item info (same fields as GetBagItems)
 - Returns nil if the slot is empty or invalid
 
 **Examples:**
@@ -270,13 +370,17 @@ if bankItem then
 end
 ```
 
-#### GetSpellRec(spellId)
-Returns a Lua table containing all fields for the spell's `SpellRec` record (including localized `name` and `rank`). Returns nil if the spell cannot be found.
+#### GetSpellRec(spellId, [copy])
+Returns a Lua table reference containing all fields for the spell's `SpellRec` record (including localized `name` and `rank`). Returns nil if the spell cannot be found.
+
+**Optional parameter:** Pass `1` for `copy` to get an independent table copy instead of a reusable reference.
 
 Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
 
-#### GetSpellRecField(spellId, fieldName)
+#### GetSpellRecField(spellId, fieldName, [copy])
 Fast lookup for a single field on a spell. Returns the requested field value; returns nil if the spell is not found; raises a Lua error if the field name is invalid.
+
+**Optional parameter:** Pass `1` for `copy` to get an independent table copy (for array fields only).
 
 Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
 
@@ -359,14 +463,15 @@ print("Flat damage bonus: " .. flatMod)
 print("Percent damage bonus: " .. percentMod .. "%")
 ```
 
-#### GetUnitData(unitToken)
-Returns a Lua table containing all unit fields for the specified unit. This provides access to low-level unit data like health, mana, stats, auras, resistances, and more.
+#### GetUnitData(unitToken, [copy])
+Returns a Lua table reference containing all unit fields for the specified unit. This provides access to low-level unit data like health, mana, stats, auras, resistances, and more.
 
 **Parameters:**
 - `unitToken` (string): Can be a standard unit token ("player", "target", "pet", "mouseover", etc.) or a GUID string (e.g., "0xF5300000000000A5")
+- `copy` (number, optional): Pass `1` to get an independent table copy instead of a reusable reference
 
 **Returns:**
-- A Lua table containing all unit fields, or nil if the unit cannot be found
+- A Lua table reference containing all unit fields, or nil if the unit cannot be found
 
 Full field name lists are in [`UNIT_FIELDS.md`](UNIT_FIELDS.md).
 
@@ -384,12 +489,13 @@ end
 local data = GetUnitData("0xF5300000000000A5")
 ```
 
-#### GetUnitField(unitToken, fieldName)
+#### GetUnitField(unitToken, fieldName, [copy])
 Fast lookup for a single field on a unit. More efficient than GetUnitData when you only need one specific field.
 
 **Parameters:**
 - `unitToken` (string): Can be a standard unit token ("player", "target", "pet", "mouseover", etc.) or a GUID string
 - `fieldName` (string): The name of the field to retrieve
+- `copy` (number, optional): Pass `1` to get an independent table copy (for array fields only)
 
 **Returns:**
 - The requested field value; returns nil if the unit is not found; raises a Lua error if the field name is invalid
@@ -497,7 +603,7 @@ Returns detailed information about the currently active cast or channel. Returns
 GetCurrentCastingInfo was made very early on and doesn't provide enough information for many use cases, but still has some uses and is available for backwards compatibility.
 
 **Returns:**
-A Lua table with the following fields, or nil if no cast is active:
+A Lua table reference with the following fields, or nil if no cast is active:
 
 - `castId` (number): Unique identifier for this cast
 - `spellId` (number): The spell ID being cast
@@ -552,7 +658,7 @@ Returns detailed cooldown information for a spell from the spell history. This p
 - `spellId` (number): The spell ID to check
 
 **Returns:**
-A Lua table with the following fields:
+A Lua table reference with the following fields:
 
 - `isOnCooldown` (number): 1 if any cooldown is active, 0 otherwise
 - `cooldownRemainingMs` (number): Maximum remaining time across all cooldown types in milliseconds
@@ -610,7 +716,7 @@ Returns detailed cooldown information for an item from the spell history. Works 
 - `itemId` (number): The item ID to check
 
 **Returns:**
-A Lua table with the same structure as GetSpellIdCooldown (see above).
+A Lua table reference with the same structure as GetSpellIdCooldown (see above).
 
 **Notes:**
 - Returns the longest cooldown among all spells associated with the item

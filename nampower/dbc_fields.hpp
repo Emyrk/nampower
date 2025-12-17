@@ -141,4 +141,54 @@ namespace Nampower {
             lua_settable(luaState, -3);
         }
     }
+
+    // Version that uses reusable table references for each array field
+    template<typename T>
+    inline void PushArrayFieldsToLuaWithRefs(uintptr_t* luaState, const T* obj, const ArrayFieldDescriptor* fields,
+                                              size_t fieldCount, std::unordered_map<std::string, int>& refMap) {
+        for (size_t i = 0; i < fieldCount; ++i) {
+            const auto& field = fields[i];
+            lua_pushstring(luaState, const_cast<char*>(field.name));
+
+            // Get or create reusable table for this specific field name
+            auto refIt = refMap.find(field.name);
+            if (refIt == refMap.end()) {
+                lua_newtable(luaState);
+                int ref = luaL_ref(luaState, LUA_REGISTRYINDEX);
+                refMap[field.name] = ref;
+            }
+            lua_rawgeti(luaState, LUA_REGISTRYINDEX, refMap[field.name]);
+
+            const char* fieldPtr = reinterpret_cast<const char*>(obj) + field.offset;
+
+            for (size_t j = 0; j < field.count; ++j) {
+                lua_pushnumber(luaState, j + 1); // Lua is 1-indexed
+
+                switch (field.type) {
+                    case FieldType::INT32:
+                        lua_pushnumber(luaState, reinterpret_cast<const int32_t*>(fieldPtr)[j]);
+                        break;
+                    case FieldType::UINT32:
+                        lua_pushnumber(luaState, reinterpret_cast<const uint32_t*>(fieldPtr)[j]);
+                        break;
+                    case FieldType::FLOAT:
+                        lua_pushnumber(luaState, reinterpret_cast<const float*>(fieldPtr)[j]);
+                        break;
+                    case FieldType::UINT64:
+                        lua_pushnumber(luaState, static_cast<double>(reinterpret_cast<const uint64_t*>(fieldPtr)[j]));
+                        break;
+                    case FieldType::UINT8:
+                        lua_pushnumber(luaState, reinterpret_cast<const uint8_t*>(fieldPtr)[j]);
+                        break;
+                    case FieldType::STRING: {
+                        const char* str = reinterpret_cast<const char* const*>(fieldPtr)[j];
+                        lua_pushstring(luaState, str ? const_cast<char*>(str) : const_cast<char*>(""));
+                        break;
+                    }
+                }
+                lua_settable(luaState, -3);
+            }
+            lua_settable(luaState, -3);
+        }
+    }
 }

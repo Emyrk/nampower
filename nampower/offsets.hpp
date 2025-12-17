@@ -160,8 +160,11 @@ enum class Offsets : std::uint32_t {
     lua_newtable = 0x006F3C90,
     lua_settable = 0x006F3E20,
     lua_pushboolean = 0x006F39F0,
-    lua_rawseti = 0x006F3EA0,
+    lua_rawseti = 0x006f3f60,
+    lua_rawgeti = 0x006f3bc0,
     lua_gettop = 0x006F3070,
+    luaL_ref = 0x006F5310,
+    luaL_unref = 0x006F5400,
 
 
     CGInputControlGetActive = 0XBE1148,

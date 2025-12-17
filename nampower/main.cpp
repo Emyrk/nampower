@@ -61,7 +61,7 @@ namespace Nampower {
     uint32_t gLastBufferIncreaseTimeMs;
     uint32_t gLastBufferDecreaseTimeMs;
 
-    uint32_t gBufferTimeMs;   // adjusts dynamically depending on errors
+    uint32_t gBufferTimeMs; // adjusts dynamically depending on errors
 
     bool gForceQueueCast;
     bool gNoQueueCast;
@@ -89,59 +89,59 @@ namespace Nampower {
     CastQueue gCastHistory = CastQueue(30);
 
 
-    std::unique_ptr<hadesmem::PatchDetour<SpellVisualsInitializeT >> gSpellVisualsInitDetour;
-    std::unique_ptr<hadesmem::PatchDetour<LoadScriptFunctionsT >> gLoadScriptFunctionsDetour;
-    std::unique_ptr<hadesmem::PatchDetour<FrameScript_CreateEventsT >> gCreateEventsDetour;
-    std::unique_ptr<hadesmem::PatchDetour<FramescriptSetEventCountT >> gSetEventCountDetour;
+    std::unique_ptr<hadesmem::PatchDetour<SpellVisualsInitializeT> > gSpellVisualsInitDetour;
+    std::unique_ptr<hadesmem::PatchDetour<LoadScriptFunctionsT> > gLoadScriptFunctionsDetour;
+    std::unique_ptr<hadesmem::PatchDetour<FrameScript_CreateEventsT> > gCreateEventsDetour;
+    std::unique_ptr<hadesmem::PatchDetour<FramescriptSetEventCountT> > gSetEventCountDetour;
 
-    std::unique_ptr<hadesmem::PatchDetour<SetCVarT>> gSetCVarDetour;
-    std::unique_ptr<hadesmem::PatchDetour<CGSpellBook_CastSpellT>> gCGSpellBook_CastSpellDetour;
-    std::unique_ptr<hadesmem::PatchDetour<CastSpellT>> gCastDetour;
-    std::unique_ptr<hadesmem::PatchDetour<SendCastT>> gSendCastDetour;
-    std::unique_ptr<hadesmem::PatchDetour<CancelSpellT>> gCancelSpellDetour;
-    std::unique_ptr<hadesmem::PatchDetour<SignalEventT>> gSignalEventDetour;
-    std::unique_ptr<hadesmem::PatchDetour<Spell_C_SpellFailedT>> gSpellFailedDetour;
-    std::unique_ptr<hadesmem::PatchDetour<Spell_C_GetSpellModifiersT>> gSpell_C_GetSpellModifiersDetour;
-    std::unique_ptr<hadesmem::PatchDetour<Spell_C_GetSpellRadiusT>> gSpell_C_GetSpellRadiusDetour;
+    std::unique_ptr<hadesmem::PatchDetour<SetCVarT> > gSetCVarDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGSpellBook_CastSpellT> > gCGSpellBook_CastSpellDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CastSpellT> > gCastDetour;
+    std::unique_ptr<hadesmem::PatchDetour<SendCastT> > gSendCastDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CancelSpellT> > gCancelSpellDetour;
+    std::unique_ptr<hadesmem::PatchDetour<SignalEventT> > gSignalEventDetour;
+    std::unique_ptr<hadesmem::PatchDetour<Spell_C_SpellFailedT> > gSpellFailedDetour;
+    std::unique_ptr<hadesmem::PatchDetour<Spell_C_GetSpellModifiersT> > gSpell_C_GetSpellModifiersDetour;
+    std::unique_ptr<hadesmem::PatchDetour<Spell_C_GetSpellRadiusT> > gSpell_C_GetSpellRadiusDetour;
     std::unique_ptr<hadesmem::PatchRaw> gCastbarPatch;
-    std::unique_ptr<hadesmem::PatchDetour<ISceneEndT>> gIEndSceneDetour;
-    std::unique_ptr<hadesmem::PatchDetour<Spell_C_GetAutoRepeatingSpellT>> gSpell_C_GetAutoRepeatingSpellDetour;
-    std::unique_ptr<hadesmem::PatchDetour<Spell_C_CooldownEventTriggeredT >> gSpell_C_CooldownEventTriggeredDetour;
-    std::unique_ptr<hadesmem::PatchDetour<SpellGoT>> gSpellGoDetour;
-    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gSpellTargetUnitDetour;
-    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT>> gSpellStopCastingDetour;
-    std::unique_ptr<hadesmem::PatchDetour<OnSpriteRightClickT>> gOnSpriteRightClickDetour;
-    std::unique_ptr<hadesmem::PatchDetour<Spell_C_HandleSpriteClickT>> gSpell_C_HandleSpriteClickDetour;
-    std::unique_ptr<hadesmem::PatchDetour<Spell_C_HandleTerrainClickT>> gSpell_C_HandleTerrainClickDetour;
-    std::unique_ptr<hadesmem::PatchDetour<CGWorldFrame_OnLayerTrackTerrainT>> gCGWorldFrame_OnLayerTrackTerrainDetour;
-    std::unique_ptr<hadesmem::PatchDetour<Spell_C_TargetSpellT>> gSpell_C_TargetSpellDetour;
+    std::unique_ptr<hadesmem::PatchDetour<ISceneEndT> > gIEndSceneDetour;
+    std::unique_ptr<hadesmem::PatchDetour<Spell_C_GetAutoRepeatingSpellT> > gSpell_C_GetAutoRepeatingSpellDetour;
+    std::unique_ptr<hadesmem::PatchDetour<Spell_C_CooldownEventTriggeredT> > gSpell_C_CooldownEventTriggeredDetour;
+    std::unique_ptr<hadesmem::PatchDetour<SpellGoT> > gSpellGoDetour;
+    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT> > gSpellTargetUnitDetour;
+    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT> > gSpellStopCastingDetour;
+    std::unique_ptr<hadesmem::PatchDetour<OnSpriteRightClickT> > gOnSpriteRightClickDetour;
+    std::unique_ptr<hadesmem::PatchDetour<Spell_C_HandleSpriteClickT> > gSpell_C_HandleSpriteClickDetour;
+    std::unique_ptr<hadesmem::PatchDetour<Spell_C_HandleTerrainClickT> > gSpell_C_HandleTerrainClickDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGWorldFrame_OnLayerTrackTerrainT> > gCGWorldFrame_OnLayerTrackTerrainDetour;
+    std::unique_ptr<hadesmem::PatchDetour<Spell_C_TargetSpellT> > gSpell_C_TargetSpellDetour;
 
-    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT>> gSpellCooldownDetour;
-    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT>> gSpellDelayedDetour;
-    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT>> gCastResultHandlerDetour;
-    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT>> gSpellFailedHandlerDetour;
-    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT>> gSpellChannelStartHandlerDetour;
-    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT>> gSpellChannelUpdateHandlerDetour;
-    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT>> gPlaySpellVisualHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellCooldownDetour;
+    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellDelayedDetour;
+    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gCastResultHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellFailedHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellChannelStartHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellChannelUpdateHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gPlaySpellVisualHandlerDetour;
 
-    std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT>> gSpellStartHandlerDetour;
-    std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT>> gPeriodicAuraLogHandlerDetour;
-    std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT>> gSpellNonMeleeDmgLogHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT> > gSpellStartHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT> > gPeriodicAuraLogHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT> > gSpellNonMeleeDmgLogHandlerDetour;
 
-    std::unique_ptr<hadesmem::PatchDetour<CGPlayer_C_OnAttackIconPressedT>> gCGPlayer_C_OnAttackIconPressedDetour;
-    std::unique_ptr<hadesmem::PatchDetour<CGActionBar_UseActionT>> gCGActionBar_UseActionDetour;
-    std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraRemovedT>> gCGUnit_C_OnAuraRemovedDetour;
-    std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraAddedT>> gCGUnit_C_OnAuraAddedDetour;
-    std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraAddedStackT>> gCGUnit_C_OnAuraAddedStackDetour;
-    std::unique_ptr<hadesmem::PatchDetour<UnitCombatLogUnitDeadT>> gUnitCombatLogUnitDeadDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGPlayer_C_OnAttackIconPressedT> > gCGPlayer_C_OnAttackIconPressedDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGActionBar_UseActionT> > gCGActionBar_UseActionDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraRemovedT> > gCGUnit_C_OnAuraRemovedDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraAddedT> > gCGUnit_C_OnAuraAddedDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraAddedStackT> > gCGUnit_C_OnAuraAddedStackDetour;
+    std::unique_ptr<hadesmem::PatchDetour<UnitCombatLogUnitDeadT> > gUnitCombatLogUnitDeadDetour;
 
-    std::unique_ptr<hadesmem::PatchDetour<InvalidFunctionPtrCheckT>> gInvalidFunctionPtrCheckDetour;
+    std::unique_ptr<hadesmem::PatchDetour<InvalidFunctionPtrCheckT> > gInvalidFunctionPtrCheckDetour;
 
-    std::unique_ptr<hadesmem::PatchDetour<GetSpellSlotFromLuaT>> gGetSpellSlotFromLuaDetour;
+    std::unique_ptr<hadesmem::PatchDetour<GetSpellSlotFromLuaT> > gGetSpellSlotFromLuaDetour;
 
     uint32_t GetTime() {
         return static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::high_resolution_clock::now().time_since_epoch()).count()) - gStartTime;
+                   std::chrono::high_resolution_clock::now().time_since_epoch()).count()) - gStartTime;
     }
 
     std::string GetHumanReadableTime() {
@@ -205,7 +205,8 @@ namespace Nampower {
 
     void RegisterLuaFunction(char *name, uintptr_t *func) {
         DEBUG_LOG("Registering " << name << " to " << func);
-        auto const registerFunction = reinterpret_cast<FrameScript_RegisterFunctionT>(Offsets::FrameScript_RegisterFunction);
+        auto const registerFunction = reinterpret_cast<FrameScript_RegisterFunctionT>(
+            Offsets::FrameScript_RegisterFunction);
         registerFunction(name, func);
     }
 
@@ -262,8 +263,10 @@ namespace Nampower {
                     return true;
                 }
 
-                auto const remainingChannelTime = (gCastData.channelEndMs > currentTime) ? gCastData.channelEndMs -
-                                                                                           currentTime : 0;
+                auto const remainingChannelTime = (gCastData.channelEndMs > currentTime)
+                                                      ? gCastData.channelEndMs -
+                                                        currentTime
+                                                      : 0;
                 return remainingChannelTime < gUserSettings.channelQueueWindowMs;
             }
         } else if (spellIsTargeting) {
@@ -291,8 +294,10 @@ namespace Nampower {
         if (gCastData.channeling && gUserSettings.queueChannelingSpells) {
             if (gUserSettings.interruptChannelsOutsideQueueWindow) {
                 auto currentTime = GetTime();
-                auto const remainingChannelTime = (gCastData.channelEndMs > currentTime) ? gCastData.channelEndMs -
-                                                                                           currentTime : 0;
+                auto const remainingChannelTime = (gCastData.channelEndMs > currentTime)
+                                                      ? gCastData.channelEndMs -
+                                                        currentTime
+                                                      : 0;
                 if (remainingChannelTime < gUserSettings.channelQueueWindowMs) {
                     return gCastData.channelEndMs;
                 }
@@ -314,7 +319,6 @@ namespace Nampower {
 
         gCastData.channelTickTimeMs = 0;
         gCastData.channelNumTicks = 0;
-
     }
 
     void ResetCastFlags() {
@@ -355,8 +359,9 @@ namespace Nampower {
             auto const currentTime = GetTime();
             auto const elapsed = currentTime - gLastCastData.channelStartTimeMs;
 
-            auto remainingChannelTime = (gCastData.channelEndMs > currentTime) ? gCastData.channelEndMs - currentTime
-                                                                               : 0;
+            auto remainingChannelTime = (gCastData.channelEndMs > currentTime)
+                                            ? gCastData.channelEndMs - currentTime
+                                            : 0;
 
             auto const currentLatency = GetLatencyMs();
             uint32_t latencyReduction = 0;
@@ -373,9 +378,9 @@ namespace Nampower {
 
             if (remainingChannelTime <= 0) {
                 DEBUG_LOG("Ending channel [" << elapsed << " elapsed > "
-                                             << gCastData.channelDuration << " original duration "
-                                             << " latency reduction " << latencyReduction << "]"
-                                             << " triggering queued spells");
+                    << gCastData.channelDuration << " original duration "
+                    << " latency reduction " << latencyReduction << "]"
+                    << " triggering queued spells");
 
                 ResetChannelingFlags();
             } else if (gCastData.cancelChannelNextTick &&
@@ -412,8 +417,8 @@ namespace Nampower {
 
                 if (remainingTickTime <= 0) {
                     DEBUG_LOG("Ending channel due to cancelChannelNextTick. "
-                                      << "Remaining tick time: " << nextTickTimeMs - currentTime
-                                      << " latency reduction: " << latencyReduction);
+                        << "Remaining tick time: " << nextTickTimeMs - currentTime
+                        << " latency reduction: " << latencyReduction);
                     ResetChannelingFlags();
                 }
             }
@@ -475,7 +480,7 @@ namespace Nampower {
                         return true;
                     } else {
                         DEBUG_LOG("Ignoring queued cast of " << game::GetSpellName(gLastNormalCastParams.spellId)
-                                                             << " due to max time since last cast");
+                            << " due to max time since last cast");
                         TriggerSpellQueuedEvent(NORMAL_QUEUE_POPPED, gLastNormalCastParams.spellId);
                         gCastData.normalSpellQueued = false;
                         gCastData.targetingSpellQueued = false;
@@ -520,9 +525,8 @@ namespace Nampower {
         // if we have a target that is not the right click target, ignore the right click
         if (gUserSettings.preventRightClickTargetChange && currentTargetGuid &&
             currentTargetGuid != objectGUID) {
-
             auto unitOrPlayer = game::ClntObjMgrObjectPtr(
-                    static_cast<game::TypeMask>(game::TYPEMASK_PLAYER | game::TYPEMASK_UNIT), objectGUID);
+                static_cast<game::TypeMask>(game::TYPEMASK_PLAYER | game::TYPEMASK_UNIT), objectGUID);
 
             // only prevent right click if guid is a unit/player
             if (unitOrPlayer) {
@@ -596,12 +600,10 @@ namespace Nampower {
         } else if (strcmp(cvar, "NP_QueueSpellsOnCooldown") == 0) {
             gUserSettings.queueSpellsOnCooldown = atoi(value) != 0;
             DEBUG_LOG("Set NP_QueueSpellsOnCooldown to " << gUserSettings.queueSpellsOnCooldown);
-
         } else if (strcmp(cvar, "NP_InterruptChannelsOutsideQueueWindow") == 0) {
             gUserSettings.interruptChannelsOutsideQueueWindow = atoi(value) != 0;
             DEBUG_LOG("Set NP_InterruptChannelsOutsideQueueWindow to "
-                              << gUserSettings.interruptChannelsOutsideQueueWindow);
-
+                << gUserSettings.interruptChannelsOutsideQueueWindow);
         } else if ((strcmp(cvar, "NP_RetryServerRejectedSpells") == 0)) {
             gUserSettings.retryServerRejectedSpells = atoi(value) != 0;
             DEBUG_LOG("Set NP_RetryServerRejectedSpells to " << gUserSettings.retryServerRejectedSpells);
@@ -614,27 +616,21 @@ namespace Nampower {
         } else if (strcmp(cvar, "NP_OptimizeBufferUsingPacketTimings") == 0) {
             gUserSettings.optimizeBufferUsingPacketTimings = atoi(value) != 0;
             DEBUG_LOG("Set NP_OptimizeBufferUsingPacketTimings to " << gUserSettings.optimizeBufferUsingPacketTimings);
-
         } else if (strcmp(cvar, "NP_PreventRightClickTargetChange") == 0) {
             gUserSettings.preventRightClickTargetChange = atoi(value) != 0;
             DEBUG_LOG("Set NP_PreventRightClickTargetChange to " << gUserSettings.preventRightClickTargetChange);
-
         } else if (strcmp(cvar, "NP_PreventRightClickPvPAttack") == 0) {
             gUserSettings.preventRightClickPvPAttack = atoi(value) != 0;
             DEBUG_LOG("Set NP_PreventRightClickPvPAttack to " << gUserSettings.preventRightClickPvPAttack);
-
         } else if (strcmp(cvar, "NP_DoubleCastToEndChannelEarly") == 0) {
             gUserSettings.doubleCastToEndChannelEarly = atoi(value) != 0;
             DEBUG_LOG("Set NP_DoubleCastToEndChannelEarly to " << gUserSettings.doubleCastToEndChannelEarly);
-
         } else if (strcmp(cvar, "NP_QuickcastOnDoubleCast") == 0) {
             gUserSettings.quickcastOnDoubleCast = atoi(value) != 0;
             DEBUG_LOG("Set NP_QuickcastOnDoubleCast to " << gUserSettings.quickcastOnDoubleCast);
-
         } else if (strcmp(cvar, "NP_SpamProtectionEnabled") == 0) {
             gUserSettings.spamProtectionEnabled = atoi(value) != 0;
             DEBUG_LOG("Set NP_SpamProtectionEnabled to " << gUserSettings.spamProtectionEnabled);
-
         } else if (strcmp(cvar, "NP_MinBufferTimeMs") == 0) {
             gUserSettings.minBufferTimeMs = atoi(value);
             DEBUG_LOG("Set NP_MinBufferTimeMs and current buffer to " << gUserSettings.minBufferTimeMs);
@@ -645,7 +641,6 @@ namespace Nampower {
         } else if (strcmp(cvar, "NP_MaxBufferIncreaseMs") == 0) {
             gUserSettings.maxBufferIncreaseMs = atoi(value);
             DEBUG_LOG("Set NP_MaxBufferIncreaseMs to " << gUserSettings.maxBufferIncreaseMs);
-
         } else if (strcmp(cvar, "NP_SpellQueueWindowMs") == 0) {
             gUserSettings.spellQueueWindowMs = atoi(value);
             DEBUG_LOG("Set NP_SpellQueueWindowMs to " << gUserSettings.spellQueueWindowMs);
@@ -661,17 +656,15 @@ namespace Nampower {
         } else if (strcmp(cvar, "NP_CooldownQueueWindowMs") == 0) {
             gUserSettings.cooldownQueueWindowMs = atoi(value);
             DEBUG_LOG("Set NP_CooldownQueueWindowMs to " << gUserSettings.cooldownQueueWindowMs);
-
         } else if (strcmp(cvar, "NP_ChannelLatencyReductionPercentage") == 0) {
             gUserSettings.channelLatencyReductionPercentage = atoi(value);
             DEBUG_LOG(
-                    "Set NP_ChannelLatencyReductionPercentage to " << gUserSettings.channelLatencyReductionPercentage);
-
+                "Set NP_ChannelLatencyReductionPercentage to " << gUserSettings.channelLatencyReductionPercentage);
         } else if (strcmp(cvar, "NP_NameplateDistance") == 0) {
             auto distance = std::stof(value);
             SetNameplateDistance(distance);
             DEBUG_LOG(
-                    "Set NP_NameplateDistance to " << distance);
+                "Set NP_NameplateDistance to " << distance);
         }
     }
 
@@ -742,7 +735,7 @@ namespace Nampower {
 
     void loadConfig() {
         gStartTime = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::high_resolution_clock::now().time_since_epoch()).count());
+            std::chrono::high_resolution_clock::now().time_since_epoch()).count());
 
         // remove/rename previous logs
         safeRemove("nampower_debug.log.3");
@@ -802,263 +795,265 @@ namespace Nampower {
         char NP_QueueCastTimeSpells[] = "NP_QueueCastTimeSpells";
         CVarRegister(NP_QueueCastTimeSpells, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      gUserSettings.queueCastTimeSpells ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      5, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_QueueInstantSpells[] = "NP_QueueInstantSpells";
         CVarRegister(NP_QueueInstantSpells, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      gUserSettings.queueInstantSpells ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_QueueChannelingSpells[] = "NP_QueueChannelingSpells";
         CVarRegister(NP_QueueChannelingSpells, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      gUserSettings.queueChannelingSpells ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_QueueTargetingSpells[] = "NP_QueueTargetingSpells";
         CVarRegister(NP_QueueTargetingSpells, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      gUserSettings.queueTargetingSpells ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_QueueOnSwingSpells[] = "NP_QueueOnSwingSpells";
         CVarRegister(NP_QueueOnSwingSpells, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      gUserSettings.queueOnSwingSpells ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_QueueSpellsOnCooldown[] = "NP_QueueSpellsOnCooldown";
         CVarRegister(NP_QueueSpellsOnCooldown, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      gUserSettings.queueSpellsOnCooldown ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_InterruptChannelsOutsideQueueWindow[] = "NP_InterruptChannelsOutsideQueueWindow";
         CVarRegister(NP_InterruptChannelsOutsideQueueWindow, // name
                      nullptr, // help
-                     0,  // unk1
-                     gUserSettings.interruptChannelsOutsideQueueWindow ? defaultTrue
-                                                                       : defaultFalse, // default value address
+                     0, // unk1
+                     gUserSettings.interruptChannelsOutsideQueueWindow
+                         ? defaultTrue
+                         : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_RetryServerRejectedSpells[] = "NP_RetryServerRejectedSpells";
         CVarRegister(NP_RetryServerRejectedSpells, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      gUserSettings.retryServerRejectedSpells ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_QuickcastTargetingSpells[] = "NP_QuickcastTargetingSpells";
         CVarRegister(NP_QuickcastTargetingSpells, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      gUserSettings.quickcastTargetingSpells ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_MinBufferTimeMs[] = "NP_MinBufferTimeMs";
         CVarRegister(NP_MinBufferTimeMs, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      std::to_string(gUserSettings.minBufferTimeMs).c_str(), // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_NonGcdBufferTimeMs[] = "NP_NonGcdBufferTimeMs";
         CVarRegister(NP_NonGcdBufferTimeMs, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      std::to_string(gUserSettings.nonGcdBufferTimeMs).c_str(), // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_MaxBufferIncreaseMs[] = "NP_MaxBufferIncreaseMs";
         CVarRegister(NP_MaxBufferIncreaseMs, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      std::to_string(gUserSettings.maxBufferIncreaseMs).c_str(), // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_SpellQueueWindowMs[] = "NP_SpellQueueWindowMs";
         CVarRegister(NP_SpellQueueWindowMs, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      std::to_string(gUserSettings.spellQueueWindowMs).c_str(), // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_ChannelQueueWindowMs[] = "NP_ChannelQueueWindowMs";
         CVarRegister(NP_ChannelQueueWindowMs, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      std::to_string(gUserSettings.channelQueueWindowMs).c_str(), // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_TargetingQueueWindowMs[] = "NP_TargetingQueueWindowMs";
         CVarRegister(NP_TargetingQueueWindowMs, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      std::to_string(gUserSettings.targetingQueueWindowMs).c_str(), // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_CooldownQueueWindowMs[] = "NP_CooldownQueueWindowMs";
         CVarRegister(NP_CooldownQueueWindowMs, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      std::to_string(gUserSettings.cooldownQueueWindowMs).c_str(), // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_OnSwingBufferCooldownMs[] = "NP_OnSwingBufferCooldownMs";
         CVarRegister(NP_OnSwingBufferCooldownMs, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      std::to_string(gUserSettings.onSwingBufferCooldownMs).c_str(), // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_ReplaceMatchingNonGcdCategory[] = "NP_ReplaceMatchingNonGcdCategory";
         CVarRegister(NP_ReplaceMatchingNonGcdCategory, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      gUserSettings.replaceMatchingNonGcdCategory ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_OptimizeBufferUsingPacketTimings[] = "NP_OptimizeBufferUsingPacketTimings";
         CVarRegister(NP_OptimizeBufferUsingPacketTimings, // name
                      nullptr, // help
-                     0,  // unk1
-                     gUserSettings.optimizeBufferUsingPacketTimings ? defaultTrue
-                                                                    : defaultFalse, // default value address
+                     0, // unk1
+                     gUserSettings.optimizeBufferUsingPacketTimings
+                         ? defaultTrue
+                         : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_PreventRightClickTargetChange[] = "NP_PreventRightClickTargetChange";
         CVarRegister(NP_PreventRightClickTargetChange, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      gUserSettings.preventRightClickTargetChange ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_PreventRightClickPvPAttack[] = "NP_PreventRightClickPvPAttack";
         CVarRegister(NP_PreventRightClickPvPAttack, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      gUserSettings.preventRightClickPvPAttack ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_DoubleCastToEndChannelEarly[] = "NP_DoubleCastToEndChannelEarly";
         CVarRegister(NP_DoubleCastToEndChannelEarly, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      gUserSettings.doubleCastToEndChannelEarly ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_QuickcastOnDoubleCast[] = "NP_QuickcastOnDoubleCast";
         CVarRegister(NP_QuickcastOnDoubleCast, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      gUserSettings.quickcastOnDoubleCast ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_SpamProtectionEnabled[] = "NP_SpamProtectionEnabled";
         CVarRegister(NP_SpamProtectionEnabled, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      gUserSettings.spamProtectionEnabled ? defaultTrue : defaultFalse, // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_ChannelLatencyReductionPercentage[] = "NP_ChannelLatencyReductionPercentage";
         CVarRegister(NP_ChannelLatencyReductionPercentage, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      std::to_string(gUserSettings.channelLatencyReductionPercentage).c_str(), // default value address
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         char NP_NameplateDistance[] = "NP_NameplateDistance";
         CVarRegister(NP_NameplateDistance, // name
                      nullptr, // help
-                     0,  // unk1
+                     0, // unk1
                      std::to_string(GetNameplateDistance()).c_str(), // use the game's DAT value as the default
                      nullptr, // callback
                      1, // category
-                     0,  // unk2
+                     0, // unk2
                      0); // unk3
 
         // update from cvars
@@ -1104,10 +1099,10 @@ namespace Nampower {
 
     // Template function to simplify hook initialization with specific storage
     template<typename FuncT, typename HookT>
-    std::unique_ptr<hadesmem::PatchDetour<FuncT>>
+    std::unique_ptr<hadesmem::PatchDetour<FuncT> >
     createHook(const hadesmem::Process &process, Offsets offset, HookT hookFunc) {
         auto const originalFunc = hadesmem::detail::AliasCast<FuncT>(offset);
-        auto detour = std::make_unique<hadesmem::PatchDetour<FuncT>>(process, originalFunc, hookFunc);
+        auto detour = std::make_unique<hadesmem::PatchDetour<FuncT> >(process, originalFunc, hookFunc);
         detour->Apply();
         return detour;
     }
@@ -1116,8 +1111,10 @@ namespace Nampower {
         const hadesmem::Process process(::GetCurrentProcessId());
 
         gSetCVarDetour = createHook<SetCVarT>(process, Offsets::Script_SetCVar, &Script_SetCVarHook);
-        gCGSpellBook_CastSpellDetour = createHook<CGSpellBook_CastSpellT>(process, Offsets::CGSpellBook_CastSpell, &CGSpellBook_CastSpellHook);
-        gCGActionBar_UseActionDetour = createHook<CGActionBar_UseActionT>(process, Offsets::CGActionBar_UseAction, &CGActionBar_UseActionHook);
+        gCGSpellBook_CastSpellDetour = createHook<CGSpellBook_CastSpellT>(
+            process, Offsets::CGSpellBook_CastSpell, &CGSpellBook_CastSpellHook);
+        gCGActionBar_UseActionDetour = createHook<CGActionBar_UseActionT>(
+            process, Offsets::CGActionBar_UseAction, &CGActionBar_UseActionHook);
         gCastDetour = createHook<CastSpellT>(process, Offsets::Spell_C_CastSpell, &Spell_C_CastSpellHook);
         gSendCastDetour = createHook<SendCastT>(process, Offsets::SendCast, &SendCastHook);
         gCancelSpellDetour = createHook<CancelSpellT>(process, Offsets::CancelSpell, &CancelSpellHook);
@@ -1144,10 +1141,12 @@ namespace Nampower {
                                                          &Script_SpellStopCastingHook);
         gSpell_C_TargetSpellDetour = createHook<Spell_C_TargetSpellT>(process, Offsets::Spell_C_TargetSpell,
                                                                       &Spell_C_TargetSpellHook);
-        gSpell_C_HandleTerrainClickDetour = createHook<Spell_C_HandleTerrainClickT>(process, Offsets::Spell_C_HandleTerrainClick,
-                                                                                     &Spell_C_HandleTerrainClickHook);
-        gCGWorldFrame_OnLayerTrackTerrainDetour = createHook<CGWorldFrame_OnLayerTrackTerrainT>(process, Offsets::CGWorldFrame_OnLayerTrackTerrain,
-                                                                                                 &CGWorldFrame_OnLayerTrackTerrainHook);
+        gSpell_C_HandleTerrainClickDetour = createHook<Spell_C_HandleTerrainClickT>(
+            process, Offsets::Spell_C_HandleTerrainClick,
+            &Spell_C_HandleTerrainClickHook);
+        gCGWorldFrame_OnLayerTrackTerrainDetour = createHook<CGWorldFrame_OnLayerTrackTerrainT>(
+            process, Offsets::CGWorldFrame_OnLayerTrackTerrain,
+            &CGWorldFrame_OnLayerTrackTerrainHook);
         gOnSpriteRightClickDetour = createHook<OnSpriteRightClickT>(process, Offsets::OnSpriteRightClick,
                                                                     OnSpriteRightClickHook);
         gIEndSceneDetour = createHook<ISceneEndT>(process, Offsets::ISceneEndPtr, &ISceneEndHook);
@@ -1156,13 +1155,14 @@ namespace Nampower {
         gGetSpellSlotFromLuaDetour = createHook<GetSpellSlotFromLuaT>(process, Offsets::GetSpellSlotFromLua,
                                                                       &GetSpellSlotFromLuaHook);
         gCGUnit_C_OnAuraRemovedDetour = createHook<CGUnit_C_OnAuraRemovedT>(process, Offsets::CGUnit_C_OnAuraRemoved,
-                                                                             &CGUnit_C_OnAuraRemovedHook);
+                                                                            &CGUnit_C_OnAuraRemovedHook);
         gCGUnit_C_OnAuraAddedDetour = createHook<CGUnit_C_OnAuraAddedT>(process, Offsets::CGUnit_C_OnAuraAdded,
-                                                                         &CGUnit_C_OnAuraAddedHook);
-        gCGUnit_C_OnAuraAddedStackDetour = createHook<CGUnit_C_OnAuraAddedStackT>(process, Offsets::CGUnit_C_OnAuraAddedStack,
-                                                                                       &CGUnit_C_OnAuraAddedStackHook);
+                                                                        &CGUnit_C_OnAuraAddedHook);
+        gCGUnit_C_OnAuraAddedStackDetour = createHook<CGUnit_C_OnAuraAddedStackT>(
+            process, Offsets::CGUnit_C_OnAuraAddedStack,
+            &CGUnit_C_OnAuraAddedStackHook);
         gUnitCombatLogUnitDeadDetour = createHook<UnitCombatLogUnitDeadT>(process, Offsets::UnitCombatLogUnitDead,
-                                                                           &UnitCombatLogUnitDeadHook);
+                                                                          &UnitCombatLogUnitDeadHook);
     }
 
     void SpellVisualsInitializeHook(hadesmem::PatchDetourBase *detour) {
@@ -1172,11 +1172,11 @@ namespace Nampower {
         initHooks();
     }
 
-    void addCustomEvent(uint32_t code, char* name) {
-        char ** FrameScript_EventObject_Data = *reinterpret_cast<char ***>(Offsets::Framescript_EventObject_Data);
+    void addCustomEvent(uint32_t code, char *name) {
+        char **FrameScript_EventObject_Data = *reinterpret_cast<char ***>(Offsets::Framescript_EventObject_Data);
 
-        auto SStrDupA = reinterpret_cast<char* (__stdcall *)(char*, char*, int)>(Offsets::SStrDupA);
-        FrameScript_EventObject_Data[code*4] = SStrDupA(name, name, 1308);
+        auto SStrDupA = reinterpret_cast<char* (__stdcall *)(char *, char *, int)>(Offsets::SStrDupA);
+        FrameScript_EventObject_Data[code * 4] = SStrDupA(name, name, 1308);
 
         DEBUG_LOG("Added custom event code:" << code << " " << name);
     }
@@ -1232,7 +1232,8 @@ namespace Nampower {
         }
     }
 
-    void Framescript_SetEventCountHook(hadesmem::PatchDetourBase *detour, void *thisPtr, void *dummy_edx, uint32_t count) {
+    void Framescript_SetEventCountHook(hadesmem::PatchDetourBase *detour, void *thisPtr, void *dummy_edx,
+                                       uint32_t count) {
         auto const setEventCount = detour->GetTrampolineT<FramescriptSetEventCountT>();
 
         if (count > 200) {
@@ -1333,7 +1334,6 @@ namespace Nampower {
 
         char getItemIdCooldown[] = "GetItemIdCooldown";
         RegisterLuaFunction(getItemIdCooldown, reinterpret_cast<uintptr_t *>(Script_GetItemIdCooldown));
-
     }
 
     std::once_flag loadFlag;
@@ -1344,36 +1344,39 @@ namespace Nampower {
                            const hadesmem::Process process(::GetCurrentProcessId());
 
                            auto const spellVisualsInitOrig = hadesmem::detail::AliasCast<SpellVisualsInitializeT>(
-                                   Offsets::SpellVisualsInitialize);
-                           gSpellVisualsInitDetour = std::make_unique<hadesmem::PatchDetour<SpellVisualsInitializeT >>(process,
-                                                                                                                       spellVisualsInitOrig,
-                                                                                                                       &SpellVisualsInitializeHook);
+                               Offsets::SpellVisualsInitialize);
+                           gSpellVisualsInitDetour = std::make_unique<hadesmem::PatchDetour<SpellVisualsInitializeT> >(
+                               process,
+                               spellVisualsInitOrig,
+                               &SpellVisualsInitializeHook);
                            gSpellVisualsInitDetour->Apply();
 
                            auto const loadScriptFunctionsOrig = hadesmem::detail::AliasCast<LoadScriptFunctionsT>(
-                                   Offsets::LoadScriptFunctions);
-                           gLoadScriptFunctionsDetour = std::make_unique<hadesmem::PatchDetour<LoadScriptFunctionsT >>(process,
-                                                                                                                       loadScriptFunctionsOrig,
-                                                                                                                       &LoadScriptFunctionsHook);
+                               Offsets::LoadScriptFunctions);
+                           gLoadScriptFunctionsDetour = std::make_unique<hadesmem::PatchDetour<LoadScriptFunctionsT> >(
+                               process,
+                               loadScriptFunctionsOrig,
+                               &LoadScriptFunctionsHook);
                            gLoadScriptFunctionsDetour->Apply();
 
                            auto const createEventsOrig = hadesmem::detail::AliasCast<FrameScript_CreateEventsT>(
-                                   Offsets::FrameScript_CreateEvents);
-                           gCreateEventsDetour = std::make_unique<hadesmem::PatchDetour<FrameScript_CreateEventsT >>(process,
-                                                                                                                     createEventsOrig,
-                                                                                                                     &FrameScript_CreateEventsHook);
+                               Offsets::FrameScript_CreateEvents);
+                           gCreateEventsDetour = std::make_unique<hadesmem::PatchDetour<FrameScript_CreateEventsT> >(
+                               process,
+                               createEventsOrig,
+                               &FrameScript_CreateEventsHook);
                            gCreateEventsDetour->Apply();
 
                            auto const setEventCountOrig = hadesmem::detail::AliasCast<FramescriptSetEventCountT>(
-                                   Offsets::Framescript_SetEventCount);
-                           gSetEventCountDetour = std::make_unique<hadesmem::PatchDetour<FramescriptSetEventCountT >>(process,
-                                                                                                                      setEventCountOrig,
-                                                                                                                      &Framescript_SetEventCountHook);
+                               Offsets::Framescript_SetEventCount);
+                           gSetEventCountDetour = std::make_unique<hadesmem::PatchDetour<FramescriptSetEventCountT> >(
+                               process,
+                               setEventCountOrig,
+                               &Framescript_SetEventCountHook);
                            gSetEventCountDetour->Apply();
                        }
         );
     }
-
 }
 
 extern "C" __declspec(dllexport) uint32_t Load() {

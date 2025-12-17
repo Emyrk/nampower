@@ -30,7 +30,7 @@ namespace Nampower {
     constexpr uint32_t BUFFER_DECREASE_FREQUENCY = 10000; // time in ms between changes to lower buffer
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 17;
+    constexpr uint32_t MINOR_VERSION = 18;
     constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
@@ -137,6 +137,9 @@ namespace Nampower {
     using lua_settopT = void (__fastcall *)(uintptr_t *, int);
     using lua_newtableT = void (__fastcall *)(uintptr_t *);
     using lua_settableT = void (__fastcall *)(uintptr_t *, int);
+    using luaL_refT = int (__fastcall *)(uintptr_t *, int);
+    using lua_rawgetiT = void (__fastcall *)(uintptr_t *, int, int);
+    using luaL_unrefT = void (__fastcall *)(uintptr_t *, int, int);
 
     using Spell_C_CooldownEventTriggeredT = void (__fastcall *)(uint32_t spellId,
                                                                 uint64_t *targetGUID,

@@ -29,6 +29,19 @@ namespace Nampower {
     int gScriptPriority = 1;
     char *queuedScript;
 
+    // Reusable table references to reduce memory allocations
+    static int castInfoTableRef = LUA_REFNIL;
+    static int itemStatsTableRef = LUA_REFNIL;
+    static int unitDataTableRef = LUA_REFNIL;
+
+    // Maps to store separate references for each array field name (for Field functions)
+    static std::unordered_map<std::string, int> itemStatsArrayFieldRefs;
+    static std::unordered_map<std::string, int> unitFieldsArrayFieldRefs;
+
+    // Maps to store separate references for nested array fields (for main table functions)
+    static std::unordered_map<std::string, int> itemStatsNestedArrayRefs;
+    static std::unordered_map<std::string, int> unitFieldsNestedArrayRefs;
+
     uint32_t Script_GetCurrentCastingInfo(uintptr_t *luaState) {
         luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
 
@@ -109,8 +122,12 @@ namespace Nampower {
             return 1;
         }
 
-        // Create new table
-        lua_newtable(luaState);
+        // Get or create reusable table
+        if (castInfoTableRef == LUA_REFNIL) {
+            lua_newtable(luaState);
+            castInfoTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
+        }
+        lua_rawgeti(luaState, LUA_REGISTRYINDEX, castInfoTableRef);
 
         // Get current time and calculate offset to convert to WoW time
         uint32_t currentTime = GetTime();
@@ -268,11 +285,17 @@ namespace Nampower {
         luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
 
         if (!lua_isnumber(luaState, 1)) {
-            lua_error(luaState, "Usage: GetItemStats(itemId)");
+            lua_error(luaState, "Usage: GetItemStats(itemId, [copy])");
             return 0;
         }
 
         uint32_t itemId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+
+        // Check for optional copy parameter
+        bool useCopy = false;
+        if (lua_isnumber(luaState, 2)) {
+            useCopy = static_cast<int>(lua_tonumber(luaState, 2)) != 0;
+        }
 
         // Get from cache
         game::ItemStats_C *item = GetItemStats(itemId);
@@ -281,8 +304,16 @@ namespace Nampower {
             return 1;
         }
 
-        // Create new table
-        lua_newtable(luaState);
+        // Create new table or get reusable table based on copy parameter
+        if (useCopy) {
+            lua_newtable(luaState);
+        } else {
+            if (itemStatsTableRef == LUA_REFNIL) {
+                lua_newtable(luaState);
+                itemStatsTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
+            }
+            lua_rawgeti(luaState, LUA_REGISTRYINDEX, itemStatsTableRef);
+        }
 
         // Push all simple fields using descriptors
         PushFieldsToLua(luaState, item, itemStatsFields, itemStatsFieldsCount);
@@ -294,8 +325,12 @@ namespace Nampower {
         PushTableValue(luaState, const_cast<char *>("description"),
                        item->m_description ? item->m_description : const_cast<char *>(""));
 
-        // Push all array fields using descriptors
-        PushArrayFieldsToLua(luaState, item, itemStatsArrayFields, itemStatsArrayFieldsCount);
+        // Push all array fields using descriptors with or without references based on copy parameter
+        if (useCopy) {
+            PushArrayFieldsToLua(luaState, item, itemStatsArrayFields, itemStatsArrayFieldsCount);
+        } else {
+            PushArrayFieldsToLuaWithRefs(luaState, item, itemStatsArrayFields, itemStatsArrayFieldsCount, itemStatsNestedArrayRefs);
+        }
 
         return 1; // Return the table
     }
@@ -304,7 +339,7 @@ namespace Nampower {
         luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
 
         if (!lua_isnumber(luaState, 1) || !lua_isstring(luaState, 2)) {
-            lua_error(luaState, "Usage: GetItemStatsField(itemId, fieldName)");
+            lua_error(luaState, "Usage: GetItemStatsField(itemId, fieldName, [copy])");
             return 0;
         }
 
@@ -312,6 +347,12 @@ namespace Nampower {
 
         uint32_t itemId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
         const char *fieldName = lua_tostring(luaState, 2);
+
+        // Check for optional copy parameter
+        bool useCopy = false;
+        if (lua_isnumber(luaState, 3)) {
+            useCopy = static_cast<int>(lua_tonumber(luaState, 3)) != 0;
+        }
 
         // Get from cache
         game::ItemStats_C *item = GetItemStats(itemId);
@@ -354,7 +395,20 @@ namespace Nampower {
         if (arrayIt != itemStatsArrayFieldMap.end()) {
             size_t i = arrayIt->second;
             const auto &field = itemStatsArrayFields[i];
-            lua_newtable(luaState);
+
+            // Create new table or get reusable table based on copy parameter
+            if (useCopy) {
+                lua_newtable(luaState);
+            } else {
+                // Get or create reusable table for this specific field name
+                auto refIt = itemStatsArrayFieldRefs.find(fieldName);
+                if (refIt == itemStatsArrayFieldRefs.end()) {
+                    lua_newtable(luaState);
+                    int ref = luaL_ref(luaState, LUA_REGISTRYINDEX);
+                    itemStatsArrayFieldRefs[fieldName] = ref;
+                }
+                lua_rawgeti(luaState, LUA_REGISTRYINDEX, itemStatsArrayFieldRefs[fieldName]);
+            }
 
             const char *fieldPtr = reinterpret_cast<const char *>(item) + field.offset;
 
@@ -404,11 +458,18 @@ namespace Nampower {
         luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
 
         if (!lua_isstring(luaState, 1)) {
-            lua_error(luaState, "Usage: GetUnitData(unitToken) - unitToken can be 'player', 'target', 'pet', etc., or a GUID string");
+            lua_error(luaState, "Usage: GetUnitData(unitToken, [copy]) - unitToken can be 'player', 'target', 'pet', etc., or a GUID string");
             return 0;
         }
 
         const char *unitToken = lua_tostring(luaState, 1);
+
+        // Check for optional copy parameter
+        bool useCopy = false;
+        if (lua_isnumber(luaState, 2)) {
+            useCopy = static_cast<int>(lua_tonumber(luaState, 2)) != 0;
+        }
+
         uint64_t guid = GetUnitGuidFromString(unitToken);
 
         if (guid == 0) {
@@ -430,14 +491,26 @@ namespace Nampower {
             return 1;
         }
 
-        // Create new table
-        lua_newtable(luaState);
+        // Create new table or get reusable table based on copy parameter
+        if (useCopy) {
+            lua_newtable(luaState);
+        } else {
+            if (unitDataTableRef == LUA_REFNIL) {
+                lua_newtable(luaState);
+                unitDataTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
+            }
+            lua_rawgeti(luaState, LUA_REGISTRYINDEX, unitDataTableRef);
+        }
 
         // Push all simple fields using descriptors
         PushFieldsToLua(luaState, unitFields, unitFieldsFields, unitFieldsFieldsCount);
 
-        // Push all array fields using descriptors
-        PushArrayFieldsToLua(luaState, unitFields, unitFieldsArrayFields, unitFieldsArrayFieldsCount);
+        // Push all array fields using descriptors with or without references based on copy parameter
+        if (useCopy) {
+            PushArrayFieldsToLua(luaState, unitFields, unitFieldsArrayFields, unitFieldsArrayFieldsCount);
+        } else {
+            PushArrayFieldsToLuaWithRefs(luaState, unitFields, unitFieldsArrayFields, unitFieldsArrayFieldsCount, unitFieldsNestedArrayRefs);
+        }
 
         return 1; // Return the table
     }
@@ -446,7 +519,7 @@ namespace Nampower {
         luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
 
         if (!lua_isstring(luaState, 1) || !lua_isstring(luaState, 2)) {
-            lua_error(luaState, "Usage: GetUnitField(unitToken, fieldName) - unitToken can be 'player', 'target', 'pet', etc., or a GUID string");
+            lua_error(luaState, "Usage: GetUnitField(unitToken, fieldName, [copy]) - unitToken can be 'player', 'target', 'pet', etc., or a GUID string");
             return 0;
         }
 
@@ -454,6 +527,12 @@ namespace Nampower {
 
         const char *unitToken = lua_tostring(luaState, 1);
         const char *fieldName = lua_tostring(luaState, 2);
+
+        // Check for optional copy parameter
+        bool useCopy = false;
+        if (lua_isnumber(luaState, 3)) {
+            useCopy = static_cast<int>(lua_tonumber(luaState, 3)) != 0;
+        }
 
         uint64_t guid = GetUnitGuidFromString(unitToken);
 
@@ -505,7 +584,20 @@ namespace Nampower {
         if (arrayIt != unitFieldsArrayFieldMap.end()) {
             size_t i = arrayIt->second;
             const auto &field = unitFieldsArrayFields[i];
-            lua_newtable(luaState);
+
+            // Create new table or get reusable table based on copy parameter
+            if (useCopy) {
+                lua_newtable(luaState);
+            } else {
+                // Get or create reusable table for this specific field name
+                auto refIt = unitFieldsArrayFieldRefs.find(fieldName);
+                if (refIt == unitFieldsArrayFieldRefs.end()) {
+                    lua_newtable(luaState);
+                    int ref = luaL_ref(luaState, LUA_REGISTRYINDEX);
+                    unitFieldsArrayFieldRefs[fieldName] = ref;
+                }
+                lua_rawgeti(luaState, LUA_REGISTRYINDEX, unitFieldsArrayFieldRefs[fieldName]);
+            }
 
             const char *fieldPtr = reinterpret_cast<const char *>(unitFields) + field.offset;
 

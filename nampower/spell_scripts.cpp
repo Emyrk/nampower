@@ -10,6 +10,15 @@
 #include <cstring>
 
 namespace Nampower {
+    // Reusable table references to reduce memory allocations
+    static int spellRecTableRef = LUA_REFNIL;
+
+    // Map to store separate references for each array field name (for Field function)
+    static std::unordered_map<std::string, int> spellRecArrayFieldRefs;
+
+    // Map to store separate references for nested array fields (for main table function)
+    static std::unordered_map<std::string, int> spellRecNestedArrayRefs;
+
     uint32_t Script_CastSpellByNameNoQueue(uintptr_t *luaState) {
         luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
 
@@ -265,11 +274,17 @@ namespace Nampower {
         luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
 
         if (!lua_isnumber(luaState, 1)) {
-            lua_error(luaState, "Usage: GetSpellRec(spellId)");
+            lua_error(luaState, "Usage: GetSpellRec(spellId, [copy])");
             return 0;
         }
 
         uint32_t spellId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+
+        // Check for optional copy parameter
+        bool useCopy = false;
+        if (lua_isnumber(luaState, 2)) {
+            useCopy = static_cast<int>(lua_tonumber(luaState, 2)) != 0;
+        }
 
         // Get spell info
         auto spell = game::GetSpellInfo(spellId);
@@ -278,8 +293,16 @@ namespace Nampower {
             return 1;
         }
 
-        // Create new table
-        lua_newtable(luaState);
+        // Create new table or get reusable table based on copy parameter
+        if (useCopy) {
+            lua_newtable(luaState);
+        } else {
+            if (spellRecTableRef == LUA_REFNIL) {
+                lua_newtable(luaState);
+                spellRecTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
+            }
+            lua_rawgeti(luaState, LUA_REGISTRYINDEX, spellRecTableRef);
+        }
 
         // Push all simple fields using descriptors
         PushFieldsToLua(luaState, spell, spellRecFields, spellRecFieldsCount);
@@ -294,8 +317,12 @@ namespace Nampower {
                            ? const_cast<char *>(reinterpret_cast<const char *>(spell->Rank[language]))
                            : const_cast<char *>(""));
 
-        // Push all array fields using descriptors
-        PushArrayFieldsToLua(luaState, spell, spellRecArrayFields, spellRecArrayFieldsCount);
+        // Push all array fields using descriptors with or without references based on copy parameter
+        if (useCopy) {
+            PushArrayFieldsToLua(luaState, spell, spellRecArrayFields, spellRecArrayFieldsCount);
+        } else {
+            PushArrayFieldsToLuaWithRefs(luaState, spell, spellRecArrayFields, spellRecArrayFieldsCount, spellRecNestedArrayRefs);
+        }
 
         return 1; // Return the table
     }
@@ -304,7 +331,7 @@ namespace Nampower {
         luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
 
         if (!lua_isnumber(luaState, 1) || !lua_isstring(luaState, 2)) {
-            lua_error(luaState, "Usage: GetSpellRecField(spellId, fieldName)");
+            lua_error(luaState, "Usage: GetSpellRecField(spellId, fieldName, [copy])");
             return 0;
         }
 
@@ -312,6 +339,12 @@ namespace Nampower {
 
         uint32_t spellId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
         const char *fieldName = lua_tostring(luaState, 2);
+
+        // Check for optional copy parameter
+        bool useCopy = false;
+        if (lua_isnumber(luaState, 3)) {
+            useCopy = static_cast<int>(lua_tonumber(luaState, 3)) != 0;
+        }
 
         // Get spell info
         auto spell = game::GetSpellInfo(spellId);
@@ -355,7 +388,20 @@ namespace Nampower {
         if (arrayIt != spellRecArrayFieldMap.end()) {
             size_t i = arrayIt->second;
             const auto &field = spellRecArrayFields[i];
-            lua_newtable(luaState);
+
+            // Create new table or get reusable table based on copy parameter
+            if (useCopy) {
+                lua_newtable(luaState);
+            } else {
+                // Get or create reusable table for this specific field name
+                auto refIt = spellRecArrayFieldRefs.find(fieldName);
+                if (refIt == spellRecArrayFieldRefs.end()) {
+                    lua_newtable(luaState);
+                    int ref = luaL_ref(luaState, LUA_REGISTRYINDEX);
+                    spellRecArrayFieldRefs[fieldName] = ref;
+                }
+                lua_rawgeti(luaState, LUA_REGISTRYINDEX, spellRecArrayFieldRefs[fieldName]);
+            }
 
             const char *fieldPtr = reinterpret_cast<const char *>(spell) + field.offset;
 
