@@ -5,6 +5,8 @@
 #include "items.hpp"
 #include "offsets.hpp"
 
+#include <cstring>
+
 namespace Nampower {
     // Reusable table reference to reduce memory allocations
     static int cooldownDetailTableRef = LUA_REFNIL;
@@ -12,6 +14,10 @@ namespace Nampower {
     struct CooldownDetail {
         bool isOnCooldown = false;
         uint32_t cooldownRemainingMs = 0;
+
+        bool itemHasActiveSpell = false;
+        uint32_t itemId = 0;
+        uint32_t itemActiveSpellId = 0;
 
         uint32_t individualStartMs = 0;
         uint32_t individualDurationMs = 0;
@@ -30,13 +36,6 @@ namespace Nampower {
         uint32_t gcdCategoryRemainingMs = 0;
         bool isOnGcdCategoryCooldown = false;
     };
-
-
-    inline void PushTableInt(uintptr_t *luaState, char *key, int value) {
-        lua_pushstring(luaState, key);
-        lua_pushnumber(luaState, value);
-        lua_settable(luaState, -3);
-    }
 
     game::SpellHistoryEntry *GetSpellHistoryHead() {
         auto const spellHistoryAddr = static_cast<uintptr_t>(Offsets::SpellHistories);
@@ -67,8 +66,18 @@ namespace Nampower {
             return detail;
         }
 
+        detail.itemId = itemId;
+
+        // Set base durations from spell record so we know what they are even if not on cooldown
+        detail.individualDurationMs = spellRec->RecoveryTime;
+        detail.categoryDurationMs = spellRec->CategoryRecoveryTime;
+        detail.gcdCategoryDurationMs = spellRec->StartRecoveryTime;
+
         auto const category = itemCategoryOverride ? itemCategoryOverride : spellRec->Category;
         auto const startRecoveryCategory = spellRec->StartRecoveryCategory;
+
+        detail.categoryId = category;
+        detail.gcdCategoryId = startRecoveryCategory;
 
         auto const now = static_cast<uint32_t>(GetWowTimeMs() & 0xFFFFFFFF); // get bottom 32 bits of time in ms
 
@@ -76,7 +85,6 @@ namespace Nampower {
         for (auto entry = GetSpellHistoryHead();
              entry && ((reinterpret_cast<uintptr_t>(entry) & 0x1) == 0);
              entry = reinterpret_cast<game::SpellHistoryEntry *>(entry->field4_0x4)) {
-
             // Individual spell cooldown
             if (entry->spellID == spellId && entry->itemID == itemId &&
                 (entry->recoveryTime != 0 || entry->onHold)) {
@@ -107,7 +115,8 @@ namespace Nampower {
             }
 
             // GCD category cooldown (startRecoveryCategory)
-            if (entry->startRecoveryCategory == startRecoveryCategory && entry->startRecoveryTime != 0 && startRecoveryCategory != 0) {
+            if (entry->startRecoveryCategory == startRecoveryCategory && entry->startRecoveryTime != 0 &&
+                startRecoveryCategory != 0) {
                 auto start = entry->onHold ? now : entry->recoveryStart;
                 auto end = entry->onHold
                                ? uint64_t(now) + entry->startRecoveryTime
@@ -124,7 +133,8 @@ namespace Nampower {
         }
 
         // Calculate overall cooldown status
-        detail.isOnCooldown = detail.isOnIndividualCooldown || detail.isOnCategoryCooldown || detail.isOnGcdCategoryCooldown;
+        detail.isOnCooldown = detail.isOnIndividualCooldown || detail.isOnCategoryCooldown || detail.
+                              isOnGcdCategoryCooldown;
 
         // Find the maximum remaining cooldown
         detail.cooldownRemainingMs = detail.individualRemainingMs;
@@ -135,12 +145,34 @@ namespace Nampower {
             detail.cooldownRemainingMs = detail.gcdCategoryRemainingMs;
         }
 
+        if (itemId > 0) {
+            // get info on active spell for item
+            auto *itemStats = GetItemStats(itemId);
+            if (itemStats) {
+                for (int i = 0; i < 5; ++i) {
+                    if (itemStats->m_spellCooldown[i] > 0 || itemStats->m_spellCategoryCooldown[i] > 0) {
+                        detail.itemHasActiveSpell = true;
+                        detail.itemActiveSpellId = itemStats->m_spellID[i];
+                        detail.individualDurationMs = itemStats->m_spellCooldown[i];
+                        detail.categoryDurationMs = itemStats->m_spellCategoryCooldown[i];
+                        return detail;
+                    }
+                }
+                // didn't have active spell, clear any spell gcd info for passive effects
+                detail.gcdCategoryDurationMs = 0;
+                detail.gcdCategoryId = 0;
+            }
+        }
+
         return detail;
     }
 
     void PushCooldownDetailTable(uintptr_t *luaState, const CooldownDetail &detail) {
         static char isOnCooldownKey[] = "isOnCooldown";
         static char cooldownRemainingMsKey[] = "cooldownRemainingMs";
+        static char itemIdKey[] = "itemId";
+        static char itemHasActiveSpellKey[] = "itemHasActiveSpell";
+        static char itemActiveSpellIdKey[] = "itemActiveSpellId";
 
         static char individualStartSKey[] = "individualStartS";
         static char individualDurationMsKey[] = "individualDurationMs";
@@ -167,35 +199,38 @@ namespace Nampower {
         lua_rawgeti(luaState, LUA_REGISTRYINDEX, cooldownDetailTableRef);
 
         // Overall cooldown status
-        PushTableInt(luaState, isOnCooldownKey, detail.isOnCooldown ? 1 : 0);
+        PushTableValue(luaState, isOnCooldownKey, detail.isOnCooldown ? 1 : 0);
         PushTableValue(luaState, cooldownRemainingMsKey, detail.cooldownRemainingMs);
+        PushTableValue(luaState, itemIdKey, detail.itemId);
+        PushTableValue(luaState, itemHasActiveSpellKey, detail.itemHasActiveSpell ? 1 : 0);
+        PushTableValue(luaState, itemActiveSpellIdKey, detail.itemActiveSpellId);
 
         // Individual cooldown
         PushTableValue(luaState, individualStartSKey, detail.individualStartMs / 1000.0);
         PushTableValue(luaState, individualDurationMsKey, detail.individualDurationMs);
         PushTableValue(luaState, individualRemainingMsKey, detail.individualRemainingMs);
-        PushTableInt(luaState, isOnIndividualCooldownKey, detail.isOnIndividualCooldown ? 1 : 0);
+        PushTableValue(luaState, isOnIndividualCooldownKey, detail.isOnIndividualCooldown ? 1 : 0);
 
         // Category cooldown
         PushTableValue(luaState, categoryIdKey, detail.categoryId);
         PushTableValue(luaState, categoryStartSKey, detail.categoryStartMs / 1000.0);
         PushTableValue(luaState, categoryDurationMsKey, detail.categoryDurationMs);
         PushTableValue(luaState, categoryRemainingMsKey, detail.categoryRemainingMs);
-        PushTableInt(luaState, isOnCategoryCooldownKey, detail.isOnCategoryCooldown ? 1 : 0);
+        PushTableValue(luaState, isOnCategoryCooldownKey, detail.isOnCategoryCooldown ? 1 : 0);
 
         // GCD category cooldown
         PushTableValue(luaState, gcdCategoryIdKey, detail.gcdCategoryId);
         PushTableValue(luaState, gcdCategoryStartSKey, detail.gcdCategoryStartMs / 1000.0);
         PushTableValue(luaState, gcdCategoryDurationMsKey, detail.gcdCategoryDurationMs);
         PushTableValue(luaState, gcdCategoryRemainingMsKey, detail.gcdCategoryRemainingMs);
-        PushTableInt(luaState, isOnGcdCategoryCooldownKey, detail.isOnGcdCategoryCooldown ? 1 : 0);
+        PushTableValue(luaState, isOnGcdCategoryCooldownKey, detail.isOnGcdCategoryCooldown ? 1 : 0);
     }
 
     CooldownDetail GetItemCooldownDetail(uint32_t itemId) {
         auto *itemStats = GetItemStats(itemId);
 
-        CooldownDetail best{};
-        uint32_t bestRemaining = 0;
+        CooldownDetail activeCooldownDetail{};
+        uint32_t longestCooldownMs = 0;
 
         if (itemStats) {
             for (int i = 0; i < 5; ++i) {
@@ -206,22 +241,17 @@ namespace Nampower {
 
                 auto const categoryOverride = static_cast<uint32_t>(itemStats->m_spellCategory[i]);
                 auto const detail = GetCooldownFromSpellHistory(spellId, itemId, categoryOverride);
-                if (!detail.isOnCooldown) {
-                    continue;
-                }
 
-                if (detail.cooldownRemainingMs >= bestRemaining) {
-                    best = detail;
-                    bestRemaining = detail.cooldownRemainingMs;
+                if (detail.cooldownRemainingMs >= longestCooldownMs) {
+                    activeCooldownDetail = detail;
+                    longestCooldownMs = detail.cooldownRemainingMs;
                 }
             }
+        } else {
+            activeCooldownDetail = GetCooldownFromSpellHistory(0, itemId, 0);
         }
 
-        if (!best.isOnCooldown) {
-            best = GetCooldownFromSpellHistory(0, itemId, 0);
-        }
-
-        return best;
+        return activeCooldownDetail;
     }
 
     uint32_t Script_GetSpellIdCooldown(uintptr_t *luaState) {
@@ -261,6 +291,86 @@ namespace Nampower {
         }
 
         // Item cooldowns rely on the associated spell entries being in the history with the item id set.
+        auto const cooldown = GetItemCooldownDetail(itemId);
+
+        PushCooldownDetailTable(luaState, cooldown);
+        return 1;
+    }
+
+    static bool TrinketMatches(uint32_t itemId, uint32_t searchItemId, const char *searchItemName) {
+        if (searchItemId != 0) {
+            return itemId == searchItemId;
+        }
+
+        if (searchItemName) {
+            auto itemStats = GetItemStats(itemId);
+            if (itemStats && itemStats->m_displayName[0]) {
+                return _stricmp(itemStats->m_displayName[0], searchItemName) == 0;
+            }
+        }
+
+        return false;
+    }
+
+    uint32_t Script_GetTrinketCooldown(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        if (!lua_isnumber(luaState, 1) && !lua_isstring(luaState, 1)) {
+            lua_error(luaState, "Usage: GetTrinketCooldown(slot|itemIdOrName)");
+            return 0;
+        }
+
+        uint32_t trinketInvSlot = 0;
+        uint32_t searchItemId = 0;
+        const char *searchItemName = nullptr;
+
+        if (lua_isnumber(luaState, 1)) {
+            auto param = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+            if (param == 1 || param == 13) {
+                trinketInvSlot = 12;
+            } else if (param == 2 || param == 14) {
+                trinketInvSlot = 13;
+            } else {
+                searchItemId = param;
+            }
+        } else {
+            searchItemName = lua_tostring(luaState, 1);
+        }
+
+        auto const getBagItem = reinterpret_cast<CGBag_C_GetItemAtSlotT>(Offsets::CGBag_C_GetItemAtSlot);
+        auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto playerUnit = game::GetObjectPtr(playerGuid);
+        if (!playerUnit) {
+            lua_pushnumber(luaState, -1);
+            return 1;
+        }
+
+        auto inventory = game::GetPlayerInventoryPtr(playerUnit);
+
+        game::CGItem_C *item = nullptr;
+
+        if (trinketInvSlot == 12 || trinketInvSlot == 13) {
+            item = getBagItem(inventory, trinketInvSlot);
+        } else {
+            for (uint32_t invSlot: {12u, 13u}) {
+                auto candidate = getBagItem(inventory, invSlot);
+                if (candidate && TrinketMatches(game::GetItemId(candidate), searchItemId, searchItemName)) {
+                    item = candidate;
+                    break;
+                }
+            }
+        }
+
+        // if looking for trinket by name and not equipped, search bags to try to find item id
+        if (!item && searchItemName != nullptr) {
+            // look for item name in bags
+            auto result = FindPlayerItem(0, searchItemName);
+            if (result.found()) {
+                searchItemId = game::GetItemId(result.item);
+            }
+        }
+
+        uint32_t itemId = (item) ? game::GetItemId(item) : searchItemId;
         auto const cooldown = GetItemCooldownDetail(itemId);
 
         PushCooldownDetailTable(luaState, cooldown);

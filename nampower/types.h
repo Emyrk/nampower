@@ -28,6 +28,7 @@ struct UserSettings {
     bool quickcastOnDoubleCast;
 
     bool spamProtectionEnabled;
+    bool enableAuraCastEvents;
 
     uint32_t spellQueueWindowMs;
     uint32_t onSwingBufferCooldownMs;

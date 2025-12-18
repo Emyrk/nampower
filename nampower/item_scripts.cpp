@@ -5,21 +5,21 @@
 #include "logging.hpp"
 #include "offsets.hpp"
 
-#include <cctype>
-#include <cstring>
 #include <string>
-#include <unordered_map>
+#include <array>
 
 namespace Nampower {
-    // Local cache for item name lookups
-    static std::unordered_map<std::string, uint32_t> itemNameToIdCache;
-
     // Reusable table references to reduce memory allocations
     static int basicItemInfoTableRef = LUA_REFNIL;
     static int itemInfoTableRef = LUA_REFNIL;
     static int equippedItemsTableRef = LUA_REFNIL;
     static int bagItemsTableRef = LUA_REFNIL;
     static int bagTableRef = LUA_REFNIL;
+    static int trinketsTableRef = LUA_REFNIL;
+    static constexpr uint32_t MAX_TRINKET_ENTRY_TABLES = 100;
+    static std::array<int, 100> trinketEntryTableRefs{};
+    static bool trinketEntryRefsInitialized = false;
+    static uint32_t lastTrinketCount = 0;
 
     // String keys used when pushing item data to Lua
     static char itemIdKey[] = "itemId";
@@ -32,74 +32,22 @@ namespace Nampower {
     static char maxDurabilityKey[] = "maxDurability";
     static char tempEnchantmentTimeLeftMsKey[] = "tempEnchantmentTimeLeftMs";
     static char tempEnchantmentChargesKey[] = "tempEnchantmentCharges";
-
-    std::string ToLowerCase(const char *str) {
-        std::string result;
-        if (!str) return result;
-
-        while (*str) {
-            result += static_cast<char>(tolower(*str));
-            ++str;
-        }
-        return result;
-    }
-
-    uint32_t GetItemIdFromCache(const char *itemName) {
-        if (!itemName) return 0;
-
-        std::string lowerName = ToLowerCase(itemName);
-        auto it = itemNameToIdCache.find(lowerName);
-        if (it != itemNameToIdCache.end()) {
-            return it->second;
-        }
-        return 0;
-    }
-
-    void CacheItemNameToId(const char *itemName, uint32_t itemId) {
-        if (!itemName || itemId == 0) return;
-
-        std::string lowerName = ToLowerCase(itemName);
-        itemNameToIdCache[lowerName] = itemId;
-    }
-
-    bool DoesItemMatch(uint32_t itemId, uint32_t searchItemId, const char *searchItemName) {
-        if (searchItemId != 0) {
-            return itemId == searchItemId;
-        }
-
-        if (searchItemName) {
-            auto itemStats = GetItemStats(itemId);
-            if (itemStats && itemStats->m_displayName[0]) {
-                bool matches = _stricmp(itemStats->m_displayName[0], searchItemName) == 0;
-                if (matches) {
-                    CacheItemNameToId(searchItemName, itemId);
-                }
-                return matches;
-            }
-        }
-
-        return false;
-    }
+    static char bagIndexKey[] = "bagIndex";
+    static char slotIndexKey[] = "slotIndex";
+    static char trinketNameKey[] = "trinketName";
 
     void PushItemFoundResult(uintptr_t *luaState, int32_t bagIndex, uint32_t slot) {
         uint32_t adjustedSlot = slot;
         if (bagIndex == 0) {
             adjustedSlot = slot - 0x17; // subtract 23
-        } else if (bagIndex == -1) {
+        } else if (bagIndex == BANK_BAG_INDEX) {
             adjustedSlot = slot - 0x27; // subtract 39
-        } else if (bagIndex == -2) {
+        } else if (bagIndex == KEYRING_BAG_INDEX) {
             adjustedSlot = slot - 0x51; // subtract 81
         }
 
         lua_pushnumber(luaState, static_cast<double>(bagIndex));
         lua_pushnumber(luaState, static_cast<double>(adjustedSlot + 1)); // lua is 1 indexed
-    }
-
-    uintptr_t *GetBagPtrFromContainer(uintptr_t *containerPtr) {
-        auto vftable = game::GetObjectVFTable(containerPtr);
-        using GetBagPtrT = uintptr_t * (__thiscall *)(uintptr_t *);
-        auto getBagPtrFunc = reinterpret_cast<GetBagPtrT>(vftable[4]);
-        return getBagPtrFunc(containerPtr);
     }
 
     void CreateBasicItemInfoTable(uintptr_t *luaState, game::CGItem *cgItem) {
@@ -200,29 +148,263 @@ namespace Nampower {
             return 0;
         }
 
+        auto result = FindPlayerItem(searchItemId, searchItemName);
+        if (!result.found()) {
+            lua_pushnil(luaState);
+            lua_pushnil(luaState);
+            return 2;
+        }
+
+        if (result.bagIndex == EQUIPPED_BAG_INDEX) {
+            lua_pushnil(luaState);
+            lua_pushnumber(luaState, static_cast<double>(result.slot + 1));
+            return 2;
+        }
+
+        PushItemFoundResult(luaState, result.bagIndex, result.slot);
+        return 2;
+    }
+
+    uint32_t Script_UseItemIdOrName(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isnumber(luaState, 1) && !lua_isstring(luaState, 1)) {
+            lua_error(luaState, "Usage: UseItemIdOrName(itemIdOrName, [target])");
+            return 0;
+        }
+
+        uint32_t searchItemId = 0;
+        const char *searchItemName = nullptr;
+
+        if (lua_isnumber(luaState, 1)) {
+            searchItemId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+        } else {
+            searchItemName = lua_tostring(luaState, 1);
+            uint32_t cachedItemId = GetItemIdFromCache(searchItemName);
+            if (cachedItemId != 0) {
+                searchItemId = cachedItemId;
+                searchItemName = nullptr;
+            }
+        }
+
+        uint64_t targetGuid = 0;
+        if (lua_gettop(luaState) >= 2) {
+            if (!lua_isnumber(luaState, 2) && !lua_isstring(luaState, 2)) {
+                lua_error(luaState, "Usage: UseItemIdOrName(itemIdOrName, [target])");
+                return 0;
+            }
+
+            targetGuid = GetUnitGuidFromLuaParam(luaState, 2);
+            if (targetGuid == 0) {
+                lua_error(luaState, "Unable to determine target guid");
+                return 0;
+            }
+        } else {
+            targetGuid = *reinterpret_cast<uint64_t *>(Offsets::LockedTargetGuid);
+            if (targetGuid == 0) {
+                targetGuid = game::ClntObjMgrGetActivePlayerGuid();
+            }
+        }
+
+        auto itemSearchResult = FindPlayerItem(searchItemId, searchItemName);
+        if (!itemSearchResult.found()) {
+            lua_pushnumber(luaState, 0);
+            return 1;
+        }
+
+        using CGItem_C_UseT = uint32_t(__thiscall *)(game::CGItem_C *this_ptr, uint64_t *targetGuid, int useBindConfirm);
+        auto const useItem = reinterpret_cast<CGItem_C_UseT>(Offsets::CGItem_C_Use);
+
+        auto const result = useItem(itemSearchResult.item, &targetGuid, 0);
+        lua_pushnumber(luaState, result);
+        return 1;
+    }
+
+    uint32_t Script_UseTrinket(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isnumber(luaState, 1) && !lua_isstring(luaState, 1)) {
+            lua_error(luaState, "Usage: UseTrinket(slot|itemIdOrName, [target])");
+            return 0;
+        }
+
+        uint32_t trinketInvSlot = 0;
+        uint32_t searchItemId = 0;
+        const char *searchItemName = nullptr;
+
+        if (lua_isnumber(luaState, 1)) {
+            auto param = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+            if (param == 1 || param == 13) {
+                trinketInvSlot = 12;
+            } else if (param == 2 || param == 14) {
+                trinketInvSlot = 13;
+            } else {
+                searchItemId = param;
+            }
+        } else {
+            searchItemName = lua_tostring(luaState, 1);
+            uint32_t cachedItemId = GetItemIdFromCache(searchItemName);
+            if (cachedItemId != 0) {
+                searchItemId = cachedItemId;
+                searchItemName = nullptr;
+            }
+        }
+
+        uint64_t targetGuid = 0;
+        if (lua_gettop(luaState) >= 2) {
+            if (!lua_isnumber(luaState, 2) && !lua_isstring(luaState, 2)) {
+                lua_error(luaState, "Usage: UseTrinket(slot|itemIdOrName, [target])");
+                return 0;
+            }
+
+            targetGuid = GetUnitGuidFromLuaParam(luaState, 2);
+            if (targetGuid == 0) {
+                lua_error(luaState, "Unable to determine target guid");
+                return 0;
+            }
+        } else {
+            targetGuid = *reinterpret_cast<uint64_t *>(Offsets::LockedTargetGuid);
+            if (targetGuid == 0) {
+                targetGuid = game::ClntObjMgrGetActivePlayerGuid();
+            }
+        }
+
         auto const getBagItem = reinterpret_cast<CGBag_C_GetItemAtSlotT>(Offsets::CGBag_C_GetItemAtSlot);
-        auto const getContainerGuid = reinterpret_cast<GetContainerGuidT>(Offsets::GetContainerGuid);
+        auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto playerUnit = game::GetObjectPtr(playerGuid);
+        if (!playerUnit) {
+            lua_pushnumber(luaState, -1);
+            return 1;
+        }
 
         auto inventory = game::GetPlayerInventoryPtr(playerUnit);
 
-        for (uint32_t slot = 0; slot <= 18; slot++) {
-            auto item = getBagItem(inventory, slot);
-            if (item && DoesItemMatch(game::GetItemId(item), searchItemId, searchItemName)) {
+        game::CGItem_C *item = nullptr;
+
+        if (trinketInvSlot == 12 || trinketInvSlot == 13) {
+            item = getBagItem(inventory, trinketInvSlot);
+        } else {
+            for (uint32_t slot : {12u, 13u}) {
+                auto candidate = getBagItem(inventory, slot);
+                if (candidate && DoesItemMatch(game::GetItemId(candidate), searchItemId, searchItemName)) {
+                    item = candidate;
+                    break;
+                }
+            }
+        }
+
+        if (!item) {
+            lua_pushnumber(luaState, -1);
+            return 1;
+        }
+
+        using CGItem_C_UseT = uint32_t(__thiscall *)(game::CGItem_C *this_ptr, uint64_t *targetGuid, int useBindConfirm);
+        auto const useItem = reinterpret_cast<CGItem_C_UseT>(Offsets::CGItem_C_Use);
+
+        auto const result = useItem(item, &targetGuid, 0);
+        lua_pushnumber(luaState, result);
+        return 1;
+    }
+
+    uint32_t Script_GetTrinkets(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        auto const getBagItem = reinterpret_cast<CGBag_C_GetItemAtSlotT>(Offsets::CGBag_C_GetItemAtSlot);
+        auto const getContainerGuid = reinterpret_cast<GetContainerGuidT>(Offsets::GetContainerGuid);
+
+        auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto playerUnit = game::GetObjectPtr(playerGuid);
+
+        bool copyTable = false;
+        if (lua_isnumber(luaState, 1)) {
+            copyTable = static_cast<int>(lua_tonumber(luaState, 1)) != 0;
+        }
+
+        if (!trinketEntryRefsInitialized) {
+            trinketEntryTableRefs.fill(LUA_REFNIL);
+            trinketEntryRefsInitialized = true;
+        }
+
+        if (!copyTable && trinketsTableRef == LUA_REFNIL) {
+            lua_newtable(luaState);
+            trinketsTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
+        }
+
+        if (copyTable) {
+            lua_newtable(luaState);
+        } else {
+            lua_rawgeti(luaState, LUA_REGISTRYINDEX, trinketsTableRef);
+            for (uint32_t i = 1; i <= lastTrinketCount; ++i) {
+                lua_pushnumber(luaState, static_cast<double>(i));
                 lua_pushnil(luaState);
-                lua_pushnumber(luaState, static_cast<double>(slot+1)); // lua is 1 indexed
-                return 2;
+                lua_settable(luaState, -3);
             }
         }
 
-        for (uint32_t slot = 23; slot <= 38; slot++) {
+        if (!playerUnit) {
+            return 1;
+        }
+
+        auto inventory = game::GetPlayerInventoryPtr(playerUnit);
+        uint32_t luaIndex = 1;
+
+        auto pushTrinket = [&](int32_t bagIndex, uint32_t slot, game::CGItem_C *item) {
+            if (!item) return;
+
+            auto itemId = game::GetItemId(item);
+            auto itemStats = GetItemStats(itemId);
+            if (!itemStats || itemStats->m_inventoryType != game::INVTYPE_TRINKET) {
+                return;
+            }
+
+            uint32_t luaSlot = slot + 1;
+            if (bagIndex == 0) {
+                luaSlot = slot - 0x17 + 1; // backpack absolute slots 23-38
+            } else if (bagIndex == BANK_BAG_INDEX) {
+                luaSlot = slot - 0x27 + 1; // bank absolute slots 39-62
+            } else if (bagIndex == KEYRING_BAG_INDEX) {
+                luaSlot = slot - 0x51 + 1; // keyring absolute slots 81-96
+            }
+
+            lua_pushnumber(luaState, static_cast<double>(luaIndex++));
+            if (copyTable || luaIndex - 2 >= MAX_TRINKET_ENTRY_TABLES) {
+                lua_newtable(luaState);
+            } else {
+                auto &entryRef = trinketEntryTableRefs[luaIndex - 2];
+                if (entryRef == LUA_REFNIL) {
+                    lua_newtable(luaState);
+                    entryRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
+                }
+                lua_rawgeti(luaState, LUA_REGISTRYINDEX, entryRef);
+            }
+            PushTableValue(luaState, itemIdKey, itemId);
+            if (bagIndex == EQUIPPED_BAG_INDEX) {
+                lua_pushstring(luaState, bagIndexKey);
+                lua_pushnil(luaState);
+                lua_settable(luaState, -3);
+            } else {
+                PushTableValue(luaState, bagIndexKey, bagIndex);
+            }
+            PushTableValue(luaState, slotIndexKey, luaSlot);
+            const char *trinketName = itemStats->m_displayName[0] ? itemStats->m_displayName[0] : "Unknown";
+            PushTableValue(luaState, trinketNameKey, trinketName);
+            lua_settable(luaState, -3);
+        };
+
+        // Equipped trinket slots (0-based slots 12 and 13)
+        for (uint32_t slot : {12u, 13u}) {
             auto item = getBagItem(inventory, slot);
-            if (item && DoesItemMatch(game::GetItemId(item), searchItemId, searchItemName)) {
-                PushItemFoundResult(luaState, 0, slot);
-                return 2;
-            }
+            pushTrinket(EQUIPPED_BAG_INDEX, slot, item);
         }
 
-        for (int32_t bagIndex = 1; bagIndex <= 4; bagIndex++) {
+        // Backpack (bagIndex 0, absolute slots 23-38)
+        for (uint32_t slot = 23; slot <= 38; ++slot) {
+            auto item = getBagItem(inventory, slot);
+            pushTrinket(0, slot, item);
+        }
+
+        // Equipped bags 1-4
+        for (int32_t bagIndex = 1; bagIndex <= 4; ++bagIndex) {
             uint64_t containerGuid = getContainerGuid(bagIndex - 1); // bagIndex 1-4 maps to container 0-3
             if (containerGuid == 0) continue;
 
@@ -233,58 +415,17 @@ namespace Nampower {
             if (!bagPtr) continue;
 
             auto bagSize = *bagPtr;
-            for (uint32_t slot = 0; slot < bagSize; slot++) {
+            for (uint32_t slot = 0; slot < bagSize; ++slot) {
                 auto item = getBagItem(bagPtr, slot);
-                if (item && DoesItemMatch(game::GetItemId(item), searchItemId, searchItemName)) {
-                    PushItemFoundResult(luaState, bagIndex, slot);
-                    return 2;
-                }
+                pushTrinket(bagIndex, slot, item);
             }
         }
 
-        uint64_t bankGuid = *reinterpret_cast<uint64_t *>(Offsets::BankGuid);
-
-        if (bankGuid > 0) {
-            for (uint32_t slot = 39; slot <= 62; slot++) {
-                auto item = getBagItem(inventory, slot);
-                if (item && DoesItemMatch(game::GetItemId(item), searchItemId, searchItemName)) {
-                    PushItemFoundResult(luaState, -1, slot);
-                    return 2;
-                }
-            }
-
-            for (int32_t bagIndex = 5; bagIndex <= 9; bagIndex++) {
-                uint64_t containerGuid = getContainerGuid(bagIndex - 1); // bagIndex 5-9 maps to container 4-8
-                if (containerGuid == 0) continue;
-
-                auto containerPtr = game::ClntObjMgrObjectPtr(game::TYPEMASK_CONTAINER, containerGuid);
-                if (!containerPtr) continue;
-
-                auto bagPtr = GetBagPtrFromContainer(containerPtr);
-                if (!bagPtr) continue;
-
-                auto bagSize = *bagPtr;
-                for (uint32_t slot = 0; slot < bagSize; slot++) {
-                    auto item = getBagItem(bagPtr, slot);
-                    if (item && DoesItemMatch(game::GetItemId(item), searchItemId, searchItemName)) {
-                        PushItemFoundResult(luaState, bagIndex, slot);
-                        return 2;
-                    }
-                }
-            }
+        if (!copyTable) {
+            lastTrinketCount = luaIndex - 1;
         }
 
-        for (uint32_t slot = 81; slot <= 96; slot++) {
-            auto item = getBagItem(inventory, slot);
-            if (item && DoesItemMatch(game::GetItemId(item), searchItemId, searchItemName)) {
-                PushItemFoundResult(luaState, -2, slot);
-                return 2;
-            }
-        }
-
-        lua_pushnil(luaState);
-        lua_pushnil(luaState);
-        return 2;
+        return 1;
     }
 
     uint32_t Script_GetEquippedItems(uintptr_t *luaState) {

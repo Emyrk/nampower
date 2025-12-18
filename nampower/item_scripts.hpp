@@ -8,6 +8,9 @@
 
 namespace Nampower {
     uint32_t Script_FindPlayerItemSlot(uintptr_t *luaState);
+    uint32_t Script_UseItemIdOrName(uintptr_t *luaState);
+    uint32_t Script_UseTrinket(uintptr_t *luaState);
+    uint32_t Script_GetTrinkets(uintptr_t *luaState);
     uint32_t Script_GetEquippedItems(uintptr_t *luaState);
     uint32_t Script_GetEquippedItem(uintptr_t *luaState);
     uint32_t Script_GetBagItem(uintptr_t *luaState);

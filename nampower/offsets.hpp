@@ -140,6 +140,8 @@ enum class Offsets : std::uint32_t {
     Script_SetCVar = 0x00488C10,
     Script_RunScript = 0x0048B980,
     Script_SpellStopCasting = 0x006E6E80,
+    Script_UseInventoryItem = 0x004c8de0,
+    Script_UseContainerItem = 0x004fa0e0,
 
     SStrDupA = 0X0064A620,
 
@@ -196,6 +198,10 @@ enum class Offsets : std::uint32_t {
     UnitCombatLogUnitDead = 0x0062c160,
 
     CGPlayer_C_OnAttackIconPressed = 0X006131A0,
+
+    CGCharacterInfo_UseItem = 0x004c7970,
+
+    CGItem_C_Use = 0x005D8D00,
 
     DBCache_ItemCacheDBGetRow = 0x0055BA30,
 

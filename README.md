@@ -125,8 +125,13 @@ This includes functions for:
 - Spell/item/unit information (GetItemStats, GetSpellRec, GetUnitData, etc.)
 - Spell casting and queuing (QueueSpellByName, QueueScript, etc.)
 - Cast information (GetCastInfo, GetCurrentCastingInfo)
-- Cooldown tracking (GetSpellIdCooldown, GetItemIdCooldown)
+- Cooldown tracking (GetSpellIdCooldown, GetItemIdCooldown), including item metadata on cooldown detail tables
+- Inventory helpers (GetTrinketCooldown, GetTrinkets)
 - Spell lookups and utilities
+
+Cooldown detail tables now also expose `itemId`, `itemHasActiveSpell`, and `itemActiveSpellId` alongside the existing per-category timing data.
+
+Use `GetTrinkets([copy])` to enumerate equipped trinkets and bagged trinkets (backpack/bags 1-4) with `itemId`, `trinketName`, `bagIndex` (nil when equipped), and 1-based `slotIndex`. It reuses cached tables by default; pass `1` (or any truthy value) to force a fresh copy.
 
 ## Custom Events
 
@@ -137,6 +142,7 @@ Available events:
 - SPELL_CAST_EVENT - Fires when you cast a spell with additional information
 - SPELL_DAMAGE_EVENT_SELF and SPELL_DAMAGE_EVENT_OTHER - Combat damage events
 - Buff/Debuff Events (BUFF_ADDED_SELF, BUFF_REMOVED_SELF, etc.)
+- AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER - Aura application events (fires once per aura effect; "Self" fires when the aura lands on the active player, including self-cast with no explicit target; includes aura metadata + amplitude/misc + aura cap bitfield for buff/debuff slots); set `NP_EnableAuraCastEvents=1` to enable
 - UNIT_DIED - Fires when a unit dies
 
 ## Bug Reporting

@@ -35,6 +35,7 @@ The following functions use reusable table references:
 - **`GetItemStatsField(itemId, fieldName, [copy])`** - Returns individual item field value
 - **`GetUnitField(unitToken, fieldName, [copy])`** - Returns individual unit field value
 - **`GetSpellRecField(spellId, fieldName, [copy])`** - Returns individual spell field value
+- **`GetTrinkets([copy])`** - Returns trinket list table
 
 **Important:** When using these functions without the `copy` parameter, **immediately copy or extract** any values you need to store for later use. Do not store references to the returned tables themselves. Alternatively, pass `1` as the `copy` parameter to get an independent table that is safe to store.
 
@@ -199,6 +200,55 @@ if slot then
         print("Hearthstone is in bag " .. bag .. " slot " .. slot)
     end
 end
+```
+
+#### UseItemIdOrName(itemIdOrName, [target])
+Uses the first matching item found in the player's inventory (including equipped items) by item ID or name.
+
+**Parameters:**
+- `itemIdOrName` (number|string): Item ID or item name (case-insensitive)
+- `target` (optional, string|number): Unit token (e.g. `"target"`, `"player"`) or GUID
+  - If omitted, uses `LockedTargetGuid` if set; otherwise falls back to the active player GUID.
+
+**Returns:**
+- `1` if the item was found and `CGItem_C::Use(...)` returned non-zero
+- `0` if the item was not found or use failed
+
+**Examples:**
+```lua
+-- Use Hearthstone
+UseItemIdOrName("Hearthstone")
+
+-- Use a healing potion on yourself (if the item requires a target)
+UseItemIdOrName(13446, "player")
+```
+
+#### UseTrinket(slot|itemIdOrName, [target])
+Uses a trinket from the equipped trinket slots (13 and 14 only).
+
+**Parameters:**
+- `slot|itemIdOrName` (number|string):
+  - `1` or `13` => use first trinket slot
+  - `2` or `14` => use second trinket slot
+  - Any other number => treat as item ID to find in trinket slots
+  - String => item name (case-insensitive) to find in trinket slots
+- `target` (optional, string|number): Unit token or GUID. If omitted, uses `LockedTargetGuid` if set; otherwise falls back to active player GUID.
+
+**Returns:**
+- `1` if the trinket was found and `CGItem_C::Use(...)` returned non-zero
+- `0` if the trinket was found but use returned zero
+- `-1` if no matching trinket was found in slots 13/14
+
+**Examples:**
+```lua
+-- Use first trinket slot
+UseTrinket(1)
+-- Use second trinket slot on current target
+UseTrinket(2, "target")
+-- Use by item id if present in either trinket slot
+UseTrinket(18406)
+-- Use by name
+UseTrinket("Royal Seal of Eldre'Thalas")
 ```
 
 #### GetEquippedItems(unitToken)
@@ -662,6 +712,9 @@ A Lua table reference with the following fields:
 
 - `isOnCooldown` (number): 1 if any cooldown is active, 0 otherwise
 - `cooldownRemainingMs` (number): Maximum remaining time across all cooldown types in milliseconds
+- `itemId` (number): Item ID tied to the cooldown (0 if none)
+- `itemHasActiveSpell` (number): 1 if the item has an on-use spell, 0 otherwise
+- `itemActiveSpellId` (number): Spell ID of the active item spell (0 if none)
 
 **Individual Spell Cooldown:**
 - `individualStartS` (number): When the individual spell cooldown started (seconds, WoW time)
@@ -733,6 +786,52 @@ else
     print("Trinket on cooldown for " .. cd.cooldownRemainingMs .. "ms")
 end
 ```
+
+#### GetTrinketCooldown(slot|itemIdOrName)
+Returns cooldown information for the equipped trinket(s) in slots 13 or 14. Accepts slot shortcuts or item identifiers.
+
+**Parameters:**
+- `slot|itemIdOrName` (number|string):
+  - `1` or `13` => first trinket slot
+  - `2` or `14` => second trinket slot
+  - Any other number => treat as item ID to match against trinket slots
+  - String => item name (case-insensitive) to match against trinket slots
+
+**Returns:**
+- If no matching trinket is equipped in slots 13/14: returns `-1`
+- Otherwise: a cooldown detail table with the same structure as `GetSpellIdCooldown` / `GetItemIdCooldown`
+
+**Example:**
+```lua
+-- Get cooldown for first trinket slot
+local cd = GetTrinketCooldown(1)
+if cd ~= -1 and cd.isOnCooldown == 0 then
+    print("Trinket ready")
+end
+
+-- Check by name
+local cd = GetTrinketCooldown("Royal Seal of Eldre'Thalas")
+if cd ~= -1 then
+    print("Remaining: " .. cd.cooldownRemainingMs .. "ms")
+end
+```
+
+#### GetTrinkets([copy])
+Returns a table of trinkets from equipped trinket slots and carried bags.
+
+**Parameters:**
+- `[copy]` (number|boolean, optional): Pass `1` (or any truthy value) to force creation of a fresh Lua table. By default the function reuses an internal table and entry tables for performance.
+
+**Returns:**
+A Lua table where each entry contains:
+- `itemId` (number)
+- `trinketName` (string, `"Unknown"` if no name available)
+- `bagIndex` (number|nil): `nil` when equipped; `0` for backpack; `1-4` for equipped bags
+- `slotIndex` (number): Lua 1-based slot within the container (or 1/2 for equipped trinket slots)
+
+**Notes:**
+- Scans only equipped trinket slots and bags 0-4 (backpack + equipped bags). Does not scan bank or keyring.
+- Reuses cached Lua tables unless `copyTable` is truthy; prefer copies if you will mutate the returned tables.
 
 #### GetSpellIdForName(spellName)
 Returns:

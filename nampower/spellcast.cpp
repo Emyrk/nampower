@@ -855,6 +855,117 @@ namespace Nampower {
         return ret;
     }
 
+    bool doesSpellApplyAura(const game::SpellRec *spell) {
+        for (unsigned int i : spell->Effect) {
+            switch (i) {
+                case game::SPELL_EFFECT_APPLY_AURA:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_PARTY:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_RAID:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_FRIEND:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_ENEMY:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_PET:
+                    return true;
+                default:
+                    break;
+            }
+        }
+
+        return false;
+    }
+
+    void TriggerAuraCastEvent(const game::SpellRec *spell,
+                              uint64_t casterGuid,
+                              uint64_t targetGuid,
+                              uint64_t activePlayerGuid,
+                              bool castByActivePlayer) {
+        auto eventToTrigger = game::AURA_CAST_ON_OTHER;
+        if (targetGuid == activePlayerGuid) {
+            eventToTrigger = game::AURA_CAST_ON_SELF;
+        }
+
+        // ignore modifiers if not cast by active player
+        auto duration = game::GetSpellDuration(spell, !castByActivePlayer);
+
+        auto *targetUnit = game::ClntObjMgrObjectPtr(
+            static_cast<game::TypeMask>(game::TYPEMASK_PLAYER | game::TYPEMASK_UNIT), targetGuid);
+
+        bool targetIsBuffCapped = false;
+        bool targetIsDebuffCapped = false;
+
+        if (targetUnit) {
+            auto *unitFields = *reinterpret_cast<game::UnitFields **>(targetUnit + 68);
+            if (unitFields) {
+                targetIsBuffCapped = true;
+                for (int i = 31; i >= 0; --i) {
+                    if (unitFields->aura[i] == 0) {
+                        targetIsBuffCapped = false;
+                        break;
+                    }
+                }
+
+                targetIsDebuffCapped = true;
+                for (int i = 47; i >= 32; --i) {
+                    if (unitFields->aura[i] == 0) {
+                        targetIsDebuffCapped = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        char *casterGuidStr = ConvertGuidToString(casterGuid);
+        char *targetGuidStr = ConvertGuidToString(targetGuid);
+        char format[] = "%d%s%s%d%d%d%d%d%d";
+
+        for (int i = 0; i < 3; ++i) {
+            auto const effectType = spell->Effect[i];
+            switch (effectType) {
+                case game::SPELL_EFFECT_APPLY_AURA:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_PARTY:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_RAID:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_FRIEND:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_ENEMY:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_PET: {
+                    auto auraName = spell->EffectApplyAuraName[i];
+                    auto effectAmplitude = spell->EffectAmplitude[i];
+                    auto effectMiscValue = spell->EffectMiscValue[i];
+
+                    auto auraCapStatus = static_cast<uint32_t>(targetIsBuffCapped) |
+                                         (static_cast<uint32_t>(targetIsDebuffCapped) << 1);
+
+                    ((int (__cdecl *)(int eventCode,
+                                      char *fmt,
+                                      uint32_t spellIdParam,
+                                      char *casterGuidStrParam,
+                                      char *targetGuidStrParam,
+                                      uint32_t effectParam,
+                                      uint32_t auraNameParam,
+                                      uint32_t effectAmplitudeParam,
+                                      uint32_t effectMiscValueParam,
+                                      uint32_t durationParam,
+                                      uint32_t auraCapStatusParam)) Offsets::SignalEventParam)(
+                        eventToTrigger,
+                        format,
+                        spell->Id,
+                        casterGuidStr,
+                        targetGuidStr,
+                        effectType,
+                        auraName,
+                        effectAmplitude,
+                        effectMiscValue,
+                        duration,
+                        auraCapStatus);
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+
+        delete[] casterGuidStr;
+        delete[] targetGuidStr;
+    }
+
     void
     SpellGoHook(hadesmem::PatchDetourBase *detour, uint64_t *casterGUID, uint64_t *targetGUID,
                 uint32_t spellId,
@@ -862,14 +973,15 @@ namespace Nampower {
         auto const spellGo = detour->GetTrampolineT<SpellGoT>();
         spellGo(casterGUID, targetGUID, spellId, spellData);
 
-        auto const castByActivePlayer = game::ClntObjMgrGetActivePlayerGuid() == *casterGUID;
+        auto const activePlayerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto const castByActivePlayer = activePlayerGuid == *casterGUID;
+        auto const spell = game::GetSpellInfo(spellId);
 
         if (castByActivePlayer) {
             auto const currentTime = GetTime();
             // only care about our own casts
             if (!gCastData.channeling) {
                 // check if spell is on swing
-                auto const spell = game::GetSpellInfo(spellId);
                 if (spell->Attributes & game::SPELL_ATTR_ON_NEXT_SWING_1) {
                     gLastCastData.onSwingStartTimeMs = currentTime;
 
@@ -889,6 +1001,11 @@ namespace Nampower {
                     }
                 }
             }
+        }
+
+        if (gUserSettings.enableAuraCastEvents && doesSpellApplyAura(spell)) {
+            auto targetGuidVal = targetGUID ? *targetGUID : *casterGUID;
+            TriggerAuraCastEvent(spell, *casterGUID, targetGuidVal, activePlayerGuid, castByActivePlayer);
         }
     }
 

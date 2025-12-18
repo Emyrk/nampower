@@ -631,6 +631,9 @@ namespace Nampower {
         } else if (strcmp(cvar, "NP_SpamProtectionEnabled") == 0) {
             gUserSettings.spamProtectionEnabled = atoi(value) != 0;
             DEBUG_LOG("Set NP_SpamProtectionEnabled to " << gUserSettings.spamProtectionEnabled);
+        } else if (strcmp(cvar, "NP_EnableAuraCastEvents") == 0) {
+            gUserSettings.enableAuraCastEvents = atoi(value) != 0;
+            DEBUG_LOG("Set NP_EnableAuraCastEvents to " << gUserSettings.enableAuraCastEvents);
         } else if (strcmp(cvar, "NP_MinBufferTimeMs") == 0) {
             gUserSettings.minBufferTimeMs = atoi(value);
             DEBUG_LOG("Set NP_MinBufferTimeMs and current buffer to " << gUserSettings.minBufferTimeMs);
@@ -771,6 +774,7 @@ namespace Nampower {
         gUserSettings.quickcastOnDoubleCast = false;
 
         gUserSettings.spamProtectionEnabled = true;
+        gUserSettings.enableAuraCastEvents = false;
 
         gUserSettings.minBufferTimeMs = 55; // time in ms to buffer cast to minimize server failure
         gUserSettings.nonGcdBufferTimeMs = 100; // time in ms to buffer non-GCD spells to minimize server failure
@@ -954,6 +958,16 @@ namespace Nampower {
                      0, // unk2
                      0); // unk3
 
+        char NP_EnableAuraCastEvents[] = "NP_EnableAuraCastEvents";
+        CVarRegister(NP_EnableAuraCastEvents, // name
+                     nullptr, // help
+                     0, // unk1
+                     gUserSettings.enableAuraCastEvents ? defaultTrue : defaultFalse, // default value address
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
         char NP_OnSwingBufferCooldownMs[] = "NP_OnSwingBufferCooldownMs";
         CVarRegister(NP_OnSwingBufferCooldownMs, // name
                      nullptr, // help
@@ -1079,6 +1093,7 @@ namespace Nampower {
         loadUserVar("NP_DoubleCastToEndChannelEarly");
 
         loadUserVar("NP_SpamProtectionEnabled");
+        loadUserVar("NP_EnableAuraCastEvents");
 
         loadUserVar("NP_MinBufferTimeMs");
         loadUserVar("NP_NonGcdBufferTimeMs");
@@ -1221,6 +1236,12 @@ namespace Nampower {
 
         char UNIT_DIED[] = "UNIT_DIED";
         addCustomEvent(game::UNIT_DIED, UNIT_DIED);
+
+        char AURA_CAST_ON_SELF[] = "AURA_CAST_ON_SELF";
+        addCustomEvent(game::AURA_CAST_ON_SELF, AURA_CAST_ON_SELF);
+
+        char AURA_CAST_ON_OTHER[] = "AURA_CAST_ON_OTHER";
+        addCustomEvent(game::AURA_CAST_ON_OTHER, AURA_CAST_ON_OTHER);
     }
 
     void FrameScript_CreateEventsHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t maxEventId) {
@@ -1334,6 +1355,19 @@ namespace Nampower {
 
         char getItemIdCooldown[] = "GetItemIdCooldown";
         RegisterLuaFunction(getItemIdCooldown, reinterpret_cast<uintptr_t *>(Script_GetItemIdCooldown));
+
+        char getTrinketCooldown[] = "GetTrinketCooldown";
+        RegisterLuaFunction(getTrinketCooldown, reinterpret_cast<uintptr_t *>(Script_GetTrinketCooldown));
+
+        // 2.19 additions
+        char useItemIdOrName[] = "UseItemIdOrName";
+        RegisterLuaFunction(useItemIdOrName, reinterpret_cast<uintptr_t *>(Script_UseItemIdOrName));
+
+        char useTrinket[] = "UseTrinket";
+        RegisterLuaFunction(useTrinket, reinterpret_cast<uintptr_t *>(Script_UseTrinket));
+
+        char getTrinkets[] = "GetTrinkets";
+        RegisterLuaFunction(getTrinkets, reinterpret_cast<uintptr_t *>(Script_GetTrinkets));
     }
 
     std::once_flag loadFlag;

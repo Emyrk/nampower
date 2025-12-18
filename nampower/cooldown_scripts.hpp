@@ -9,4 +9,5 @@
 namespace Nampower {
     uint32_t Script_GetSpellIdCooldown(uintptr_t *luaState);
     uint32_t Script_GetItemIdCooldown(uintptr_t *luaState);
+    uint32_t Script_GetTrinketCooldown(uintptr_t *luaState);
 }

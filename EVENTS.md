@@ -145,6 +145,22 @@ for _, eventName in ipairs({"BUFF_ADDED_SELF", "BUFF_REMOVED_SELF", "DEBUFF_ADDE
 end
 ```
 
+#### AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER
+Fire when a spell cast applies an aura. "Self" covers casts that land on the active player (including cases where the active player is the caster with no explicit target); "Other" covers all other targets.
+
+These events are gated behind the `NP_EnableAuraCastEvents` CVar (default 0). Set it to `1` to enable.
+
+Parameters:
+1.  int spellId
+2.  string casterGuid - caster guid like "0xF5300000000000A5"
+3.  string targetGuid - target guid like "0xF5300000000000A5"
+4.  int effect - aura-applying effect id (event fires once for each qualifying effect in the spell)
+5.  int effectAuraName - corresponding entry from EffectApplyAuraName
+6.  int effectAmplitude - EffectAmplitude entry for the selected aura effect
+7.  int effectMiscValue - EffectMiscValue entry for the selected aura effect
+8.  int durationMs - spell duration in milliseconds (after modifiers)
+9.  int auraCapStatus - bitfield: 1 = buff bar full, 2 = debuff bar full (3 means both)
+
 #### UNIT_DIED
 Fires when a unit death is recorded in the combat log.
 
