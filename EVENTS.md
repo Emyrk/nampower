@@ -149,6 +149,9 @@ end
 Fire when a spell cast applies an aura. "Self" covers casts that land on the active player (including cases where the active player is the caster with no explicit target); "Other" covers all other targets.
 
 These events are gated behind the `NP_EnableAuraCastEvents` CVar (default 0). Set it to `1` to enable.
+**Note:** some auras do not have spell effects and won’t trigger these events; the BUFF/DEBUFF gain events are the only way to track those.
+
+These events are primarily intended for basic tracking of aura applications when buff/debuff caps prevent normal GAINS events from firing.
 
 Parameters:
 1.  int spellId
