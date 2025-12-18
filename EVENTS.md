@@ -161,7 +161,7 @@ Parameters:
 5.  int effectAuraName - corresponding entry from EffectApplyAuraName
 6.  int effectAmplitude - EffectAmplitude entry for the selected aura effect
 7.  int effectMiscValue - EffectMiscValue entry for the selected aura effect
-8.  int durationMs - spell duration in milliseconds (after modifiers)
+8.  int durationMs - spell duration in milliseconds (includes client modifiers if you are the caster)
 9.  int auraCapStatus - bitfield: 1 = buff bar full, 2 = debuff bar full (3 means both)
 
 #### UNIT_DIED
