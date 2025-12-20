@@ -89,7 +89,7 @@ namespace Nampower {
     CastQueue gCastHistory = CastQueue(30);
 
 
-    std::unique_ptr<hadesmem::PatchDetour<SpellVisualsInitializeT> > gSpellVisualsInitDetour;
+    std::unique_ptr<hadesmem::PatchDetour<SysMsgInitializeT> > gSysMsgInitDetour;
     std::unique_ptr<hadesmem::PatchDetour<LoadScriptFunctionsT> > gLoadScriptFunctionsDetour;
     std::unique_ptr<hadesmem::PatchDetour<FrameScript_CreateEventsT> > gCreateEventsDetour;
     std::unique_ptr<hadesmem::PatchDetour<FramescriptSetEventCountT> > gSetEventCountDetour;
@@ -138,6 +138,15 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<InvalidFunctionPtrCheckT> > gInvalidFunctionPtrCheckDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<GetSpellSlotFromLuaT> > gGetSpellSlotFromLuaDetour;
+
+    // Flags for one-time initialization
+    std::once_flag loadFlag;
+    std::once_flag initHooksFlag;
+
+    // Forward declarations for hook functions
+    void LoadScriptFunctionsHook(hadesmem::PatchDetourBase *detour);
+    void FrameScript_CreateEventsHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t maxEventId);
+    void Framescript_SetEventCountHook(hadesmem::PatchDetourBase *detour, void *thisPtr, void *dummy_edx, uint32_t count);
 
     uint32_t GetTime() {
         return static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -1123,66 +1132,74 @@ namespace Nampower {
     }
 
     void initHooks() {
-        const hadesmem::Process process(::GetCurrentProcessId());
+        std::call_once(initHooksFlag, []() {
+            const hadesmem::Process process(::GetCurrentProcessId());
 
-        gSetCVarDetour = createHook<SetCVarT>(process, Offsets::Script_SetCVar, &Script_SetCVarHook);
-        gCGSpellBook_CastSpellDetour = createHook<CGSpellBook_CastSpellT>(
-            process, Offsets::CGSpellBook_CastSpell, &CGSpellBook_CastSpellHook);
-        gCGActionBar_UseActionDetour = createHook<CGActionBar_UseActionT>(
-            process, Offsets::CGActionBar_UseAction, &CGActionBar_UseActionHook);
-        gCastDetour = createHook<CastSpellT>(process, Offsets::Spell_C_CastSpell, &Spell_C_CastSpellHook);
-        gSendCastDetour = createHook<SendCastT>(process, Offsets::SendCast, &SendCastHook);
-        gCancelSpellDetour = createHook<CancelSpellT>(process, Offsets::CancelSpell, &CancelSpellHook);
-        gCastResultHandlerDetour = createHook<PacketHandlerT>(process, Offsets::CastResultHandler,
-                                                              &CastResultHandlerHook);
-        gSpellStartHandlerDetour = createHook<FastCallPacketHandlerT>(process, Offsets::SpellStartHandler,
-                                                                      &SpellStartHandlerHook);
-        gPeriodicAuraLogHandlerDetour = createHook<FastCallPacketHandlerT>(process, Offsets::PeriodicAuraLogHandler,
-                                                                           &PeriodicAuraLogHandlerHook);
-        gSpellNonMeleeDmgLogHandlerDetour = createHook<FastCallPacketHandlerT>(process,
-                                                                               Offsets::SpellNonMeleeDmgLogHandler,
-                                                                               &SpellNonMeleeDmgLogHandlerHook);
-        gSpellChannelStartHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellChannelStartHandler,
-                                                                     &SpellChannelStartHandlerHook);
-        gSpellChannelUpdateHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellChannelUpdateHandler,
-                                                                      &SpellChannelUpdateHandlerHook);
-        gSpellFailedDetour = createHook<Spell_C_SpellFailedT>(process, Offsets::Spell_C_SpellFailed,
-                                                              &Spell_C_SpellFailedHook);
-        gSpellGoDetour = createHook<SpellGoT>(process, Offsets::SpellGo, &SpellGoHook);
-        gSpellDelayedDetour = createHook<PacketHandlerT>(process, Offsets::SpellDelayed, &SpellDelayedHook);
-        gSpellTargetUnitDetour = createHook<LuaScriptT>(process, Offsets::Script_SpellTargetUnit,
-                                                        &Script_SpellTargetUnitHook);
-        gSpellStopCastingDetour = createHook<LuaScriptT>(process, Offsets::Script_SpellStopCasting,
-                                                         &Script_SpellStopCastingHook);
-        gSpell_C_TargetSpellDetour = createHook<Spell_C_TargetSpellT>(process, Offsets::Spell_C_TargetSpell,
-                                                                      &Spell_C_TargetSpellHook);
-        gSpell_C_HandleTerrainClickDetour = createHook<Spell_C_HandleTerrainClickT>(
-            process, Offsets::Spell_C_HandleTerrainClick,
-            &Spell_C_HandleTerrainClickHook);
-        gCGWorldFrame_OnLayerTrackTerrainDetour = createHook<CGWorldFrame_OnLayerTrackTerrainT>(
-            process, Offsets::CGWorldFrame_OnLayerTrackTerrain,
-            &CGWorldFrame_OnLayerTrackTerrainHook);
-        gOnSpriteRightClickDetour = createHook<OnSpriteRightClickT>(process, Offsets::OnSpriteRightClick,
-                                                                    OnSpriteRightClickHook);
-        gIEndSceneDetour = createHook<ISceneEndT>(process, Offsets::ISceneEndPtr, &ISceneEndHook);
-        gInvalidFunctionPtrCheckDetour = createHook<InvalidFunctionPtrCheckT>(process, Offsets::InvalidFunctionPtrCheck,
-                                                                              &InvalidFunctionPtrCheckHook);
-        gGetSpellSlotFromLuaDetour = createHook<GetSpellSlotFromLuaT>(process, Offsets::GetSpellSlotFromLua,
-                                                                      &GetSpellSlotFromLuaHook);
-        gCGUnit_C_OnAuraRemovedDetour = createHook<CGUnit_C_OnAuraRemovedT>(process, Offsets::CGUnit_C_OnAuraRemoved,
-                                                                            &CGUnit_C_OnAuraRemovedHook);
-        gCGUnit_C_OnAuraAddedDetour = createHook<CGUnit_C_OnAuraAddedT>(process, Offsets::CGUnit_C_OnAuraAdded,
-                                                                        &CGUnit_C_OnAuraAddedHook);
-        gCGUnit_C_OnAuraAddedStackDetour = createHook<CGUnit_C_OnAuraAddedStackT>(
-            process, Offsets::CGUnit_C_OnAuraAddedStack,
-            &CGUnit_C_OnAuraAddedStackHook);
-        gUnitCombatLogUnitDeadDetour = createHook<UnitCombatLogUnitDeadT>(process, Offsets::UnitCombatLogUnitDead,
-                                                                          &UnitCombatLogUnitDeadHook);
+            gSetCVarDetour = createHook<SetCVarT>(process, Offsets::Script_SetCVar, &Script_SetCVarHook);
+            gCGSpellBook_CastSpellDetour = createHook<CGSpellBook_CastSpellT>(
+                process, Offsets::CGSpellBook_CastSpell, &CGSpellBook_CastSpellHook);
+            gCGActionBar_UseActionDetour = createHook<CGActionBar_UseActionT>(
+                process, Offsets::CGActionBar_UseAction, &CGActionBar_UseActionHook);
+            gCastDetour = createHook<CastSpellT>(process, Offsets::Spell_C_CastSpell, &Spell_C_CastSpellHook);
+            gSendCastDetour = createHook<SendCastT>(process, Offsets::SendCast, &SendCastHook);
+            gCancelSpellDetour = createHook<CancelSpellT>(process, Offsets::CancelSpell, &CancelSpellHook);
+            gCastResultHandlerDetour = createHook<PacketHandlerT>(process, Offsets::CastResultHandler,
+                                                                  &CastResultHandlerHook);
+            gSpellStartHandlerDetour = createHook<FastCallPacketHandlerT>(process, Offsets::SpellStartHandler,
+                                                                          &SpellStartHandlerHook);
+            gPeriodicAuraLogHandlerDetour = createHook<FastCallPacketHandlerT>(process, Offsets::PeriodicAuraLogHandler,
+                                                                               &PeriodicAuraLogHandlerHook);
+            gSpellNonMeleeDmgLogHandlerDetour = createHook<FastCallPacketHandlerT>(process,
+                                                                                   Offsets::SpellNonMeleeDmgLogHandler,
+                                                                                   &SpellNonMeleeDmgLogHandlerHook);
+            gSpellChannelStartHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellChannelStartHandler,
+                                                                         &SpellChannelStartHandlerHook);
+            gSpellChannelUpdateHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellChannelUpdateHandler,
+                                                                          &SpellChannelUpdateHandlerHook);
+            gSpellFailedDetour = createHook<Spell_C_SpellFailedT>(process, Offsets::Spell_C_SpellFailed,
+                                                                  &Spell_C_SpellFailedHook);
+            gSpellGoDetour = createHook<SpellGoT>(process, Offsets::SpellGo, &SpellGoHook);
+            gSpellDelayedDetour = createHook<PacketHandlerT>(process, Offsets::SpellDelayed, &SpellDelayedHook);
+            gSpellTargetUnitDetour = createHook<LuaScriptT>(process, Offsets::Script_SpellTargetUnit,
+                                                            &Script_SpellTargetUnitHook);
+            gSpellStopCastingDetour = createHook<LuaScriptT>(process, Offsets::Script_SpellStopCasting,
+                                                             &Script_SpellStopCastingHook);
+            gSpell_C_TargetSpellDetour = createHook<Spell_C_TargetSpellT>(process, Offsets::Spell_C_TargetSpell,
+                                                                          &Spell_C_TargetSpellHook);
+            gSpell_C_HandleTerrainClickDetour = createHook<Spell_C_HandleTerrainClickT>(
+                process, Offsets::Spell_C_HandleTerrainClick,
+                &Spell_C_HandleTerrainClickHook);
+            gCGWorldFrame_OnLayerTrackTerrainDetour = createHook<CGWorldFrame_OnLayerTrackTerrainT>(
+                process, Offsets::CGWorldFrame_OnLayerTrackTerrain,
+                &CGWorldFrame_OnLayerTrackTerrainHook);
+            gOnSpriteRightClickDetour = createHook<OnSpriteRightClickT>(process, Offsets::OnSpriteRightClick,
+                                                                        OnSpriteRightClickHook);
+            gIEndSceneDetour = createHook<ISceneEndT>(process, Offsets::ISceneEndPtr, &ISceneEndHook);
+            gInvalidFunctionPtrCheckDetour = createHook<InvalidFunctionPtrCheckT>(process, Offsets::InvalidFunctionPtrCheck,
+                                                                                  &InvalidFunctionPtrCheckHook);
+            gGetSpellSlotFromLuaDetour = createHook<GetSpellSlotFromLuaT>(process, Offsets::GetSpellSlotFromLua,
+                                                                          &GetSpellSlotFromLuaHook);
+            gCGUnit_C_OnAuraRemovedDetour = createHook<CGUnit_C_OnAuraRemovedT>(process, Offsets::CGUnit_C_OnAuraRemoved,
+                                                                                &CGUnit_C_OnAuraRemovedHook);
+            gCGUnit_C_OnAuraAddedDetour = createHook<CGUnit_C_OnAuraAddedT>(process, Offsets::CGUnit_C_OnAuraAdded,
+                                                                            &CGUnit_C_OnAuraAddedHook);
+            gCGUnit_C_OnAuraAddedStackDetour = createHook<CGUnit_C_OnAuraAddedStackT>(
+                process, Offsets::CGUnit_C_OnAuraAddedStack,
+                &CGUnit_C_OnAuraAddedStackHook);
+            gUnitCombatLogUnitDeadDetour = createHook<UnitCombatLogUnitDeadT>(process, Offsets::UnitCombatLogUnitDead,
+                                                                              &UnitCombatLogUnitDeadHook);
+            gLoadScriptFunctionsDetour = createHook<LoadScriptFunctionsT>(process, Offsets::LoadScriptFunctions,
+                                                                          &LoadScriptFunctionsHook);
+            gCreateEventsDetour = createHook<FrameScript_CreateEventsT>(process, Offsets::FrameScript_CreateEvents,
+                                                                        &FrameScript_CreateEventsHook);
+            gSetEventCountDetour = createHook<FramescriptSetEventCountT>(process, Offsets::Framescript_SetEventCount,
+                                                                         &Framescript_SetEventCountHook);
+        });
     }
 
-    void SpellVisualsInitializeHook(hadesmem::PatchDetourBase *detour) {
-        auto const spellVisualsInitialize = detour->GetTrampolineT<SpellVisualsInitializeT>();
-        spellVisualsInitialize();
+    void SysMsgInitializeHook(hadesmem::PatchDetourBase *detour) {
+        auto const sysMsgInitialize = detour->GetTrampolineT<SysMsgInitializeT>();
+        sysMsgInitialize();
         loadConfig();
         initHooks();
     }
@@ -1370,44 +1387,18 @@ namespace Nampower {
         RegisterLuaFunction(getTrinkets, reinterpret_cast<uintptr_t *>(Script_GetTrinkets));
     }
 
-    std::once_flag loadFlag;
-
     void load() {
         std::call_once(loadFlag, []() {
-                           // hook spell visuals initialize
+                           // hook SysMsgInitialize (bootstrap hook)
                            const hadesmem::Process process(::GetCurrentProcessId());
 
-                           auto const spellVisualsInitOrig = hadesmem::detail::AliasCast<SpellVisualsInitializeT>(
-                               Offsets::SpellVisualsInitialize);
-                           gSpellVisualsInitDetour = std::make_unique<hadesmem::PatchDetour<SpellVisualsInitializeT> >(
+                           auto const sysMsgInitOrig = hadesmem::detail::AliasCast<SysMsgInitializeT>(
+                               Offsets::SysMsgInitialize);
+                           gSysMsgInitDetour = std::make_unique<hadesmem::PatchDetour<SysMsgInitializeT> >(
                                process,
-                               spellVisualsInitOrig,
-                               &SpellVisualsInitializeHook);
-                           gSpellVisualsInitDetour->Apply();
-
-                           auto const loadScriptFunctionsOrig = hadesmem::detail::AliasCast<LoadScriptFunctionsT>(
-                               Offsets::LoadScriptFunctions);
-                           gLoadScriptFunctionsDetour = std::make_unique<hadesmem::PatchDetour<LoadScriptFunctionsT> >(
-                               process,
-                               loadScriptFunctionsOrig,
-                               &LoadScriptFunctionsHook);
-                           gLoadScriptFunctionsDetour->Apply();
-
-                           auto const createEventsOrig = hadesmem::detail::AliasCast<FrameScript_CreateEventsT>(
-                               Offsets::FrameScript_CreateEvents);
-                           gCreateEventsDetour = std::make_unique<hadesmem::PatchDetour<FrameScript_CreateEventsT> >(
-                               process,
-                               createEventsOrig,
-                               &FrameScript_CreateEventsHook);
-                           gCreateEventsDetour->Apply();
-
-                           auto const setEventCountOrig = hadesmem::detail::AliasCast<FramescriptSetEventCountT>(
-                               Offsets::Framescript_SetEventCount);
-                           gSetEventCountDetour = std::make_unique<hadesmem::PatchDetour<FramescriptSetEventCountT> >(
-                               process,
-                               setEventCountOrig,
-                               &Framescript_SetEventCountHook);
-                           gSetEventCountDetour->Apply();
+                               sysMsgInitOrig,
+                               &SysMsgInitializeHook);
+                           gSysMsgInitDetour->Apply();
                        }
         );
     }

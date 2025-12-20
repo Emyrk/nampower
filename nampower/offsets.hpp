@@ -177,6 +177,7 @@ enum class Offsets : std::uint32_t {
     RangeCheckSelected = 0x6E4440,
 
     SpellVisualsInitialize = 0x006ec0e0,
+    SysMsgInitialize = 0x0044cd10,
 
     IntIntParamFormat = 0X00843342,
     StringIntParamFormat = 0X00847FBC,

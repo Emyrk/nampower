@@ -31,7 +31,7 @@ namespace Nampower {
 
     constexpr uint32_t MAJOR_VERSION = 2;
     constexpr uint32_t MINOR_VERSION = 19;
-    constexpr uint32_t PATCH_VERSION = 0;
+    constexpr uint32_t PATCH_VERSION = 1;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
@@ -148,6 +148,7 @@ namespace Nampower {
                                                                 int clearCooldowns);
 
     using SpellVisualsInitializeT = void (__stdcall *)(void);
+    using SysMsgInitializeT = void (__fastcall *)(void);
 
     using PlaySpellVisual = void (__stdcall *)(int **param_1, void *param_2, int param_3, void **param_4);
     using CGUnit_C_ClearCastingSpellT = void (__thiscall *)(uintptr_t *unit, uint32_t param_1, int param_2,
