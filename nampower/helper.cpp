@@ -16,6 +16,8 @@ namespace Nampower {
     // Lua function pointers
     lua_errorT lua_error = reinterpret_cast<lua_errorT>(Offsets::lua_error);
     lua_gettopT lua_gettop = reinterpret_cast<lua_gettopT>(Offsets::lua_gettop);
+    lua_settopT lua_settop = reinterpret_cast<lua_settopT>(Offsets::lua_settop);
+    lua_typeT lua_type = reinterpret_cast<lua_typeT>(Offsets::lua_type);
     lua_isstringT lua_isstring = reinterpret_cast<lua_isstringT>(Offsets::lua_isstring);
     lua_isnumberT lua_isnumber = reinterpret_cast<lua_isnumberT>(Offsets::lua_isnumber);
     lua_tostringT lua_tostring = reinterpret_cast<lua_tostringT>(Offsets::lua_tostring);
@@ -206,6 +208,15 @@ namespace Nampower {
                 spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_CREATE_ITEM ||
                 spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_OPEN_LOCK ||
                 spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_OPEN_LOCK_ITEM);
+    }
+
+    bool SpellIsMounting(const game::SpellRec *spell) {
+        for (int i = 0; i < 3; ++i) {
+            if (spell->Effect[i] == game::SPELL_EFFECT_APPLY_AURA && spell->EffectApplyAuraName[i] == 78) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // if the spell is off cooldown, this will return the gcd, otherwise the cooldown

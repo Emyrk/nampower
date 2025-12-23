@@ -58,6 +58,7 @@ enum class Offsets : std::uint32_t {
     ChannelTargetGuid = 0xC4D980,
     NameplateDistance = 0xC4D988,  // float containing the distance squared ready to be pythagorean'd
     DBCacheGetRecord = 0X0055BA30,
+    InvQuestionMark = 0X00847FE4,
 
     ItemDBCache = 0xC0E2A0,
 
@@ -147,6 +148,7 @@ enum class Offsets : std::uint32_t {
 
     lua_state_ptr = 0x7040D0,
 
+    lua_type = 0x006F3460,
     lua_isstring = 0x006F3510,
     lua_isnumber = 0X006F34D0,
     lua_tostring = 0x006F3690,
@@ -168,7 +170,6 @@ enum class Offsets : std::uint32_t {
     luaL_ref = 0x006F5310,
     luaL_unref = 0x006F5400,
 
-
     CGInputControlGetActive = 0XBE1148,
     LastHardwareAction = 0X00CF0BC8,
     CGInputControlSetReleaseAction = 0x514810,
@@ -181,6 +182,7 @@ enum class Offsets : std::uint32_t {
 
     IntIntParamFormat = 0X00843342,
     StringIntParamFormat = 0X00847FBC,
+    StringParamFormat = 0X0082E280,
 
     QueueEventStringPtr = 0X00BE175C, // unused event 369 0x171
     CastEventStringPtr = 0X00BE1A08, // unused event 540 0x21C
@@ -203,6 +205,7 @@ enum class Offsets : std::uint32_t {
     CGCharacterInfo_UseItem = 0x004c7970,
 
     CGItem_C_Use = 0x005D8D00,
+    CGItem_C_GetInventoryArt = 0x005D88B0,
 
     DBCache_ItemCacheDBGetRow = 0x0055BA30,
 
@@ -211,4 +214,5 @@ enum class Offsets : std::uint32_t {
     ClearCursor = 0x00495190,
     CursorSetCursorMode = 0x00523d20,
     CursorModelSetSequence = 0x00523c20,
+    CGGameUI_DisplayError = 0x00496720,
 };

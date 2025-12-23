@@ -3,6 +3,7 @@
 #include "helper.hpp"
 #include "game.hpp"
 #include "items.hpp"
+#include "lua_refs.hpp"
 #include "offsets.hpp"
 
 #include <cstring>
@@ -192,11 +193,7 @@ namespace Nampower {
         static char isOnGcdCategoryCooldownKey[] = "isOnGcdCategoryCooldown";
 
         // Get or create reusable table
-        if (cooldownDetailTableRef == LUA_REFNIL) {
-            lua_newtable(luaState);
-            cooldownDetailTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
-        }
-        lua_rawgeti(luaState, LUA_REGISTRYINDEX, cooldownDetailTableRef);
+        GetTableRef(luaState, cooldownDetailTableRef);
 
         // Overall cooldown status
         PushTableValue(luaState, isOnCooldownKey, detail.isOnCooldown ? 1 : 0);
@@ -376,4 +373,5 @@ namespace Nampower {
         PushCooldownDetailTable(luaState, cooldown);
         return 1;
     }
+
 }

@@ -8,39 +8,40 @@
 #include <cstdint>
 
 struct UserSettings {
-    bool queueCastTimeSpells;
-    bool queueInstantSpells;
-    bool queueOnSwingSpells;
-    bool queueChannelingSpells;
-    bool queueTargetingSpells;
-    bool queueSpellsOnCooldown;
+    bool queueCastTimeSpells = true;
+    bool queueInstantSpells = true;
+    bool queueOnSwingSpells = false;
+    bool queueChannelingSpells = true;
+    bool queueTargetingSpells = true;
+    bool queueSpellsOnCooldown = true;
 
-    bool interruptChannelsOutsideQueueWindow;
-    bool retryServerRejectedSpells;
-    bool quickcastTargetingSpells;
-    bool replaceMatchingNonGcdCategory;
-    bool optimizeBufferUsingPacketTimings;
+    bool interruptChannelsOutsideQueueWindow = false;
+    bool retryServerRejectedSpells = true;
+    bool quickcastTargetingSpells = false;
+    bool replaceMatchingNonGcdCategory = false;
+    bool optimizeBufferUsingPacketTimings = false;
 
-    bool preventRightClickTargetChange;
-    bool preventRightClickPvPAttack;
+    bool preventRightClickTargetChange = false;
+    bool preventRightClickPvPAttack = false;
 
-    bool doubleCastToEndChannelEarly;
-    bool quickcastOnDoubleCast;
+    bool doubleCastToEndChannelEarly = false;
+    bool quickcastOnDoubleCast = false;
 
-    bool spamProtectionEnabled;
-    bool enableAuraCastEvents;
+    bool spamProtectionEnabled = true;
+    bool enableAuraCastEvents = false;
+    bool preventMountingWhenBuffCapped = true;
 
-    uint32_t spellQueueWindowMs;
-    uint32_t onSwingBufferCooldownMs;
-    uint32_t channelQueueWindowMs;
-    uint32_t targetingQueueWindowMs;
-    uint32_t cooldownQueueWindowMs;
+    uint32_t spellQueueWindowMs = 500;
+    uint32_t onSwingBufferCooldownMs = 500;
+    uint32_t channelQueueWindowMs = 1500;
+    uint32_t targetingQueueWindowMs = 500;
+    uint32_t cooldownQueueWindowMs = 250;
 
-    uint32_t minBufferTimeMs;
-    uint32_t maxBufferIncreaseMs;
-    uint32_t nonGcdBufferTimeMs;
+    uint32_t minBufferTimeMs = 55;
+    uint32_t maxBufferIncreaseMs = 30;
+    uint32_t nonGcdBufferTimeMs = 100;
 
-    int32_t channelLatencyReductionPercentage;
+    int32_t channelLatencyReductionPercentage = 75;
 };
 
 enum CastType {

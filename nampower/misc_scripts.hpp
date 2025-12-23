@@ -28,5 +28,7 @@ namespace Nampower {
 
     uint32_t Script_GetUnitField(uintptr_t *luaState);
 
+    uint32_t Script_StartItemExport(uintptr_t *luaState);
+
     bool RunQueuedScript(int priority);
 }

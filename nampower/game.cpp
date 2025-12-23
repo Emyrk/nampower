@@ -196,4 +196,55 @@ namespace game {
             return false;
         }
     }
+
+    bool UnitIsBuffCapped(uintptr_t *unit) {
+        if (!unit) {
+            return false;
+        }
+
+        auto *unitFields = *reinterpret_cast<UnitFields **>(unit + 68);
+        if (!unitFields) {
+            return false;
+        }
+
+        for (int i = 31; i >= 0; --i) {
+            if (unitFields->aura[i] == 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool UnitIsDebuffCapped(uintptr_t *unit) {
+        if (!unit) {
+            return false;
+        }
+
+        auto *unitFields = *reinterpret_cast<UnitFields **>(unit + 68);
+        if (!unitFields) {
+            return false;
+        }
+
+        for (int i = 47; i >= 32; --i) {
+            if (unitFields->aura[i] == 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    uint32_t UnitGetMountDisplayId(uintptr_t *unit) {
+        if (!unit) {
+            return 0;
+        }
+
+        auto *unitFields = *reinterpret_cast<UnitFields **>(unit + 68);
+        if (!unitFields) {
+            return 0;
+        }
+
+        return unitFields->mountDisplayId;
+    }
 }

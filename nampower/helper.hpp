@@ -11,6 +11,8 @@ namespace Nampower {
     // Lua function pointers
     extern lua_errorT lua_error;
     extern lua_gettopT lua_gettop;
+    extern lua_settopT lua_settop;
+    extern lua_typeT lua_type;
     extern lua_isstringT lua_isstring;
     extern lua_isnumberT lua_isnumber;
     extern lua_tostringT lua_tostring;
@@ -30,6 +32,15 @@ namespace Nampower {
     #define LUA_REFNIL (-2)
     #endif
 
+    #ifndef LUA_TTABLE
+    #define LUA_TTABLE 5
+    #endif
+
+    // Lua helper function - lua_istable implementation
+    inline bool lua_istable(uintptr_t *luaState, int idx) {
+        return lua_type(luaState, idx) == LUA_TTABLE;
+    }
+
     uint32_t GetSpellSlotAndTypeForName(const char *spellName, uint32_t *spellType);
 
     uint32_t GetSpellIdFromSpellName(const char *spellName);
@@ -45,6 +56,8 @@ namespace Nampower {
     bool SpellIsOnSwing(const game::SpellRec *spell);
 
     bool SpellIsAttackTradeskillOrEnchant(const game::SpellRec *spell);
+
+    bool SpellIsMounting(const game::SpellRec *spell);
 
     bool IsTargetingTerrainSpell();
 

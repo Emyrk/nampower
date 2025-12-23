@@ -223,34 +223,6 @@ UseItemIdOrName("Hearthstone")
 UseItemIdOrName(13446, "player")
 ```
 
-#### UseTrinket(slot|itemIdOrName, [target])
-Uses a trinket from the equipped trinket slots (13 and 14 only).
-
-**Parameters:**
-- `slot|itemIdOrName` (number|string):
-  - `1` or `13` => use first trinket slot
-  - `2` or `14` => use second trinket slot
-  - Any other number => treat as item ID to find in trinket slots
-  - String => item name (case-insensitive) to find in trinket slots
-- `target` (optional, string|number): Unit token or GUID. If omitted, uses `LockedTargetGuid` if set; otherwise falls back to active player GUID.
-
-**Returns:**
-- `1` if the trinket was found and `CGItem_C::Use(...)` returned non-zero
-- `0` if the trinket was found but use returned zero
-- `-1` if no matching trinket was found in slots 13/14
-
-**Examples:**
-```lua
--- Use first trinket slot
-UseTrinket(1)
--- Use second trinket slot on current target
-UseTrinket(2, "target")
--- Use by item id if present in either trinket slot
-UseTrinket(18406)
--- Use by name
-UseTrinket("Royal Seal of Eldre'Thalas")
-```
-
 #### GetEquippedItems(unitToken)
 Returns a table reference containing all equipped items for the specified unit.
 
@@ -787,6 +759,24 @@ else
 end
 ```
 
+#### GetTrinkets([copy])
+Returns a table of trinkets from equipped trinket slots and carried bags.
+
+**Parameters:**
+- `[copy]` (number|boolean, optional): Pass `1` (or any truthy value) to force creation of a fresh Lua table. By default the function reuses an internal table and entry tables for performance.
+
+**Returns:**
+A Lua table where each entry contains:
+- `itemId` (number)
+- `trinketName` (string, `"Unknown"` if no name available)
+- `texture` (string): Texture name for the item icon
+- `bagIndex` (number|nil): `nil` when equipped; `0` for backpack; `1-4` for equipped bags
+- `slotIndex` (number): Lua 1-based slot within the container (or 1/2 for equipped trinket slots)
+
+**Notes:**
+- Scans only equipped trinket slots and bags 0-4 (backpack + equipped bags). Does not scan bank or keyring.
+- Reuses cached Lua tables unless `copyTable` is truthy; prefer copies if you will mutate the returned tables.
+- 
 #### GetTrinketCooldown(slot|itemIdOrName)
 Returns cooldown information for the equipped trinket(s) in slots 13 or 14. Accepts slot shortcuts or item identifiers.
 
@@ -816,22 +806,33 @@ if cd ~= -1 then
 end
 ```
 
-#### GetTrinkets([copy])
-Returns a table of trinkets from equipped trinket slots and carried bags.
+#### UseTrinket(slot|itemIdOrName, [target])
+Uses a trinket from the equipped trinket slots (13 and 14 only).
 
 **Parameters:**
-- `[copy]` (number|boolean, optional): Pass `1` (or any truthy value) to force creation of a fresh Lua table. By default the function reuses an internal table and entry tables for performance.
+- `slot|itemIdOrName` (number|string):
+  - `1` or `13` => use first trinket slot
+  - `2` or `14` => use second trinket slot
+  - Any other number => treat as item ID to find in trinket slots
+  - String => item name (case-insensitive) to find in trinket slots
+- `target` (optional, string|number): Unit token or GUID. If omitted, uses `LockedTargetGuid` if set; otherwise falls back to active player GUID.
 
 **Returns:**
-A Lua table where each entry contains:
-- `itemId` (number)
-- `trinketName` (string, `"Unknown"` if no name available)
-- `bagIndex` (number|nil): `nil` when equipped; `0` for backpack; `1-4` for equipped bags
-- `slotIndex` (number): Lua 1-based slot within the container (or 1/2 for equipped trinket slots)
+- `1` if the trinket was found and `CGItem_C::Use(...)` returned non-zero
+- `0` if the trinket was found but use returned zero
+- `-1` if no matching trinket was found in slots 13/14
 
-**Notes:**
-- Scans only equipped trinket slots and bags 0-4 (backpack + equipped bags). Does not scan bank or keyring.
-- Reuses cached Lua tables unless `copyTable` is truthy; prefer copies if you will mutate the returned tables.
+**Examples:**
+```lua
+-- Use first trinket slot
+UseTrinket(1)
+-- Use second trinket slot on current target
+UseTrinket(2, "target")
+-- Use by item id if present in either trinket slot
+UseTrinket(18406)
+-- Use by name
+UseTrinket("Royal Seal of Eldre'Thalas")
+```
 
 #### GetSpellIdForName(spellName)
 Returns:

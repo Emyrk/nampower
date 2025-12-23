@@ -11,6 +11,8 @@ namespace Nampower {
 
     using DBCache_ItemCacheDBGetRowT = uint32_t * (__thiscall  *)(void *this_ptr, uint32_t itemId, uint64_t *guid, TooltipItemStatsCallbackT callback, uintptr_t *userData, bool requestIfMissing);
 
+    using GetInventoryArtT = char * (__fastcall *)(uint32_t displayId);
+
     constexpr int32_t EQUIPPED_BAG_INDEX = -3;
     constexpr int32_t BANK_BAG_INDEX = -1;
     constexpr int32_t KEYRING_BAG_INDEX = -2;
@@ -24,6 +26,7 @@ namespace Nampower {
     };
 
     void ExportAllItems();
+    void StartItemExport();
     bool LoadItem(uint32_t itemId);  // Returns true if item needs async load (caller should wait)
     bool ProcessItemExport();  // Process one item export per frame, returns true if still exporting
     game::ItemStats_C* GetItemStats(uint32_t itemId);

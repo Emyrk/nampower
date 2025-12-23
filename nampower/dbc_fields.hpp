@@ -5,6 +5,7 @@
 #pragma once
 
 #include "main.hpp"
+#include "lua_refs.hpp"
 #include <unordered_map>
 #include <string>
 #include <cstddef>
@@ -151,13 +152,7 @@ namespace Nampower {
             lua_pushstring(luaState, const_cast<char*>(field.name));
 
             // Get or create reusable table for this specific field name
-            auto refIt = refMap.find(field.name);
-            if (refIt == refMap.end()) {
-                lua_newtable(luaState);
-                int ref = luaL_ref(luaState, LUA_REGISTRYINDEX);
-                refMap[field.name] = ref;
-            }
-            lua_rawgeti(luaState, LUA_REGISTRYINDEX, refMap[field.name]);
+            GetTableRef(luaState, refMap[field.name]);
 
             const char* fieldPtr = reinterpret_cast<const char*>(obj) + field.offset;
 

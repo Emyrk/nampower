@@ -1666,4 +1666,10 @@ namespace game {
     bool UnitIsPvpFlagged(uintptr_t *unit);
 
     bool UnitIsInCombat(uintptr_t *unit);
+
+    bool UnitIsBuffCapped(uintptr_t *unit);
+
+    bool UnitIsDebuffCapped(uintptr_t *unit);
+
+    uint32_t UnitGetMountDisplayId(uintptr_t *unit);
 }

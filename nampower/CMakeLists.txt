@@ -38,6 +38,8 @@ set(SOURCE_FILES
         unit_fields.cpp
         auras.hpp
         auras.cpp
+        lua_refs.hpp
+        lua_refs.cpp
 )
 
 add_library(${DLL_NAME} SHARED ${SOURCE_FILES})

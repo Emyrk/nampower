@@ -30,8 +30,8 @@ namespace Nampower {
     constexpr uint32_t BUFFER_DECREASE_FREQUENCY = 10000; // time in ms between changes to lower buffer
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 19;
-    constexpr uint32_t PATCH_VERSION = 1;
+    constexpr uint32_t MINOR_VERSION = 20;
+    constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
@@ -125,6 +125,7 @@ namespace Nampower {
     using GetUnitFromNameT = uintptr_t *(__fastcall *)(const char *);
     using lua_gettableT = void (__fastcall *)(uintptr_t *luaState, int globalsIndex);
     using lua_gettopT = int (__fastcall *)(uintptr_t *);
+    using lua_typeT = int (__fastcall *)(uintptr_t *, int);
     using lua_isstringT = bool (__fastcall *)(uintptr_t *, int);
     using lua_isnumberT = bool (__fastcall *)(uintptr_t *, int);
     using lua_tostringT = char *(__fastcall *)(uintptr_t *, int);
@@ -171,6 +172,8 @@ namespace Nampower {
                                               int category, char unk2, int unk3);
 
     using InvalidFunctionPtrCheckT = void (__fastcall *)(uint32_t param_1);
+
+    using CGGameUI_DisplayErrorT = void (__cdecl *)(uint32_t errorCode);
 
     void RegisterLuaFunction(char *, uintptr_t *func);
 

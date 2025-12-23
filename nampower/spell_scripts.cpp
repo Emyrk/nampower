@@ -4,8 +4,8 @@
 
 #include "spell_scripts.hpp"
 #include "helper.hpp"
+#include "lua_refs.hpp"
 #include "offsets.hpp"
-#include "items.hpp"
 #include "dbc_fields.hpp"
 #include <cstring>
 
@@ -297,11 +297,7 @@ namespace Nampower {
         if (useCopy) {
             lua_newtable(luaState);
         } else {
-            if (spellRecTableRef == LUA_REFNIL) {
-                lua_newtable(luaState);
-                spellRecTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
-            }
-            lua_rawgeti(luaState, LUA_REGISTRYINDEX, spellRecTableRef);
+            GetTableRef(luaState, spellRecTableRef);
         }
 
         // Push all simple fields using descriptors
@@ -394,13 +390,7 @@ namespace Nampower {
                 lua_newtable(luaState);
             } else {
                 // Get or create reusable table for this specific field name
-                auto refIt = spellRecArrayFieldRefs.find(fieldName);
-                if (refIt == spellRecArrayFieldRefs.end()) {
-                    lua_newtable(luaState);
-                    int ref = luaL_ref(luaState, LUA_REGISTRYINDEX);
-                    spellRecArrayFieldRefs[fieldName] = ref;
-                }
-                lua_rawgeti(luaState, LUA_REGISTRYINDEX, spellRecArrayFieldRefs[fieldName]);
+                GetTableRef(luaState, spellRecArrayFieldRefs[fieldName]);
             }
 
             const char *fieldPtr = reinterpret_cast<const char *>(spell) + field.offset;
@@ -568,5 +558,6 @@ namespace Nampower {
 
         return 0;
     }
+
 
 }

@@ -512,4 +512,10 @@ namespace Nampower {
 
         DEBUG_LOG("Export initialized. ProcessItemExport will be called each frame from processQueues.");
     }
+
+    void StartItemExport() {
+        isExporting = true;
+        currentExportItemId = 1;
+        pendingItemIds.clear();
+    }
 }

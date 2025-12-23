@@ -452,7 +452,10 @@ namespace Nampower {
         // it is possible when spamming to attempt to cast before queues are processed
         processQueues();
 
-        if (item == nullptr && casterUnit != game::GetObjectPtr(game::ClntObjMgrGetActivePlayerGuid())) {
+        auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto playerUnit = (playerGuid > 0) ? game::GetObjectPtr(playerGuid) : nullptr;
+
+        if (item == nullptr && casterUnit != playerUnit) {
             DEBUG_LOG("Ignoring non active player cast of spell " << game::GetSpellName(spellId) << " " << spellId);
             // just call original function if caster is not the active player
             // happens with Doomguard rain of fire
@@ -471,6 +474,24 @@ namespace Nampower {
         auto const spellIsChanneling = SpellIsChanneling(spell);
         auto const spellIsTargeting = SpellIsTargeting(spell);
         auto const isSpecialSpell = SpellIsAttackTradeskillOrEnchant(spell);
+
+        if (casterUnit == playerUnit && gUserSettings.preventMountingWhenBuffCapped) {
+            // Check for mount spell when player is buff capped
+            if (SpellIsMounting(spell)) {
+                if (playerUnit && game::UnitIsBuffCapped(playerUnit) && game::UnitGetMountDisplayId(playerUnit) == 0) {
+                    DEBUG_LOG("Blocking mount spell " << spellName << " due to buff cap");
+
+                    static char message[] = "Preventing mounting due to buff cap (breaks dismount)";
+                    ((int (__cdecl *)(int, char *, char *)) Offsets::SignalEventParam)(
+                        game::UI_ERROR_MESSAGE,
+                        (char *) Offsets::StringParamFormat,
+                        message);
+
+                    return false;
+                }
+            }
+        }
+
         auto const currentTargetGuid = game::GetCurrentTargetGuid();
 
         if (spellIsChanneling) {
@@ -505,10 +526,10 @@ namespace Nampower {
 
         uint32_t itemId = 0;
         if (item) {
-            itemId = game::GetItemId((game::CGItem_C *) item);
+            itemId = game::GetItemId(reinterpret_cast<game::CGItem_C *>(item));
         }
 
-        DEBUG_LOG("Attempt cast " << spellName << " item " << item << " on guid " << guid << " target "
+        DEBUG_LOG("Attempt cast " << spellName << " itemId " << itemId << " on guid " << guid << " target "
             << currentTargetGuid
             << ", time since last cast " << currentTime - gLastCastData.startTimeMs);
 
@@ -856,7 +877,7 @@ namespace Nampower {
     }
 
     bool doesSpellApplyAura(const game::SpellRec *spell) {
-        for (unsigned int i : spell->Effect) {
+        for (unsigned int i: spell->Effect) {
             switch (i) {
                 case game::SPELL_EFFECT_APPLY_AURA:
                 case game::SPELL_EFFECT_APPLY_AREA_AURA_PARTY:
@@ -889,29 +910,8 @@ namespace Nampower {
         auto *targetUnit = game::ClntObjMgrObjectPtr(
             static_cast<game::TypeMask>(game::TYPEMASK_PLAYER | game::TYPEMASK_UNIT), targetGuid);
 
-        bool targetIsBuffCapped = false;
-        bool targetIsDebuffCapped = false;
-
-        if (targetUnit) {
-            auto *unitFields = *reinterpret_cast<game::UnitFields **>(targetUnit + 68);
-            if (unitFields) {
-                targetIsBuffCapped = true;
-                for (int i = 31; i >= 0; --i) {
-                    if (unitFields->aura[i] == 0) {
-                        targetIsBuffCapped = false;
-                        break;
-                    }
-                }
-
-                targetIsDebuffCapped = true;
-                for (int i = 47; i >= 32; --i) {
-                    if (unitFields->aura[i] == 0) {
-                        targetIsDebuffCapped = false;
-                        break;
-                    }
-                }
-            }
-        }
+        bool targetIsBuffCapped = game::UnitIsBuffCapped(targetUnit);
+        bool targetIsDebuffCapped = game::UnitIsDebuffCapped(targetUnit);
 
         char *casterGuidStr = ConvertGuidToString(casterGuid);
         char *targetGuidStr = ConvertGuidToString(targetGuid);
@@ -1005,6 +1005,7 @@ namespace Nampower {
 
         if (gUserSettings.enableAuraCastEvents && doesSpellApplyAura(spell)) {
             auto targetGuidVal = targetGUID ? *targetGUID : *casterGUID;
+
             TriggerAuraCastEvent(spell, *casterGUID, targetGuidVal, activePlayerGuid, castByActivePlayer);
         }
     }

@@ -8,6 +8,7 @@
 #include "dbc_fields.hpp"
 #include "unit_fields.hpp"
 #include "helper.hpp"
+#include "lua_refs.hpp"
 #include <cstring>
 
 namespace Nampower {
@@ -123,11 +124,7 @@ namespace Nampower {
         }
 
         // Get or create reusable table
-        if (castInfoTableRef == LUA_REFNIL) {
-            lua_newtable(luaState);
-            castInfoTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
-        }
-        lua_rawgeti(luaState, LUA_REGISTRYINDEX, castInfoTableRef);
+        GetTableRef(luaState, castInfoTableRef);
 
         // Get current time and calculate offset to convert to WoW time
         uint32_t currentTime = GetTime();
@@ -308,11 +305,7 @@ namespace Nampower {
         if (useCopy) {
             lua_newtable(luaState);
         } else {
-            if (itemStatsTableRef == LUA_REFNIL) {
-                lua_newtable(luaState);
-                itemStatsTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
-            }
-            lua_rawgeti(luaState, LUA_REGISTRYINDEX, itemStatsTableRef);
+            GetTableRef(luaState, itemStatsTableRef);
         }
 
         // Push all simple fields using descriptors
@@ -401,13 +394,7 @@ namespace Nampower {
                 lua_newtable(luaState);
             } else {
                 // Get or create reusable table for this specific field name
-                auto refIt = itemStatsArrayFieldRefs.find(fieldName);
-                if (refIt == itemStatsArrayFieldRefs.end()) {
-                    lua_newtable(luaState);
-                    int ref = luaL_ref(luaState, LUA_REGISTRYINDEX);
-                    itemStatsArrayFieldRefs[fieldName] = ref;
-                }
-                lua_rawgeti(luaState, LUA_REGISTRYINDEX, itemStatsArrayFieldRefs[fieldName]);
+                GetTableRef(luaState, itemStatsArrayFieldRefs[fieldName]);
             }
 
             const char *fieldPtr = reinterpret_cast<const char *>(item) + field.offset;
@@ -454,6 +441,12 @@ namespace Nampower {
         return 0;
     }
 
+    // won't do anything unless you uncomment line in process queues
+    uint32_t Script_StartItemExport(uintptr_t *luaState) {
+        StartItemExport();
+        return 0;
+    }
+
     uint32_t Script_GetUnitData(uintptr_t *luaState) {
         luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
 
@@ -495,11 +488,7 @@ namespace Nampower {
         if (useCopy) {
             lua_newtable(luaState);
         } else {
-            if (unitDataTableRef == LUA_REFNIL) {
-                lua_newtable(luaState);
-                unitDataTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
-            }
-            lua_rawgeti(luaState, LUA_REGISTRYINDEX, unitDataTableRef);
+            GetTableRef(luaState, unitDataTableRef);
         }
 
         // Push all simple fields using descriptors
@@ -590,13 +579,7 @@ namespace Nampower {
                 lua_newtable(luaState);
             } else {
                 // Get or create reusable table for this specific field name
-                auto refIt = unitFieldsArrayFieldRefs.find(fieldName);
-                if (refIt == unitFieldsArrayFieldRefs.end()) {
-                    lua_newtable(luaState);
-                    int ref = luaL_ref(luaState, LUA_REGISTRYINDEX);
-                    unitFieldsArrayFieldRefs[fieldName] = ref;
-                }
-                lua_rawgeti(luaState, LUA_REGISTRYINDEX, unitFieldsArrayFieldRefs[fieldName]);
+                GetTableRef(luaState, unitFieldsArrayFieldRefs[fieldName]);
             }
 
             const char *fieldPtr = reinterpret_cast<const char *>(unitFields) + field.offset;
@@ -627,4 +610,5 @@ namespace Nampower {
         lua_error(luaState, "Unknown field name");
         return 0;
     }
+
 }

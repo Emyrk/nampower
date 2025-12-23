@@ -3,6 +3,7 @@
 #include "helper.hpp"
 #include "items.hpp"
 #include "logging.hpp"
+#include "lua_refs.hpp"
 #include "offsets.hpp"
 
 #include <string>
@@ -35,6 +36,8 @@ namespace Nampower {
     static char bagIndexKey[] = "bagIndex";
     static char slotIndexKey[] = "slotIndex";
     static char trinketNameKey[] = "trinketName";
+    static char textureKey[] = "texture";
+    static char itemLevelKey[] = "itemLevel";
 
     void PushItemFoundResult(uintptr_t *luaState, int32_t bagIndex, uint32_t slot) {
         uint32_t adjustedSlot = slot;
@@ -57,11 +60,7 @@ namespace Nampower {
         }
 
         // Get or create reusable table
-        if (basicItemInfoTableRef == LUA_REFNIL) {
-            lua_newtable(luaState);
-            basicItemInfoTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
-        }
-        lua_rawgeti(luaState, LUA_REGISTRYINDEX, basicItemInfoTableRef);
+        GetTableRef(luaState, basicItemInfoTableRef);
 
         PushTableValue(luaState, itemIdKey, cgItem->itemId);
         PushTableValue(luaState, permanentEnchantIdKey, cgItem->permanentEnchantId);
@@ -78,11 +77,7 @@ namespace Nampower {
         auto itemFields = item->itemFields;
 
         // Get or create reusable table
-        if (itemInfoTableRef == LUA_REFNIL) {
-            lua_newtable(luaState);
-            itemInfoTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
-        }
-        lua_rawgeti(luaState, LUA_REGISTRYINDEX, itemInfoTableRef);
+        GetTableRef(luaState, itemInfoTableRef);
 
         PushTableValue(luaState, itemIdKey, itemId);
         PushTableValue(luaState, stackCountKey, itemFields->stackCount);
@@ -311,6 +306,7 @@ namespace Nampower {
 
         auto const getBagItem = reinterpret_cast<CGBag_C_GetItemAtSlotT>(Offsets::CGBag_C_GetItemAtSlot);
         auto const getContainerGuid = reinterpret_cast<GetContainerGuidT>(Offsets::GetContainerGuid);
+        auto const getInventoryArt = reinterpret_cast<GetInventoryArtT>(Offsets::CGItem_C_GetInventoryArt);
 
         auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
         auto playerUnit = game::GetObjectPtr(playerGuid);
@@ -325,20 +321,10 @@ namespace Nampower {
             trinketEntryRefsInitialized = true;
         }
 
-        if (!copyTable && trinketsTableRef == LUA_REFNIL) {
-            lua_newtable(luaState);
-            trinketsTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
-        }
-
         if (copyTable) {
             lua_newtable(luaState);
         } else {
-            lua_rawgeti(luaState, LUA_REGISTRYINDEX, trinketsTableRef);
-            for (uint32_t i = 1; i <= lastTrinketCount; ++i) {
-                lua_pushnumber(luaState, static_cast<double>(i));
-                lua_pushnil(luaState);
-                lua_settable(luaState, -3);
-            }
+            GetTableRef(luaState, trinketsTableRef);
         }
 
         if (!playerUnit) {
@@ -370,12 +356,7 @@ namespace Nampower {
             if (copyTable || luaIndex - 2 >= MAX_TRINKET_ENTRY_TABLES) {
                 lua_newtable(luaState);
             } else {
-                auto &entryRef = trinketEntryTableRefs[luaIndex - 2];
-                if (entryRef == LUA_REFNIL) {
-                    lua_newtable(luaState);
-                    entryRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
-                }
-                lua_rawgeti(luaState, LUA_REGISTRYINDEX, entryRef);
+                GetTableRef(luaState, trinketEntryTableRefs[luaIndex - 2]);
             }
             PushTableValue(luaState, itemIdKey, itemId);
             if (bagIndex == EQUIPPED_BAG_INDEX) {
@@ -388,6 +369,20 @@ namespace Nampower {
             PushTableValue(luaState, slotIndexKey, luaSlot);
             const char *trinketName = itemStats->m_displayName[0] ? itemStats->m_displayName[0] : "Unknown";
             PushTableValue(luaState, trinketNameKey, trinketName);
+            PushTableValue(luaState, itemLevelKey, itemStats->m_itemLevel);
+
+            // Get texture path using display ID
+            if (itemStats && itemStats->m_displayInfoID > 0) {
+                char *texturePath = getInventoryArt(itemStats->m_displayInfoID);
+                if (texturePath && texturePath[0] != '\0') {
+                    PushTableValue(luaState, textureKey, texturePath);
+                } else {
+                    PushTableValue(luaState, textureKey, reinterpret_cast<const char *>(Offsets::InvQuestionMark));
+                }
+            } else {
+                PushTableValue(luaState, textureKey, reinterpret_cast<const char *>(Offsets::InvQuestionMark));
+            }
+
             lua_settable(luaState, -3);
         };
 
@@ -457,11 +452,7 @@ namespace Nampower {
         }
 
         // Get or create reusable table
-        if (equippedItemsTableRef == LUA_REFNIL) {
-            lua_newtable(luaState);
-            equippedItemsTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
-        }
-        lua_rawgeti(luaState, LUA_REGISTRYINDEX, equippedItemsTableRef);
+        GetTableRef(luaState, equippedItemsTableRef);
 
         auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
         bool isPlayer = (guid == playerGuid);
@@ -700,11 +691,7 @@ namespace Nampower {
         auto const getBagItem = reinterpret_cast<CGBag_C_GetItemAtSlotT>(Offsets::CGBag_C_GetItemAtSlot);
 
         // Get or create reusable table
-        if (bagItemsTableRef == LUA_REFNIL) {
-            lua_newtable(luaState);
-            bagItemsTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
-        }
-        lua_rawgeti(luaState, LUA_REGISTRYINDEX, bagItemsTableRef);
+        GetTableRef(luaState, bagItemsTableRef);
 
         auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
         auto player = game::GetObjectPtr(playerGuid);
@@ -713,11 +700,7 @@ namespace Nampower {
         lua_pushnumber(luaState, static_cast<double>(0));
 
         // Get or create reusable bag table
-        if (bagTableRef == LUA_REFNIL) {
-            lua_newtable(luaState);
-            bagTableRef = luaL_ref(luaState, LUA_REGISTRYINDEX);
-        }
-        lua_rawgeti(luaState, LUA_REGISTRYINDEX, bagTableRef);
+        GetTableRef(luaState, bagTableRef);
 
         for (uint32_t slot = 23; slot <= 38; slot++) {
             auto item = getBagItem(inventory, slot);
@@ -781,5 +764,6 @@ namespace Nampower {
 
         return 1;
     }
+
 
 }
