@@ -15,12 +15,17 @@ namespace Nampower {
     static int itemInfoTableRef = LUA_REFNIL;
     static int equippedItemsTableRef = LUA_REFNIL;
     static int bagItemsTableRef = LUA_REFNIL;
-    static int bagTableRef = LUA_REFNIL;
     static int trinketsTableRef = LUA_REFNIL;
-    static constexpr uint32_t MAX_TRINKET_ENTRY_TABLES = 100;
-    static std::array<int, 100> trinketEntryTableRefs{};
-    static bool trinketEntryRefsInitialized = false;
     static uint32_t lastTrinketCount = 0;
+
+    // Bag items table references (10 bags: 0-9, plus special indices for -1 bank, -2 keyring)
+    static std::array<int, MAX_BAGS> bagTableRefs{};
+
+    // Item entry table references: 2D matrix [bagIndex][slot] for direct mapping
+    static std::array<std::array<int, MAX_BAG_SLOTS>, MAX_BAGS> itemEntryTableRefs{};
+
+    // Equipped item table references (slots 0-18)
+    static std::array<int, MAX_EQUIPPED_SLOTS> equippedItemTableRefs{};
 
     // String keys used when pushing item data to Lua
     static char itemIdKey[] = "itemId";
@@ -91,6 +96,36 @@ namespace Nampower {
         PushTableValue(luaState, maxDurabilityKey, itemFields->maxDurability);
     }
 
+    void ClearBagSlot(uintptr_t *luaState, int32_t bagIndex, uint32_t adjustedSlot) {
+        // Clear from cache
+        CachedItemData* cachedData = nullptr;
+
+        if (bagIndex == -1) {
+            // Bank (map to cache index 10)
+            if (adjustedSlot < MAX_BAG_SLOTS) {
+                cachedData = &bagItemDataCache[BANK_CACHE_INDEX][adjustedSlot];
+            }
+        } else if (bagIndex == -2) {
+            // Keyring (map to cache index 11)
+            if (adjustedSlot < MAX_BAG_SLOTS) {
+                cachedData = &bagItemDataCache[KEYRING_CACHE_INDEX][adjustedSlot];
+            }
+        } else if (bagIndex >= 0 && bagIndex < 10 && adjustedSlot < MAX_BAG_SLOTS) {
+            // Regular bags (0-9)
+            cachedData = &bagItemDataCache[bagIndex][adjustedSlot];
+        }
+
+        if (cachedData && cachedData->itemId != 0) {
+            // Clear the cache
+            *cachedData = CachedItemData();
+
+            // Clear from Lua table (set to nil)
+            lua_pushnumber(luaState, static_cast<double>(adjustedSlot + 1));
+            lua_pushnil(luaState);
+            lua_settable(luaState, -3);
+        }
+    }
+
     void PushBagCGItemToTable(uintptr_t *luaState, int32_t bagIndex, uint32_t slot, game::CGItem_C *item) {
         if (!item) {
             DEBUG_LOG("missing item at slot " << slot);
@@ -110,9 +145,101 @@ namespace Nampower {
             adjustedSlot = slot - 0x51; // subtract 81
         }
 
-        lua_pushnumber(luaState, static_cast<double>(adjustedSlot + 1)); // lua is 1 indexed
-        CreateItemInfoTable(luaState, item);
-        lua_settable(luaState, -3);
+        // Extract current item data
+        auto itemId = game::GetItemId(item);
+        auto itemFields = item->itemFields;
+
+        CachedItemData currentData;
+        currentData.itemId = itemId;
+        currentData.stackCount = itemFields->stackCount;
+        currentData.duration = itemFields->duration;
+        currentData.flags = itemFields->flags;
+        currentData.permanentEnchantId = itemFields->permEnchantmentSlot.id;
+        currentData.tempEnchantId = itemFields->tempEnchantmentSlot.id;
+        currentData.tempEnchantmentTimeLeftMs = itemFields->tempEnchantmentSlot.duration;
+        currentData.tempEnchantmentCharges = itemFields->tempEnchantmentSlot.charges;
+        currentData.durability = itemFields->durability;
+        currentData.maxDurability = itemFields->maxDurability;
+
+        // Get cached data for comparison
+        CachedItemData* cachedData = nullptr;
+
+        if (bagIndex == -999) {
+            // Equipped items
+            if (slot < MAX_EQUIPPED_SLOTS) {
+                cachedData = &equippedItemDataCache[slot];
+            }
+        } else if (bagIndex == -1) {
+            // Bank (map to cache index 10)
+            if (adjustedSlot < MAX_BAG_SLOTS) {
+                cachedData = &bagItemDataCache[BANK_CACHE_INDEX][adjustedSlot];
+            }
+        } else if (bagIndex == -2) {
+            // Keyring (map to cache index 11)
+            if (adjustedSlot < MAX_BAG_SLOTS) {
+                cachedData = &bagItemDataCache[KEYRING_CACHE_INDEX][adjustedSlot];
+            }
+        } else if (bagIndex >= 0 && bagIndex < 10) {
+            // Regular bag items (0-9)
+            if (adjustedSlot < MAX_BAG_SLOTS) {
+                cachedData = &bagItemDataCache[bagIndex][adjustedSlot];
+            }
+        }
+
+        // Check if data has changed
+        bool hasChanged = true;
+        if (cachedData != nullptr) {
+            hasChanged = (currentData != *cachedData);
+        }
+
+        // Only update Lua table if data has changed
+        if (hasChanged) {
+            lua_pushnumber(luaState, static_cast<double>(adjustedSlot + 1)); // lua is 1 indexed
+
+            // Get table ref based on bag position (direct 2D mapping)
+            if (bagIndex == -999) {
+                // Equipped items
+                if (slot < MAX_EQUIPPED_SLOTS) {
+                    GetTableRef(luaState, equippedItemTableRefs[slot]);
+                } else {
+                    lua_newtable(luaState);
+                }
+            } else {
+                // Bag items - map to cache index
+                uint32_t cacheIndexForTableRef = 0;
+                if (bagIndex == -1) {
+                    cacheIndexForTableRef = BANK_CACHE_INDEX;
+                } else if (bagIndex == -2) {
+                    cacheIndexForTableRef = KEYRING_CACHE_INDEX;
+                } else if (bagIndex >= 0 && bagIndex < 10) {
+                    cacheIndexForTableRef = bagIndex;
+                }
+
+                if (cacheIndexForTableRef < MAX_BAGS && adjustedSlot < MAX_BAG_SLOTS) {
+                    GetTableRef(luaState, itemEntryTableRefs[cacheIndexForTableRef][adjustedSlot]);
+                } else {
+                    lua_newtable(luaState);
+                }
+            }
+
+            PushTableValue(luaState, itemIdKey, itemId);
+            PushTableValue(luaState, stackCountKey, itemFields->stackCount);
+            PushTableValue(luaState, durationKey, itemFields->duration);
+            PushTableValue(luaState, flagsKey, itemFields->flags);
+            PushTableValue(luaState, permanentEnchantIdKey, itemFields->permEnchantmentSlot.id);
+            PushTableValue(luaState, tempEnchantIdKey, itemFields->tempEnchantmentSlot.id);
+            PushTableValue(luaState, tempEnchantmentTimeLeftMsKey, itemFields->tempEnchantmentSlot.duration);
+            PushTableValue(luaState, tempEnchantmentChargesKey, itemFields->tempEnchantmentSlot.charges);
+            PushTableValue(luaState, durabilityKey, itemFields->durability);
+            PushTableValue(luaState, maxDurabilityKey, itemFields->maxDurability);
+
+            lua_settable(luaState, -3);
+
+            // Update cache
+            if (cachedData != nullptr) {
+                *cachedData = currentData;
+            }
+        }
     }
 
     uint32_t Script_FindPlayerItemSlot(uintptr_t *luaState) {
@@ -316,11 +443,6 @@ namespace Nampower {
             copyTable = static_cast<int>(lua_tonumber(luaState, 1)) != 0;
         }
 
-        if (!trinketEntryRefsInitialized) {
-            trinketEntryTableRefs.fill(LUA_REFNIL);
-            trinketEntryRefsInitialized = true;
-        }
-
         if (copyTable) {
             lua_newtable(luaState);
         } else {
@@ -335,55 +457,132 @@ namespace Nampower {
         uint32_t luaIndex = 1;
 
         auto pushTrinket = [&](int32_t bagIndex, uint32_t slot, game::CGItem_C *item) {
-            if (!item) return;
+            auto itemId = item ? game::GetItemId(item) : 0;
 
-            auto itemId = game::GetItemId(item);
-            auto itemStats = GetItemStats(itemId);
-            if (!itemStats || itemStats->m_inventoryType != game::INVTYPE_TRINKET) {
-                return;
-            }
-
+            // Calculate adjusted slot for cache indexing
+            uint32_t adjustedSlot = slot;
             uint32_t luaSlot = slot + 1;
             if (bagIndex == 0) {
-                luaSlot = slot - 0x17 + 1; // backpack absolute slots 23-38
+                adjustedSlot = slot - 0x17; // backpack absolute slots 23-38
+                luaSlot = adjustedSlot + 1;
             } else if (bagIndex == BANK_BAG_INDEX) {
-                luaSlot = slot - 0x27 + 1; // bank absolute slots 39-62
+                adjustedSlot = slot - 0x27; // bank absolute slots 39-62
+                luaSlot = adjustedSlot + 1;
             } else if (bagIndex == KEYRING_BAG_INDEX) {
-                luaSlot = slot - 0x51 + 1; // keyring absolute slots 81-96
+                adjustedSlot = slot - 0x51; // keyring absolute slots 81-96
+                luaSlot = adjustedSlot + 1;
             }
 
-            lua_pushnumber(luaState, static_cast<double>(luaIndex++));
-            if (copyTable || luaIndex - 2 >= MAX_TRINKET_ENTRY_TABLES) {
-                lua_newtable(luaState);
-            } else {
-                GetTableRef(luaState, trinketEntryTableRefs[luaIndex - 2]);
-            }
-            PushTableValue(luaState, itemIdKey, itemId);
+            // Get cached data pointer based on location
+            CachedTrinketData* cachedData = nullptr;
             if (bagIndex == EQUIPPED_BAG_INDEX) {
-                lua_pushstring(luaState, bagIndexKey);
-                lua_pushnil(luaState);
-                lua_settable(luaState, -3);
-            } else {
-                PushTableValue(luaState, bagIndexKey, bagIndex);
-            }
-            PushTableValue(luaState, slotIndexKey, luaSlot);
-            const char *trinketName = itemStats->m_displayName[0] ? itemStats->m_displayName[0] : "Unknown";
-            PushTableValue(luaState, trinketNameKey, trinketName);
-            PushTableValue(luaState, itemLevelKey, itemStats->m_itemLevel);
-
-            // Get texture path using display ID
-            if (itemStats && itemStats->m_displayInfoID > 0) {
-                char *texturePath = getInventoryArt(itemStats->m_displayInfoID);
-                if (texturePath && texturePath[0] != '\0') {
-                    PushTableValue(luaState, textureKey, texturePath);
-                } else {
-                    PushTableValue(luaState, textureKey, reinterpret_cast<const char *>(Offsets::InvQuestionMark));
+                if (slot < MAX_EQUIPPED_SLOTS) {
+                    cachedData = &equippedTrinketDataCache[slot];
                 }
-            } else {
-                PushTableValue(luaState, textureKey, reinterpret_cast<const char *>(Offsets::InvQuestionMark));
+            } else if (bagIndex == BANK_BAG_INDEX) {
+                if (adjustedSlot < MAX_BAG_SLOTS) {
+                    cachedData = &bagTrinketDataCache[BANK_CACHE_INDEX][adjustedSlot];
+                }
+            } else if (bagIndex == KEYRING_BAG_INDEX) {
+                if (adjustedSlot < MAX_BAG_SLOTS) {
+                    cachedData = &bagTrinketDataCache[KEYRING_CACHE_INDEX][adjustedSlot];
+                }
+            } else if (bagIndex >= 0 && bagIndex < 10) {
+                if (adjustedSlot < MAX_BAG_SLOTS) {
+                    cachedData = &bagTrinketDataCache[bagIndex][adjustedSlot];
+                }
             }
 
-            lua_settable(luaState, -3);
+            // Check if this is a trinket and if data has changed
+            bool isTrinket = false;
+            if (item) {
+                auto itemStats = GetItemStats(itemId);
+                if (itemStats && itemStats->m_inventoryType == game::INVTYPE_TRINKET) {
+                    isTrinket = true;
+                }
+            }
+
+            // Build current trinket data for comparison
+            CachedTrinketData currentData;
+            currentData.itemId = isTrinket ? itemId : 0;
+
+            // Check if data has changed
+            bool hasChanged = true;
+            if (!copyTable && cachedData != nullptr) {
+                hasChanged = (currentData != *cachedData);
+            }
+
+            // Always push trinkets to maintain sequential indices
+            if (isTrinket) {
+                auto itemStats = GetItemStats(itemId);
+
+                lua_pushnumber(luaState, static_cast<double>(luaIndex));
+
+                if (copyTable) {
+                    lua_newtable(luaState);
+                } else {
+                    // Get table ref based on location (direct 2D mapping)
+                    if (bagIndex == EQUIPPED_BAG_INDEX) {
+                        if (slot < MAX_EQUIPPED_SLOTS) {
+                            GetTableRef(luaState, equippedItemTableRefs[slot]);
+                        } else {
+                            lua_newtable(luaState);
+                        }
+                    } else {
+                        uint32_t cacheIndexForTableRef = 0;
+                        if (bagIndex == BANK_BAG_INDEX) {
+                            cacheIndexForTableRef = BANK_CACHE_INDEX;
+                        } else if (bagIndex == KEYRING_BAG_INDEX) {
+                            cacheIndexForTableRef = KEYRING_CACHE_INDEX;
+                        } else if (bagIndex >= 0 && bagIndex < 10) {
+                            cacheIndexForTableRef = bagIndex;
+                        }
+
+                        if (adjustedSlot < MAX_BAG_SLOTS) {
+                            GetTableRef(luaState, itemEntryTableRefs[cacheIndexForTableRef][adjustedSlot]);
+                        } else {
+                            lua_newtable(luaState);
+                        }
+                    }
+                }
+
+                // Only update trinket details if data changed
+                if (copyTable || hasChanged) {
+                    PushTableValue(luaState, itemIdKey, itemId);
+                    if (bagIndex == EQUIPPED_BAG_INDEX) {
+                        lua_pushstring(luaState, bagIndexKey);
+                        lua_pushnil(luaState);
+                        lua_settable(luaState, -3);
+                    } else {
+                        PushTableValue(luaState, bagIndexKey, bagIndex);
+                    }
+                    PushTableValue(luaState, slotIndexKey, luaSlot);
+                    const char *trinketName = itemStats->m_displayName[0] ? itemStats->m_displayName[0] : "Unknown";
+                    PushTableValue(luaState, trinketNameKey, trinketName);
+                    PushTableValue(luaState, itemLevelKey, itemStats->m_itemLevel);
+
+                    // Get texture path using display ID
+                    if (itemStats && itemStats->m_displayInfoID > 0) {
+                        char *texturePath = getInventoryArt(itemStats->m_displayInfoID);
+                        if (texturePath && texturePath[0] != '\0') {
+                            PushTableValue(luaState, textureKey, texturePath);
+                        } else {
+                            PushTableValue(luaState, textureKey, reinterpret_cast<const char *>(Offsets::InvQuestionMark));
+                        }
+                    } else {
+                        PushTableValue(luaState, textureKey, reinterpret_cast<const char *>(Offsets::InvQuestionMark));
+                    }
+                }
+
+                lua_settable(luaState, -3);
+
+                luaIndex++;
+            }
+
+            // Update cache
+            if (!copyTable && cachedData != nullptr) {
+                *cachedData = currentData;
+            }
         };
 
         // Equipped trinket slots (0-based slots 12 and 13)
@@ -416,8 +615,15 @@ namespace Nampower {
             }
         }
 
+        // Clear any stale entries from the Lua table (when trinkets are removed)
         if (!copyTable) {
-            lastTrinketCount = luaIndex - 1;
+            uint32_t currentTrinketCount = luaIndex - 1;
+            for (uint32_t i = currentTrinketCount; i < lastTrinketCount; ++i) {
+                lua_pushnumber(luaState, static_cast<double>(i + 1));
+                lua_pushnil(luaState);
+                lua_settable(luaState, -3);
+            }
+            lastTrinketCount = currentTrinketCount;
         }
 
         return 1;
@@ -690,30 +896,43 @@ namespace Nampower {
         auto const getContainerGuid = reinterpret_cast<GetContainerGuidT>(Offsets::GetContainerGuid);
         auto const getBagItem = reinterpret_cast<CGBag_C_GetItemAtSlotT>(Offsets::CGBag_C_GetItemAtSlot);
 
-        // Get or create reusable table
+        // Get or create reusable main table
         GetTableRef(luaState, bagItemsTableRef);
 
         auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
         auto player = game::GetObjectPtr(playerGuid);
         auto inventory = game::GetPlayerInventoryPtr(player);
 
+        // Backpack (bag 0)
         lua_pushnumber(luaState, static_cast<double>(0));
-
-        // Get or create reusable bag table
-        GetTableRef(luaState, bagTableRef);
+        GetTableRef(luaState, bagTableRefs[0]);
 
         for (uint32_t slot = 23; slot <= 38; slot++) {
             auto item = getBagItem(inventory, slot);
+            uint32_t adjustedSlot = slot - 0x17;
             if (item) {
                 PushBagCGItemToTable(luaState, 0, slot, item);
+            } else {
+                // Check if item was removed from this slot
+                ClearBagSlot(luaState, 0, adjustedSlot);
             }
         }
 
         lua_settable(luaState, -3);
 
+        // Bags 1-4
         for (int32_t bagIndex = 1; bagIndex <= 4; bagIndex++) {
             uint64_t containerGuid = getContainerGuid(bagIndex - 1); // bagIndex 1-4 maps to container 0-3
-            if (containerGuid == 0) continue;
+            if (containerGuid == 0) {
+                // Bag slot is empty, clear all cached items for this bag
+                lua_pushnumber(luaState, static_cast<double>(bagIndex));
+                GetTableRef(luaState, bagTableRefs[bagIndex]);
+                for (uint32_t slot = 0; slot < MAX_BAG_SLOTS; slot++) {
+                    ClearBagSlot(luaState, bagIndex, slot);
+                }
+                lua_settable(luaState, -3);
+                continue;
+            }
 
             auto containerPtr = game::ClntObjMgrObjectPtr(game::TYPEMASK_CONTAINER, containerGuid);
             if (!containerPtr) continue;
@@ -722,24 +941,37 @@ namespace Nampower {
             if (!bagPtr) continue;
 
             lua_pushnumber(luaState, static_cast<double>(bagIndex));
-            lua_rawgeti(luaState, LUA_REGISTRYINDEX, bagTableRef);
+            GetTableRef(luaState, bagTableRefs[bagIndex]);
 
             auto bagSize = *bagPtr;
-            for (uint32_t slot = 0; slot < bagSize; slot++) {
+            // Check all possible slots up to bag size
+            for (uint32_t slot = 0; slot < bagSize && slot < MAX_BAG_SLOTS; slot++) {
                 auto item = getBagItem(bagPtr, slot);
                 if (item) {
                     PushBagCGItemToTable(luaState, bagIndex, slot, item);
+                } else {
+                    ClearBagSlot(luaState, bagIndex, slot);
                 }
             }
 
             lua_settable(luaState, -3);
         }
 
+        // Bank bags 5-9
         uint64_t bankGuid = *reinterpret_cast<uint64_t *>(Offsets::BankGuid);
         if (bankGuid > 0) {
             for (int32_t bagIndex = 5; bagIndex <= 9; bagIndex++) {
                 uint64_t containerGuid = getContainerGuid(bagIndex - 1); // bagIndex 5-9 maps to container 4-8
-                if (containerGuid == 0) continue;
+                if (containerGuid == 0) {
+                    // Bag slot is empty, clear all cached items for this bag
+                    lua_pushnumber(luaState, static_cast<double>(bagIndex));
+                    GetTableRef(luaState, bagTableRefs[bagIndex]);
+                    for (uint32_t slot = 0; slot < MAX_BAG_SLOTS; slot++) {
+                        ClearBagSlot(luaState, bagIndex, slot);
+                    }
+                    lua_settable(luaState, -3);
+                    continue;
+                }
 
                 auto containerPtr = game::ClntObjMgrObjectPtr(game::TYPEMASK_CONTAINER, containerGuid);
                 if (!containerPtr) continue;
@@ -748,13 +980,16 @@ namespace Nampower {
                 if (!bagPtr) continue;
 
                 lua_pushnumber(luaState, static_cast<double>(bagIndex));
-                lua_rawgeti(luaState, LUA_REGISTRYINDEX, bagTableRef);
+                GetTableRef(luaState, bagTableRefs[bagIndex]);
 
                 auto bagSize = *bagPtr;
-                for (uint32_t slot = 0; slot < bagSize; slot++) {
+                // Check all possible slots up to bag size
+                for (uint32_t slot = 0; slot < bagSize && slot < MAX_BAG_SLOTS; slot++) {
                     auto item = getBagItem(bagPtr, slot);
                     if (item) {
                         PushBagCGItemToTable(luaState, bagIndex, slot, item);
+                    } else {
+                        ClearBagSlot(luaState, bagIndex, slot);
                     }
                 }
 

@@ -19,7 +19,8 @@ namespace Nampower {
 
     void GetTableRef(uintptr_t* luaState, int& tableRef) {
         // Create table if needed and push onto stack
-        if (tableRef == LUA_REFNIL) {
+        // Check for both LUA_REFNIL (-2) and 0 (default array initialization)
+        if (tableRef == LUA_REFNIL || tableRef == 0) {
             // Register this table ref if it's a new one
             RegisterTableRef(&tableRef);
 

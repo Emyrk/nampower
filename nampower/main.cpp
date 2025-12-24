@@ -1269,6 +1269,7 @@ namespace Nampower {
         loadScriptFunctions();
 
         CleanupAllLuaTableRefs();
+        ClearItemCaches();
 
         // register our own lua functions
         DEBUG_LOG("Registering Custom Lua functions");

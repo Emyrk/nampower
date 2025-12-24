@@ -18,6 +18,12 @@
 #include "dbc_fields.hpp"
 
 namespace Nampower {
+    // Item data caches for change detection
+    std::array<std::array<CachedItemData, MAX_BAG_SLOTS>, MAX_BAGS> bagItemDataCache{};
+    std::array<CachedItemData, MAX_EQUIPPED_SLOTS> equippedItemDataCache{};
+    std::array<std::array<CachedTrinketData, MAX_BAG_SLOTS>, MAX_BAGS> bagTrinketDataCache{};
+    std::array<CachedTrinketData, MAX_EQUIPPED_SLOTS> equippedTrinketDataCache{};
+
     // Global dictionary to store itemId -> ItemStats_C mappings
     static std::unordered_map<uint32_t, game::ItemStats_C *> itemStatsCache;
 
@@ -30,11 +36,23 @@ namespace Nampower {
     // Export state tracking
     static bool isExporting = false;
     static uint32_t currentExportItemId = 0;
-    static const uint32_t MAX_EXPORT_ITEM_ID = 100000;
-    static const uint32_t ITEMS_PER_FRAME = 20;
+    static constexpr uint32_t MAX_EXPORT_ITEM_ID = 100000;
+    static constexpr uint32_t ITEMS_PER_FRAME = 20;
 
     auto const getRow = reinterpret_cast<DBCache_ItemCacheDBGetRowT>(Offsets::DBCache_ItemCacheDBGetRow);
     auto const itemCache = reinterpret_cast<void *>(Offsets::ItemDBCache);
+
+    void ClearItemCaches() {
+        // Clear all item data caches (called on UI reload)
+        for (auto& bagCache : bagItemDataCache) {
+            bagCache.fill(CachedItemData());
+        }
+        equippedItemDataCache.fill(CachedItemData());
+        for (auto& bagCache : bagTrinketDataCache) {
+            bagCache.fill(CachedTrinketData());
+        }
+        equippedTrinketDataCache.fill(CachedTrinketData());
+    }
 
     std::string ToLowerCase(const char *str) {
         std::string result;

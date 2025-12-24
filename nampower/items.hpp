@@ -5,6 +5,7 @@
 #pragma once
 
 #include "main.hpp"
+#include <array>
 
 namespace Nampower {
     using TooltipItemStatsCallbackT = void (__fastcall *)(uint32_t itemId, const uint64_t *ownerGuid, void *userData, bool resultFlag);
@@ -17,6 +18,13 @@ namespace Nampower {
     constexpr int32_t BANK_BAG_INDEX = -1;
     constexpr int32_t KEYRING_BAG_INDEX = -2;
 
+    // Cache constants
+    constexpr uint32_t MAX_BAGS = 12;  // 0-9 for regular bags, 10 for -1 (bank), 11 for -2 (keyring)
+    constexpr uint32_t BANK_CACHE_INDEX = 10;
+    constexpr uint32_t KEYRING_CACHE_INDEX = 11;
+    constexpr uint32_t MAX_BAG_SLOTS = 64;  // Increased to 64 for future-proofing
+    constexpr uint32_t MAX_EQUIPPED_SLOTS = 19;
+
     struct PlayerItemSearchResult {
         game::CGItem_C *item = nullptr;
         int32_t bagIndex = 0;   // -3 equipped, -1 bank main slots, -2 keyring, 0 backpack, 1-9 bag indices
@@ -25,6 +33,64 @@ namespace Nampower {
         bool found() const { return item != nullptr; }
     };
 
+    // Cached item data for change detection
+    struct CachedItemData {
+        uint32_t itemId;
+        uint32_t stackCount;
+        uint32_t duration;
+        uint32_t flags;
+        uint32_t permanentEnchantId;
+        uint32_t tempEnchantId;
+        uint32_t tempEnchantmentTimeLeftMs;
+        uint32_t tempEnchantmentCharges;
+        uint32_t durability;
+        uint32_t maxDurability;
+
+        CachedItemData() : itemId(0), stackCount(0), duration(0), flags(0),
+                           permanentEnchantId(0), tempEnchantId(0),
+                           tempEnchantmentTimeLeftMs(0), tempEnchantmentCharges(0),
+                           durability(0), maxDurability(0) {}
+
+        bool operator==(const CachedItemData& other) const {
+            return itemId == other.itemId &&
+                   stackCount == other.stackCount &&
+                   duration == other.duration &&
+                   flags == other.flags &&
+                   permanentEnchantId == other.permanentEnchantId &&
+                   tempEnchantId == other.tempEnchantId &&
+                   tempEnchantmentTimeLeftMs == other.tempEnchantmentTimeLeftMs &&
+                   tempEnchantmentCharges == other.tempEnchantmentCharges &&
+                   durability == other.durability &&
+                   maxDurability == other.maxDurability;
+        }
+
+        bool operator!=(const CachedItemData& other) const {
+            return !(*this == other);
+        }
+    };
+
+    // Cached trinket data for change detection (2D matrix by [bagIndex][slot])
+    struct CachedTrinketData {
+        uint32_t itemId;
+
+        CachedTrinketData() : itemId(0) {}
+
+        bool operator==(const CachedTrinketData& other) const {
+            return itemId == other.itemId;
+        }
+
+        bool operator!=(const CachedTrinketData& other) const {
+            return !(*this == other);
+        }
+    };
+
+    // Cache arrays (defined in items.cpp)
+    extern std::array<std::array<CachedItemData, MAX_BAG_SLOTS>, MAX_BAGS> bagItemDataCache;
+    extern std::array<CachedItemData, MAX_EQUIPPED_SLOTS> equippedItemDataCache;
+    extern std::array<std::array<CachedTrinketData, MAX_BAG_SLOTS>, MAX_BAGS> bagTrinketDataCache;
+    extern std::array<CachedTrinketData, MAX_EQUIPPED_SLOTS> equippedTrinketDataCache;
+
+    void ClearItemCaches();
     void ExportAllItems();
     void StartItemExport();
     bool LoadItem(uint32_t itemId);  // Returns true if item needs async load (caller should wait)
