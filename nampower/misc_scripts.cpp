@@ -691,6 +691,22 @@ namespace Nampower {
             return 0;
         }
 
+        // Check if player has Disenchant spell (13262)
+        constexpr uint32_t DISENCHANT_SPELL_ID = 13262;
+        bool hasDisenchant = false;
+        for (uint32_t slot = 0; slot < 1024; slot++) {
+            uint32_t spellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownSpells) + slot * 4);
+            if (spellId == DISENCHANT_SPELL_ID) {
+                hasDisenchant = true;
+                break;
+            }
+        }
+
+        if (!hasDisenchant) {
+            lua_error(luaState, "You do not have the Disenchant spell");
+            return 0;
+        }
+
         // Reset both modes
         gDisenchantItemId = 0;
         gDisenchantQuality = -1;
