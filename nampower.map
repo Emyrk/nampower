@@ -1,6 +1,6 @@
  nampower
 
- Timestamp is 694eef4b (Fri Dec 26 12:25:47 2025)
+ Timestamp is 694ef97c (Fri Dec 26 13:09:16 2025)
 
  Preferred load address is 10000000
 
@@ -3464,7 +3464,7 @@
  0002:000073dc       ??_C@_05EBCMBJBB@blues@    1007c3dc     misc_scripts.cpp.obj
  0002:000073e8       __real@3ff0000000000000    1007c3e8     misc_scripts.cpp.obj
  0002:000073f0       __real@4000000000000000    1007c3f0     misc_scripts.cpp.obj
- 0002:000073f8       __real@4034000000000000    1007c3f8     misc_scripts.cpp.obj
+ 0002:000073f8       __real@4035000000000000    1007c3f8     misc_scripts.cpp.obj
  0002:00007400       __real@408f400000000000    1007c400     misc_scripts.cpp.obj
  0002:0000740c       ??_C@_0CD@FAFLFIPA@Casting?5next?5spell?5without?5queu@ 1007c40c     spell_scripts.cpp.obj
  0002:00007430       ??_C@_0BO@KHCNJBCM@Force?5queuing?5next?5cast?5spell@ 1007c430     spell_scripts.cpp.obj

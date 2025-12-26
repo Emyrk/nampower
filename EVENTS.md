@@ -1,6 +1,22 @@
-### Custom Events
+# Nampower Custom Events
 
-#### SPELL_QUEUE_EVENT
+This document describes all custom events added by Nampower that you can register and listen to in your addons.
+
+For custom Lua functions, see [SCRIPTS.md](SCRIPTS.md). For general usage information, see [README.md](README.md).
+
+## Table of Contents
+- [SPELL_QUEUE_EVENT](#spell_queue_event)
+- [SPELL_CAST_EVENT](#spell_cast_event)
+- [SPELL_DAMAGE_EVENT_SELF and SPELL_DAMAGE_EVENT_OTHER](#spell_damage_event_self-and-spell_damage_event_other)
+- [Buff/Debuff Events](#buffdebuff-events)
+- [AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER](#aura_cast_on_self-and-aura_cast_on_other)
+- [UNIT_DIED](#unit_died)
+
+---
+
+## Custom Events
+
+### SPELL_QUEUE_EVENT
 I've added a new event you can register in game to get updates when spells are added and popped from the queue.
 
 The event is `SPELL_QUEUE_EVENT` and has 2 parameters:
@@ -39,7 +55,7 @@ end
 NampowerSettings:RegisterEvent("SPELL_QUEUE_EVENT", spellQueueEvent)
 ```
 
-#### SPELL_CAST_EVENT
+### SPELL_CAST_EVENT
 Event you can register in game to get updates when you cast spells with some additional information.  This will only fire for spells you (and certain pets) initiated.
 
 The event is `SPELL_CAST_EVENT` and has 5 parameters:
@@ -74,7 +90,7 @@ Cursive:RegisterEvent("SPELL_CAST_EVENT", function(success, spellId, castType, t
 end);
 ```
 
-####  SPELL_DAMAGE_EVENT_SELF and SPELL_DAMAGE_EVENT_OTHER
+### SPELL_DAMAGE_EVENT_SELF and SPELL_DAMAGE_EVENT_OTHER
 New events you can register in game to get updates whenever spell damage occurs. SPELL_DAMAGE_EVENT_SELF will only trigger for damage you deal, while SPELL_DAMAGE_EVENT_OTHER will only trigger for damage dealt by others.
 
 Both of these events have the following parameters:
@@ -110,7 +126,7 @@ Cursive:RegisterEvent("SPELL_DAMAGE_EVENT_SELF",
     end);
 ```
 
-#### Buff/Debuff Events
+### Buff/Debuff Events
 New events fire whenever a buff or debuff is added or removed on you or any other unit that the client tracks.
 
 Events:
@@ -145,7 +161,7 @@ for _, eventName in ipairs({"BUFF_ADDED_SELF", "BUFF_REMOVED_SELF", "DEBUFF_ADDE
 end
 ```
 
-#### AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER
+### AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER
 Fire when a spell cast applies an aura. "Self" covers casts that land on the active player (including cases where the active player is the caster with no explicit target); "Other" covers all other targets.
 
 These events are gated behind the `NP_EnableAuraCastEvents` CVar (default 0). Set it to `1` to enable.
@@ -164,7 +180,7 @@ Parameters:
 8.  int durationMs - spell duration in milliseconds (includes client modifiers if you are the caster)
 9.  int auraCapStatus - bitfield: 1 = buff bar full, 2 = debuff bar full (3 means both)
 
-#### UNIT_DIED
+### UNIT_DIED
 Fires when a unit death is recorded in the combat log.
 
 Parameters:
