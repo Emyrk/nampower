@@ -299,7 +299,7 @@ namespace Nampower {
     void SaveCastParams(CastSpellParams *params,
                         uint32_t *casterUnit,
                         uint32_t spellId,
-                        uintptr_t *item,
+                        game::CGItem_C *item,
                         std::uint64_t guid,
                         uint32_t gcDCategory,
                         uint32_t castTimeMs,
@@ -444,7 +444,7 @@ namespace Nampower {
 
     bool
     Spell_C_CastSpellHook(hadesmem::PatchDetourBase *detour, uint32_t *casterUnit, uint32_t spellId,
-                          uintptr_t *item,
+                          game::CGItem_C *item,
                           std::uint64_t guid) {
         // save the detour to allow quickly calling this hook
         castSpellDetour = detour;
@@ -459,7 +459,7 @@ namespace Nampower {
             DEBUG_LOG("Ignoring non active player cast of spell " << game::GetSpellName(spellId) << " " << spellId);
             // just call original function if caster is not the active player
             // happens with Doomguard rain of fire
-            auto const castSpell = detour->GetTrampolineT<CastSpellT>();
+            auto const castSpell = detour->GetTrampolineT<Spell_C_CastSpellT>();
             return castSpell(casterUnit, spellId, item, guid);
         }
 
@@ -478,6 +478,7 @@ namespace Nampower {
         if (casterUnit == playerUnit && gUserSettings.preventMountingWhenBuffCapped) {
             // Check for mount spell when player is buff capped
             if (SpellIsMounting(spell)) {
+                // check if they are not already mounted
                 if (playerUnit && game::UnitIsBuffCapped(playerUnit) && game::UnitGetMountDisplayId(playerUnit) == 0) {
                     DEBUG_LOG("Blocking mount spell " << spellName << " due to buff cap");
 
@@ -562,7 +563,7 @@ namespace Nampower {
             gNextCastId++;
 
             // try to cast the spell
-            auto const castSpell = detour->GetTrampolineT<CastSpellT>();
+            auto const castSpell = detour->GetTrampolineT<Spell_C_CastSpellT>();
             auto ret = castSpell(casterUnit, spellId, item, guid);
 
             TriggerSpellCastEvent(ret, spellId, ON_SWING, guid, itemId);
@@ -587,7 +588,7 @@ namespace Nampower {
             return ret;
         }
 
-        auto const castSpell = detour->GetTrampolineT<CastSpellT>();
+        auto const castSpell = detour->GetTrampolineT<Spell_C_CastSpellT>();
 
         auto effectiveCastEndMs = EffectiveCastEndMs();
         auto remainingEffectiveCastTime = (effectiveCastEndMs > currentTime) ? effectiveCastEndMs - currentTime : 0;
@@ -877,6 +878,10 @@ namespace Nampower {
     }
 
     bool doesSpellApplyAura(const game::SpellRec *spell) {
+        if (!spell) {
+            return false;
+        }
+
         for (unsigned int i: spell->Effect) {
             switch (i) {
                 case game::SPELL_EFFECT_APPLY_AURA:
@@ -977,6 +982,11 @@ namespace Nampower {
         auto const castByActivePlayer = activePlayerGuid == *casterGUID;
         auto const spell = game::GetSpellInfo(spellId);
 
+        if (!spell || spell->Id <= 0) {
+            DEBUG_LOG("Unable to determine spell information in SpellGo for " << spellId);
+            return;
+        }
+
         if (castByActivePlayer) {
             auto const currentTime = GetTime();
             // only care about our own casts
@@ -1006,6 +1016,8 @@ namespace Nampower {
         if (gUserSettings.enableAuraCastEvents && doesSpellApplyAura(spell)) {
             auto targetGuidVal = targetGUID ? *targetGUID : *casterGUID;
 
+            DEBUG_LOG("Triggering aura cast event for " << game::GetSpellName(spell->Id)
+                << " (" << spell->Id << ") caster: " << *casterGUID << " target: " << targetGuidVal);
             TriggerAuraCastEvent(spell, *casterGUID, targetGuidVal, activePlayerGuid, castByActivePlayer);
         }
     }

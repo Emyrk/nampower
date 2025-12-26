@@ -611,4 +611,127 @@ namespace Nampower {
         return 0;
     }
 
+    bool TryDisenchant() {
+        DEBUG_LOG("Trying disenchant with quality filter " << gDisenchantQuality << " itemId " << gDisenchantItemId);
+        if (gDisenchantQuality < 0 && gDisenchantItemId == 0) {
+            return false;
+        }
+
+        // Find the item in player inventory
+        PlayerItemSearchResult itemSearchResult;
+        if (gDisenchantItemId != 0) {
+            // Item-specific disenchanting
+            itemSearchResult = FindPlayerItem(gDisenchantItemId, nullptr);
+        } else {
+            // Quality-based disenchanting (weapons and armor only)
+            itemSearchResult = FindPlayerDisenchantItem(gDisenchantQuality);
+        }
+
+        if (!itemSearchResult.found()) {
+            // Item not found, stop disenchanting
+            DEBUG_LOG("No disenchantable item found, stopping disenchant");
+            gDisenchantItemId = 0;
+            gDisenchantQuality = -1;
+            gNextDisenchantTimeMs = 0;
+            return false;
+        }
+
+        // Get the item GUID
+        auto item = itemSearchResult.item;
+        if (!item || !item->object.m_obj) {
+            // Invalid item, stop disenchanting
+            DEBUG_LOG("Invalid item, stopping disenchant");
+            gDisenchantItemId = 0;
+            gDisenchantQuality = -1;
+            gNextDisenchantTimeMs = 0;
+            return false;
+        }
+        uint64_t itemGuid = item->object.m_obj->m_guid;
+
+        // Get player unit for casting
+        auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto playerUnit = game::GetObjectPtr(playerGuid);
+
+        if (!playerUnit) {
+            // No player unit, stop disenchanting
+            DEBUG_LOG("No player unit, stopping disenchant");
+            gDisenchantItemId = 0;
+            gDisenchantQuality = -1;
+            gNextDisenchantTimeMs = 0;
+            return false;
+        }
+
+        // Set timer for next disenchant attempt (5 seconds to allow time for inventory to update)
+        auto currentTime = GetTime();
+        gNextDisenchantTimeMs = currentTime + 5000;
+
+        // Cast Disenchant spell (13262) on the item
+        auto const castSpell = reinterpret_cast<Spell_C_CastSpellT>(Offsets::Spell_C_CastSpell);
+        bool success = castSpell(playerUnit, 13262, nullptr, itemGuid);
+
+        if (!success) {
+            // Cast failed, stop disenchanting
+            DEBUG_LOG("Cast failed, stopping disenchant");
+            gDisenchantItemId = 0;
+            gDisenchantQuality = -1;
+            gNextDisenchantTimeMs = 0;
+            return false;
+        }
+
+        return true;
+    }
+
+    uint32_t Script_DisenchantAll(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isnumber(luaState, 1) && !lua_isstring(luaState, 1)) {
+            lua_error(luaState, "Usage: DisenchantAll(itemIdOrName) or DisenchantAll(quality)\n"
+                "quality: \"greens\" for uncommon, \"blues\" for rare\n"
+                "itemIdOrName: item ID (number) or item name (string)");
+            return 0;
+        }
+
+        // Reset both modes
+        gDisenchantItemId = 0;
+        gDisenchantQuality = -1;
+
+        // Check number first (lua_isstring will also match numbers)
+        if (lua_isnumber(luaState, 1)) {
+            // It's an item ID
+            gDisenchantItemId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+        } else if (lua_isstring(luaState, 1)) {
+            // It's a string - check if it's quality-based or item name
+            const char *param = lua_tostring(luaState, 1);
+            if (_stricmp(param, "greens") == 0) {
+                gDisenchantQuality = game::ITEM_QUALITY_UNCOMMON;  // 2
+            } else if (_stricmp(param, "blues") == 0) {
+                gDisenchantQuality = game::ITEM_QUALITY_RARE;  // 3
+            } else {
+                // It's an item name
+                uint32_t cachedItemId = GetItemIdFromCache(param);
+                if (cachedItemId != 0) {
+                    gDisenchantItemId = cachedItemId;
+                } else {
+                    // Try to find the item to get its ID
+                    auto itemSearchResult = FindPlayerItem(0, param);
+                    if (itemSearchResult.found()) {
+                        gDisenchantItemId = game::GetItemId(itemSearchResult.item);
+                        // Cache the item name for future lookups
+                        CacheItemNameToId(param, gDisenchantItemId);
+                    } else {
+                        // Item not found
+                        lua_pushnumber(luaState, 0);
+                        return 1;
+                    }
+                }
+            }
+        }
+
+        // Try the first disenchant
+        bool success = TryDisenchant();
+
+        lua_pushnumber(luaState, success ? 1 : 0);
+        return 1;
+    }
+
 }

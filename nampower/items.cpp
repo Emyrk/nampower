@@ -217,6 +217,91 @@ namespace Nampower {
         return result;
     }
 
+    PlayerItemSearchResult FindPlayerDisenchantItem(int32_t quality) {
+        PlayerItemSearchResult result{};
+
+        auto const getBagItem = reinterpret_cast<CGBag_C_GetItemAtSlotT>(Offsets::CGBag_C_GetItemAtSlot);
+        auto const getContainerGuid = reinterpret_cast<GetContainerGuidT>(Offsets::GetContainerGuid);
+
+        auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto playerUnit = game::GetObjectPtr(playerGuid);
+        if (!playerUnit) {
+            return result;
+        }
+
+        auto inventory = game::GetPlayerInventoryPtr(playerUnit);
+
+        auto matchesItem = [&](game::CGItem_C *item) {
+            if (!item) {
+                return false;
+            }
+
+            uint32_t itemId = game::GetItemId(item);
+            auto *itemStats = GetItemStats(itemId);
+            if (!itemStats) {
+                return false;
+            }
+
+            // Check if item is weapon or armor
+            if (itemStats->m_class != game::ITEM_CLASS_WEAPON &&
+                itemStats->m_class != game::ITEM_CLASS_ARMOR) {
+                return false;
+            }
+
+            if (itemStats->m_quality != quality) {
+                return false;
+            }
+
+            return true;
+        };
+
+        for (uint32_t slot = 0; slot <= 18; slot++) {
+            auto item = getBagItem(inventory, slot);
+            if (matchesItem(item)) {
+                result.item = item;
+                result.bagIndex = EQUIPPED_BAG_INDEX;
+                result.slot = slot;
+                return result;
+            }
+        }
+
+        for (uint32_t slot = 23; slot <= 38; slot++) {
+            auto item = getBagItem(inventory, slot);
+            if (matchesItem(item)) {
+                result.item = item;
+                result.bagIndex = 0;
+                result.slot = slot;
+                return result;
+            }
+        }
+
+        for (int32_t bagIndex = 1; bagIndex <= 4; bagIndex++) {
+            uint64_t containerGuid = getContainerGuid(bagIndex - 1);
+            if (containerGuid == 0) continue;
+
+            auto containerPtr = game::ClntObjMgrObjectPtr(game::TYPEMASK_CONTAINER, containerGuid);
+            if (!containerPtr) continue;
+
+            auto bagPtr = GetBagPtrFromContainer(containerPtr);
+            if (!bagPtr) continue;
+
+            auto bagSize = *bagPtr;
+            for (uint32_t slot = 0; slot < bagSize; slot++) {
+                auto item = getBagItem(bagPtr, slot);
+                if (matchesItem(item)) {
+                    result.item = item;
+                    result.bagIndex = bagIndex;
+                    result.slot = slot;
+                    return result;
+                }
+            }
+        }
+
+        // don't search bank
+
+        return result;
+    }
+
     std::string escapeJsonString(const char *str) {
         if (!str) return "null";
 

@@ -76,7 +76,7 @@ struct CastSpellParams {
 
     uint32_t *casterUnit;
     uint32_t spellId;
-    uintptr_t *item;
+    game::CGItem_C *item;
     uint64_t guid;
     /* *********************** */
 

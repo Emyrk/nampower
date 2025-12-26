@@ -64,6 +64,10 @@ namespace Nampower {
 
     uint32_t gBufferTimeMs; // adjusts dynamically depending on errors
 
+    uint32_t gDisenchantItemId = 0;
+    int32_t gDisenchantQuality = -1;  // -1 = unset
+    uint32_t gNextDisenchantTimeMs = 0;
+
     bool gForceQueueCast;
     bool gNoQueueCast;
     bool gQueuesProcessed;
@@ -97,7 +101,7 @@ namespace Nampower {
 
     std::unique_ptr<hadesmem::PatchDetour<SetCVarT> > gSetCVarDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGSpellBook_CastSpellT> > gCGSpellBook_CastSpellDetour;
-    std::unique_ptr<hadesmem::PatchDetour<CastSpellT> > gCastDetour;
+    std::unique_ptr<hadesmem::PatchDetour<Spell_C_CastSpellT> > gCastDetour;
     std::unique_ptr<hadesmem::PatchDetour<SendCastT> > gSendCastDetour;
     std::unique_ptr<hadesmem::PatchDetour<CancelSpellT> > gCancelSpellDetour;
     std::unique_ptr<hadesmem::PatchDetour<SignalEventT> > gSignalEventDetour;
@@ -519,6 +523,18 @@ namespace Nampower {
             if (RunQueuedScript(3)) {
                 // script ran, stop processing
                 return true;
+            }
+
+            // Check for disenchant all
+            if (gDisenchantItemId != 0 || gDisenchantQuality != -1) {
+                auto currentTime = GetTime();
+
+                // Try to disenchant when timer has elapsed
+                if (gNextDisenchantTimeMs <= currentTime) {
+                    if (TryDisenchant()) {
+                        return true;
+                    }
+                }
             }
         }
 
@@ -1121,7 +1137,7 @@ namespace Nampower {
             process, Offsets::CGSpellBook_CastSpell, &CGSpellBook_CastSpellHook);
         gCGActionBar_UseActionDetour = createHook<CGActionBar_UseActionT>(
             process, Offsets::CGActionBar_UseAction, &CGActionBar_UseActionHook);
-        gCastDetour = createHook<CastSpellT>(process, Offsets::Spell_C_CastSpell, &Spell_C_CastSpellHook);
+        gCastDetour = createHook<Spell_C_CastSpellT>(process, Offsets::Spell_C_CastSpell, &Spell_C_CastSpellHook);
         gSendCastDetour = createHook<SendCastT>(process, Offsets::SendCast, &SendCastHook);
         gCancelSpellDetour = createHook<CancelSpellT>(process, Offsets::CancelSpell, &CancelSpellHook);
         gCastResultHandlerDetour = createHook<PacketHandlerT>(process, Offsets::CastResultHandler,
@@ -1373,6 +1389,9 @@ namespace Nampower {
 
         char getTrinkets[] = "GetTrinkets";
         RegisterLuaFunction(getTrinkets, reinterpret_cast<uintptr_t *>(Script_GetTrinkets));
+
+        char disenchantAll[] = "DisenchantAll";
+        RegisterLuaFunction(disenchantAll, reinterpret_cast<uintptr_t *>(Script_DisenchantAll));
     }
 
     void load() {

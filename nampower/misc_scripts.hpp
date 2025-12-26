@@ -30,5 +30,9 @@ namespace Nampower {
 
     uint32_t Script_StartItemExport(uintptr_t *luaState);
 
+    bool TryDisenchant();
+
+    uint32_t Script_DisenchantAll(uintptr_t *luaState);
+
     bool RunQueuedScript(int priority);
 }

@@ -30,8 +30,8 @@ namespace Nampower {
     constexpr uint32_t BUFFER_DECREASE_FREQUENCY = 10000; // time in ms between changes to lower buffer
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 20;
-    constexpr uint32_t PATCH_VERSION = 1;
+    constexpr uint32_t MINOR_VERSION = 21;
+    constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
@@ -41,6 +41,10 @@ namespace Nampower {
     extern uint32_t gLastBufferDecreaseTimeMs;
 
     extern uint32_t gBufferTimeMs;   // adjusts dynamically depending on errors
+
+    extern uint32_t gDisenchantItemId;
+    extern int32_t gDisenchantQuality;
+    extern uint32_t gNextDisenchantTimeMs;
 
     extern bool gForceQueueCast;
     extern bool gNoQueueCast;
@@ -70,7 +74,7 @@ namespace Nampower {
     using RangeCheckSelectedT = bool (__fastcall *)(uintptr_t *playerUnit, const game::SpellRec *,
                                                     std::uint64_t targetGuid, char ignoreErrors);
     using CGSpellBook_CastSpellT = void (__fastcall *)(uint32_t spellSlot, int bookType, uint64_t target);
-    using CastSpellT = bool (__fastcall *)(uintptr_t *playerUnit, uint32_t spellId, uintptr_t *item,
+    using Spell_C_CastSpellT = bool (__fastcall *)(uintptr_t *playerUnit, uint32_t spellId, game::CGItem_C *item,
                                            std::uint64_t targetGuid);
     using SendCastT = void (__fastcall *)(game::SpellCast *, char unk);
     using CancelSpellT = void (__fastcall *)(bool, bool, game::SpellCastResult);

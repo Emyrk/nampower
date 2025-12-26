@@ -24,7 +24,7 @@ namespace Nampower {
     lua_tonumberT lua_tonumber = reinterpret_cast<lua_tonumberT>(Offsets::lua_tonumber);
     lua_pushnumberT lua_pushnumber = reinterpret_cast<lua_pushnumberT>(Offsets::lua_pushnumber);
     lua_pushstringT lua_pushstring = reinterpret_cast<lua_pushstringT>(Offsets::lua_pushstring);
-    lua_pushbooleanT lua_pushboolean = reinterpret_cast<lua_pushbooleanT>(Offsets::lua_pushboolean);
+    // lua_pushbooleanT lua_pushboolean = reinterpret_cast<lua_pushbooleanT>(Offsets::lua_pushboolean);  doesn't seem to work properly
     lua_pushnilT lua_pushnil = reinterpret_cast<lua_pushnilT>(Offsets::lua_pushnil);
     lua_newtableT lua_newtable = reinterpret_cast<lua_newtableT>(Offsets::lua_newtable);
     lua_settableT lua_settable = reinterpret_cast<lua_settableT>(Offsets::lua_settable);

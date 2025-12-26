@@ -96,7 +96,7 @@ namespace game {
     const SpellRec *GetSpellInfo(uint32_t spellId) {
         auto const spellDb = reinterpret_cast<WowClientDB<SpellRec> *>(Offsets::SpellDb);
 
-        if (spellId > spellDb->m_maxId)
+        if (spellId > spellDb->m_maxId || spellId <= 0)
             return nullptr;
 
         return spellDb->m_recordsById[spellId];

@@ -11,6 +11,7 @@ For installation, configuration, and general usage information, see the main [RE
   - [Spell Casting and Queuing](#spell-casting-and-queuing)
   - [Cast Information](#cast-information)
   - [Cooldown Information](#cooldown-information)
+  - [Utility Functions](#utility-functions)
 ---
 
 ## Performance Optimization - Table References
@@ -892,3 +893,65 @@ should print 90 for atiesh
 
 #### ChannelStopCastingNextTick()
 Will stop channeling early on the next tick if you have queue channeling spells enabled and try to cast a spell before the next tick (didn't know how to cancel channels without casting another spell).  Uses your ChannelLatencyReductionPercentage to determine when to stop the channel.
+
+---
+
+### Utility Functions
+
+#### DisenchantAll(itemIdOrName) or DisenchantAll(quality)
+Automatically disenchants items in your inventory. Can disenchant a specific item by ID/name, or all weapons and armor of a specified quality.
+
+**⚠️ WARNING ⚠️**
+**THIS FUNCTION WILL AUTOMATICALLY DISENCHANT ITEMS WITHOUT CONFIRMATION!**
+- **Use at your own risk** - there is no undo for disenchanting
+- Only disenchants items from **player inventory bags (0-4)** - does NOT touch bank items
+- Make sure you have the Disenchant spell and the items are disenchantable before using
+- **Always double-check your bags** before running this command
+
+**Parameters:**
+
+**Mode 1: Disenchant by Item ID or Name**
+- `itemIdOrName` (number|string): Item ID (number) or item name (string)
+  - Disenchants all copies of the specified item found in your bags
+  - Works on any disenchantable item type (weapons, armor, etc.)
+
+**Mode 2: Disenchant by Quality** *(weapons and armor only)*
+- `quality` (string): Must be either:
+  - `"greens"` - Disenchants all uncommon (green) quality weapons and armor
+  - `"blues"` - Disenchants all rare (blue) quality weapons and armor
+  - Only affects **weapons** (class 2) and **armor** (class 4)
+
+**Returns:**
+- `1` if the first disenchant succeeded
+- `0` if no matching items were found or the disenchant failed
+
+**Behavior:**
+- Searches player inventory bags (0-4) only - **bank items are protected**
+- Finds the first matching item in your inventory
+- Casts Disenchant spell on that item
+- Automatically continues disenchanting matching items every 4 seconds
+- Stops when no more matching items are found or an error occurs
+
+**Examples:**
+```lua
+-- Disenchant all green weapons and armor in your bags
+DisenchantAll("greens")
+
+-- Disenchant all blue weapons and armor in your bags
+DisenchantAll("blues")
+
+-- Disenchant a specific item by ID
+DisenchantAll(12345)
+
+-- Disenchant a specific item by name
+DisenchantAll("Glowing Brightwood Staff")
+```
+
+**Important Notes:**
+- The function runs continuously until all matching items are disenchanted
+- Items must be in your inventory bags (0-4), not in bank, keyring, or equipped
+- When using quality mode ("greens"/"blues"), only weapons and armor are affected
+- When using item ID/name mode, any disenchantable item can be targeted
+- Make sure you have enough bag space for the disenchanting materials
+- The function will stop if you run out of matching items or if the disenchant spell fails
+- **REVIEW YOUR BAGS CAREFULLY BEFORE USE** - disenchanting cannot be undone!
