@@ -55,9 +55,7 @@ namespace Nampower {
         // Check for Disenchant (13262) failure and stop the disenchant loop
         if (spellId == 13262) {
             DEBUG_LOG("Disenchant spell failed with result " << int(spellResult) << ", stopping disenchant loop");
-            gDisenchantItemId = 0;
-            gDisenchantQuality = -1;
-            gNextDisenchantTimeMs = 0;
+            ResetDisenchantState();
         }
 
         // ignore SPELL_FAILED_CANT_DO_THAT_YET for arcane surge gets sent all the time after success

@@ -66,6 +66,7 @@ namespace Nampower {
 
     uint32_t gDisenchantItemId = 0;
     int32_t gDisenchantQuality = -1;  // -1 = unset
+    bool gDisenchantIncludeSoulbound = false;
     uint32_t gNextDisenchantTimeMs = 0;
 
     bool gForceQueueCast;
@@ -368,6 +369,13 @@ namespace Nampower {
         }
         gCastData.targetingSpellQueued = false;
         gCastData.targetingSpellId = 0;
+    }
+
+    void ResetDisenchantState() {
+        gDisenchantItemId = 0;
+        gDisenchantQuality = -1;
+        gDisenchantIncludeSoulbound = false;
+        gNextDisenchantTimeMs = 0;
     }
 
     void checkForStopChanneling() {

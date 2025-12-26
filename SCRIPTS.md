@@ -930,13 +930,15 @@ Will stop channeling early on the next tick if you have queue channeling spells 
 
 ### Utility Functions
 
-#### DisenchantAll(itemIdOrName) or DisenchantAll(quality)
+#### DisenchantAll(itemIdOrName, [includeSoulbound]) or DisenchantAll(quality, [includeSoulbound])
 Automatically disenchants items in your inventory. Can disenchant a specific item by ID/name, or all weapons and armor of a specified quality.
 
 **⚠️ WARNING ⚠️**
 **THIS FUNCTION WILL AUTOMATICALLY DISENCHANT ITEMS WITHOUT CONFIRMATION!**
 - **Use at your own risk** - there is no undo for disenchanting
 - Only disenchants items from **player inventory bags (0-4)** - does NOT touch bank items
+- **Quest items are ALWAYS protected** regardless of settings
+- **Soulbound items are protected by default** (can be overridden with optional parameter)
 - Make sure you have the Disenchant spell and the items are disenchantable before using
 - **Always double-check your bags** before running this command
 
@@ -946,12 +948,14 @@ Automatically disenchants items in your inventory. Can disenchant a specific ite
 - `itemIdOrName` (number|string): Item ID (number) or item name (string)
   - Disenchants all copies of the specified item found in your bags
   - Works on any disenchantable item type (weapons, armor, etc.)
+- `includeSoulbound` (number, optional): Pass any non-zero value (e.g., `1`) to include soulbound items (defaults to `0`)
 
 **Mode 2: Disenchant by Quality** *(weapons and armor only)*
 - `quality` (string): Must be either:
   - `"greens"` - Disenchants all uncommon (green) quality weapons and armor
   - `"blues"` - Disenchants all rare (blue) quality weapons and armor
   - Only affects **weapons** (class 2) and **armor** (class 4)
+- `includeSoulbound` (number, optional): Pass any non-zero value (e.g., `1`) to include soulbound items (defaults to `0`)
 
 **Returns:**
 - `1` if the first disenchant succeeded
@@ -966,17 +970,17 @@ Automatically disenchants items in your inventory. Can disenchant a specific ite
 
 **Examples:**
 ```lua
--- Disenchant all green weapons and armor in your bags
+-- Disenchant all green weapons and armor in your bags (excluding soulbound)
 DisenchantAll("greens")
 
--- Disenchant all blue weapons and armor in your bags
-DisenchantAll("blues")
+-- Disenchant all blue weapons and armor including soulbound items
+DisenchantAll("blues", 1)
 
--- Disenchant a specific item by ID
+-- Disenchant a specific item by ID (excluding soulbound)
 DisenchantAll(12345)
 
--- Disenchant a specific item by name
-DisenchantAll("Glowing Brightwood Staff")
+-- Disenchant a specific item by name including soulbound items
+DisenchantAll("Glowing Brightwood Staff", 1)
 ```
 
 **Important Notes:**

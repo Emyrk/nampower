@@ -217,7 +217,7 @@ namespace Nampower {
         return result;
     }
 
-    PlayerItemSearchResult FindPlayerDisenchantItem(int32_t quality) {
+    PlayerItemSearchResult FindPlayerDisenchantItem(int32_t quality, bool includeSoulbound) {
         PlayerItemSearchResult result{};
 
         auto const getBagItem = reinterpret_cast<CGBag_C_GetItemAtSlotT>(Offsets::CGBag_C_GetItemAtSlot);
@@ -231,6 +231,9 @@ namespace Nampower {
 
         auto inventory = game::GetPlayerInventoryPtr(playerUnit);
 
+        auto const itemIsQuestOrSoulbound = reinterpret_cast<CGItem_C_ItemIsQuestOrSoulboundT>(
+            Offsets::CGItem_C_ItemIsQuestOrSoulbound);
+
         auto matchesItem = [&](game::CGItem_C *item) {
             if (!item) {
                 return false;
@@ -239,6 +242,16 @@ namespace Nampower {
             uint32_t itemId = game::GetItemId(item);
             auto *itemStats = GetItemStats(itemId);
             if (!itemStats) {
+                return false;
+            }
+
+            // Always skip quest items (check by class or startQuestID)
+            if (itemStats->m_class == game::ITEM_CLASS_QUEST || itemStats->m_startQuestID > 0) {
+                return false;
+            }
+
+            // Skip soulbound items only if includeSoulbound is false
+            if (!includeSoulbound && itemIsQuestOrSoulbound(item)) {
                 return false;
             }
 

@@ -614,6 +614,7 @@ namespace Nampower {
     bool TryDisenchant() {
         DEBUG_LOG("Trying disenchant with quality filter " << gDisenchantQuality << " itemId " << gDisenchantItemId);
         if (gDisenchantQuality < 0 && gDisenchantItemId == 0) {
+            ResetDisenchantState();
             return false;
         }
 
@@ -624,15 +625,13 @@ namespace Nampower {
             itemSearchResult = FindPlayerItem(gDisenchantItemId, nullptr);
         } else {
             // Quality-based disenchanting (weapons and armor only)
-            itemSearchResult = FindPlayerDisenchantItem(gDisenchantQuality);
+            itemSearchResult = FindPlayerDisenchantItem(gDisenchantQuality, gDisenchantIncludeSoulbound);
         }
 
         if (!itemSearchResult.found()) {
             // Item not found, stop disenchanting
             DEBUG_LOG("No disenchantable item found, stopping disenchant");
-            gDisenchantItemId = 0;
-            gDisenchantQuality = -1;
-            gNextDisenchantTimeMs = 0;
+            ResetDisenchantState();
             return false;
         }
 
@@ -641,9 +640,7 @@ namespace Nampower {
         if (!item || !item->object.m_obj) {
             // Invalid item, stop disenchanting
             DEBUG_LOG("Invalid item, stopping disenchant");
-            gDisenchantItemId = 0;
-            gDisenchantQuality = -1;
-            gNextDisenchantTimeMs = 0;
+            ResetDisenchantState();
             return false;
         }
         uint64_t itemGuid = item->object.m_obj->m_guid;
@@ -655,9 +652,7 @@ namespace Nampower {
         if (!playerUnit) {
             // No player unit, stop disenchanting
             DEBUG_LOG("No player unit, stopping disenchant");
-            gDisenchantItemId = 0;
-            gDisenchantQuality = -1;
-            gNextDisenchantTimeMs = 0;
+            ResetDisenchantState();
             return false;
         }
 
@@ -672,9 +667,7 @@ namespace Nampower {
         if (!success) {
             // Cast failed, stop disenchanting
             DEBUG_LOG("Cast failed, stopping disenchant");
-            gDisenchantItemId = 0;
-            gDisenchantQuality = -1;
-            gNextDisenchantTimeMs = 0;
+            ResetDisenchantState();
             return false;
         }
 
@@ -685,9 +678,10 @@ namespace Nampower {
         luaState = GetLuaStatePtr();
 
         if (!lua_isnumber(luaState, 1) && !lua_isstring(luaState, 1)) {
-            lua_error(luaState, "Usage: DisenchantAll(itemIdOrName) or DisenchantAll(quality)\n"
+            lua_error(luaState, "Usage: DisenchantAll(itemIdOrName, [includeSoulbound]) or DisenchantAll(quality, [includeSoulbound])\n"
                 "quality: \"greens\" for uncommon, \"blues\" for rare\n"
-                "itemIdOrName: item ID (number) or item name (string)");
+                "itemIdOrName: item ID (number) or item name (string)\n"
+                "includeSoulbound: optional number - pass 1 to include soulbound items (defaults to 0)");
             return 0;
         }
 
@@ -707,9 +701,8 @@ namespace Nampower {
             return 0;
         }
 
-        // Reset both modes
-        gDisenchantItemId = 0;
-        gDisenchantQuality = -1;
+        // Reset all modes
+        ResetDisenchantState();
 
         // Check number first (lua_isstring will also match numbers)
         if (lua_isnumber(luaState, 1)) {
@@ -741,6 +734,12 @@ namespace Nampower {
                     }
                 }
             }
+        }
+
+        // Parse optional includeSoulbound parameter (defaults to false)
+        // Any non-zero integer enables it
+        if (lua_isnumber(luaState, 2)) {
+            gDisenchantIncludeSoulbound = (lua_tonumber(luaState, 2) != 0);
         }
 
         // Try the first disenchant
