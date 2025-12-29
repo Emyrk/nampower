@@ -43,7 +43,7 @@ For installation, configuration, and general usage information, see the main [RE
     - [GetTrinketCooldown](#gettrinketcooldownslotitemidorname)
     - [UseTrinket](#usetrinketslotitemidorname-target)
   - [Utility Functions](#utility-functions)
-    - [DisenchantAll](#disenchantallitemidorname-or-disenchantallquality)
+    - [DisenchantAll](#disenchantallitemidorname-includesoulbound-or-disenchantallquality-includesoulbound)
 ---
 
 ## Performance Optimization - Table References
@@ -936,7 +936,8 @@ Automatically disenchants items in your inventory. Can disenchant a specific ite
 **⚠️ WARNING ⚠️**
 **THIS FUNCTION WILL AUTOMATICALLY DISENCHANT ITEMS WITHOUT CONFIRMATION!**
 - **Use at your own risk** - there is no undo for disenchanting
-- Only disenchants items from **player inventory bags (0-4)** - does NOT touch bank items
+- Only disenchants items from **player inventory bags (backpack and bags 1-4)**
+- **Equipped items, bank items, and keyring are PROTECTED** - will not be touched
 - **Quest items are ALWAYS protected** regardless of settings
 - **Soulbound items are protected by default** (can be overridden with optional parameter)
 - Make sure you have the Disenchant spell and the items are disenchantable before using
@@ -951,9 +952,13 @@ Automatically disenchants items in your inventory. Can disenchant a specific ite
 - `includeSoulbound` (number, optional): Pass any non-zero value (e.g., `1`) to include soulbound items (defaults to `0`)
 
 **Mode 2: Disenchant by Quality** *(weapons and armor only)*
-- `quality` (string): Must be either:
+- `quality` (string): Can be a single quality or combination (pipe-separated):
   - `"greens"` - Disenchants all uncommon (green) quality weapons and armor
   - `"blues"` - Disenchants all rare (blue) quality weapons and armor
+  - `"purples"` - Disenchants all epic (purple) quality weapons and armor
+  - `"greens|blues"` - Disenchants both greens and blues
+  - `"blues|purples"` - Disenchants both blues and purples
+  - `"greens|blues|purples"` - Disenchants greens, blues, and purples
   - Only affects **weapons** (class 2) and **armor** (class 4)
 - `includeSoulbound` (number, optional): Pass any non-zero value (e.g., `1`) to include soulbound items (defaults to `0`)
 
@@ -962,11 +967,13 @@ Automatically disenchants items in your inventory. Can disenchant a specific ite
 - `0` if no matching items were found or the disenchant failed
 
 **Behavior:**
-- Searches player inventory bags (0-4) only - **bank items are protected**
+- Searches player inventory bags (backpack and bags 1-4) only - **equipped items, bank, and keyring are protected**
 - Finds the first matching item in your inventory
+- Displays a chat message showing which item is being disenchanted
 - Casts Disenchant spell on that item
-- Automatically continues disenchanting matching items every 4 seconds
+- Automatically continues disenchanting matching items every 5 seconds
 - Stops when no more matching items are found or an error occurs
+- Displays completion or error messages in chat
 
 **Examples:**
 ```lua
@@ -975,6 +982,18 @@ DisenchantAll("greens")
 
 -- Disenchant all blue weapons and armor including soulbound items
 DisenchantAll("blues", 1)
+
+-- Disenchant all purple (epic) weapons and armor
+DisenchantAll("purples")
+
+-- Disenchant both greens and blues
+DisenchantAll("greens|blues")
+
+-- Disenchant blues and purples including soulbound items
+DisenchantAll("blues|purples", 1)
+
+-- Disenchant all greens, blues, and purples
+DisenchantAll("greens|blues|purples")
 
 -- Disenchant a specific item by ID (excluding soulbound)
 DisenchantAll(12345)
@@ -985,9 +1004,10 @@ DisenchantAll("Glowing Brightwood Staff", 1)
 
 **Important Notes:**
 - The function runs continuously until all matching items are disenchanted
-- Items must be in your inventory bags (0-4), not in bank, keyring, or equipped
-- When using quality mode ("greens"/"blues"), only weapons and armor are affected
+- **Only searches inventory bags (backpack and bags 1-4)** - equipped items, bank, and keyring are protected
+- When using quality mode ("greens"/"blues"/"purples" or combinations), only weapons and armor are affected
 - When using item ID/name mode, any disenchantable item can be targeted
 - Make sure you have enough bag space for the disenchanting materials
 - The function will stop if you run out of matching items or if the disenchant spell fails
+- Displays chat messages: "Disenchanting [Item Link] move during cast to cancel.", "No more items to disenchant.", and "Disenchant interrupted or failed."
 - **REVIEW YOUR BAGS CAREFULLY BEFORE USE** - disenchanting cannot be undone!
