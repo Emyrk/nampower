@@ -65,7 +65,7 @@ namespace Nampower {
     uint32_t gBufferTimeMs; // adjusts dynamically depending on errors
 
     uint32_t gDisenchantItemId = 0;
-    int32_t gDisenchantQuality = -1;  // -1 = unset
+    uint32_t gDisenchantQuality = 0;  // 0 = unset
     bool gDisenchantIncludeSoulbound = false;
     uint32_t gNextDisenchantTimeMs = 0;
 
@@ -373,7 +373,7 @@ namespace Nampower {
 
     void ResetDisenchantState() {
         gDisenchantItemId = 0;
-        gDisenchantQuality = -1;
+        gDisenchantQuality = 0;
         gDisenchantIncludeSoulbound = false;
         gNextDisenchantTimeMs = 0;
     }
@@ -534,7 +534,7 @@ namespace Nampower {
             }
 
             // Check for disenchant all
-            if (gDisenchantItemId != 0 || gDisenchantQuality != -1) {
+            if (gDisenchantItemId != 0 || gDisenchantQuality != 0) {
                 auto currentTime = GetTime();
 
                 // Try to disenchant when timer has elapsed

@@ -29,8 +29,13 @@ namespace Nampower {
     constexpr uint32_t BUFFER_INCREASE_FREQUENCY = 5000; // time in ms between changes to raise buffer
     constexpr uint32_t BUFFER_DECREASE_FREQUENCY = 10000; // time in ms between changes to lower buffer
 
+    // Disenchant quality bitmasks
+    constexpr uint32_t DISENCHANT_QUALITY_GREEN = 0x01;   // Uncommon
+    constexpr uint32_t DISENCHANT_QUALITY_BLUE = 0x02;    // Rare
+    constexpr uint32_t DISENCHANT_QUALITY_PURPLE = 0x04;  // Epic
+
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 22;
+    constexpr uint32_t MINOR_VERSION = 23;
     constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
@@ -43,7 +48,7 @@ namespace Nampower {
     extern uint32_t gBufferTimeMs;   // adjusts dynamically depending on errors
 
     extern uint32_t gDisenchantItemId;
-    extern int32_t gDisenchantQuality;
+    extern uint32_t gDisenchantQuality;
     extern bool gDisenchantIncludeSoulbound;
     extern uint32_t gNextDisenchantTimeMs;
 

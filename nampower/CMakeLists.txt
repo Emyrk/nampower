@@ -9,6 +9,7 @@ set(SOURCE_FILES
         cdatastore.hpp
         cdatastore.cpp
         castqueue.h
+        cooldown.hpp
         game.hpp
         game.cpp
         main.hpp

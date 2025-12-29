@@ -133,6 +133,7 @@ struct CastData {
     uint32_t numRetries;
 
     bool cancellingSpell;
+    bool ignoreCancelDueToCooldown;
 
     bool channeling;
     bool cancelChannelNextTick;

@@ -613,7 +613,7 @@ namespace Nampower {
 
     bool TryDisenchant() {
         DEBUG_LOG("Trying disenchant with quality filter " << gDisenchantQuality << " itemId " << gDisenchantItemId);
-        if (gDisenchantQuality < 0 && gDisenchantItemId == 0) {
+        if (gDisenchantQuality == 0 && gDisenchantItemId == 0) {
             ResetDisenchantState();
             return false;
         }
@@ -631,6 +631,7 @@ namespace Nampower {
         if (!itemSearchResult.found()) {
             // Item not found, stop disenchanting
             DEBUG_LOG("No disenchantable item found, stopping disenchant");
+            LuaCall("DEFAULT_CHAT_FRAME:AddMessage(\"No more items to disenchant.\")");
             ResetDisenchantState();
             return false;
         }
@@ -656,6 +657,14 @@ namespace Nampower {
             return false;
         }
 
+        // Display which item is being disenchanted
+        char luaCode[256];
+        snprintf(luaCode, sizeof(luaCode),
+                "local itemLink = GetContainerItemLink(%d, %d); "
+                "if itemLink then DEFAULT_CHAT_FRAME:AddMessage(\"Disenchanting \" .. itemLink .. \" move during cast to cancel.\") end",
+                itemSearchResult.bagIndex, itemSearchResult.slot + 1);  // Lua slots are 1-indexed
+        LuaCall(luaCode);
+
         // Set timer for next disenchant attempt (5 seconds to allow time for inventory to update)
         auto currentTime = GetTime();
         gNextDisenchantTimeMs = currentTime + 5000;
@@ -667,6 +676,7 @@ namespace Nampower {
         if (!success) {
             // Cast failed, stop disenchanting
             DEBUG_LOG("Cast failed, stopping disenchant");
+            LuaCall("DEFAULT_CHAT_FRAME:AddMessage(\"Disenchant interrupted or failed.\")");
             ResetDisenchantState();
             return false;
         }
@@ -679,7 +689,7 @@ namespace Nampower {
 
         if (!lua_isnumber(luaState, 1) && !lua_isstring(luaState, 1)) {
             lua_error(luaState, "Usage: DisenchantAll(itemIdOrName, [includeSoulbound]) or DisenchantAll(quality, [includeSoulbound])\n"
-                "quality: \"greens\" for uncommon, \"blues\" for rare\n"
+                "quality: \"greens\", \"blues\", \"purples\", or combinations like \"greens|blues\" or \"greens|blues|purples\"\n"
                 "itemIdOrName: item ID (number) or item name (string)\n"
                 "includeSoulbound: optional number - pass 1 to include soulbound items (defaults to 0)");
             return 0;
@@ -711,10 +721,36 @@ namespace Nampower {
         } else if (lua_isstring(luaState, 1)) {
             // It's a string - check if it's quality-based or item name
             const char *param = lua_tostring(luaState, 1);
-            if (_stricmp(param, "greens") == 0) {
-                gDisenchantQuality = game::ITEM_QUALITY_UNCOMMON;  // 2
-            } else if (_stricmp(param, "blues") == 0) {
-                gDisenchantQuality = game::ITEM_QUALITY_RARE;  // 3
+
+            // Parse quality combinations (e.g., "greens", "blues|purples", "greens|blues|purples")
+            bool isQualityString = false;
+            uint32_t qualityBitmask = 0;
+
+            // Make a mutable copy of the string for tokenizing
+            std::string paramStr(param);
+            size_t start = 0;
+            size_t end = 0;
+
+            while (end != std::string::npos) {
+                end = paramStr.find('|', start);
+                std::string token = paramStr.substr(start, (end == std::string::npos) ? std::string::npos : end - start);
+
+                if (_stricmp(token.c_str(), "greens") == 0) {
+                    qualityBitmask |= DISENCHANT_QUALITY_GREEN;
+                    isQualityString = true;
+                } else if (_stricmp(token.c_str(), "blues") == 0) {
+                    qualityBitmask |= DISENCHANT_QUALITY_BLUE;
+                    isQualityString = true;
+                } else if (_stricmp(token.c_str(), "purples") == 0) {
+                    qualityBitmask |= DISENCHANT_QUALITY_PURPLE;
+                    isQualityString = true;
+                }
+
+                start = (end == std::string::npos) ? std::string::npos : end + 1;
+            }
+
+            if (isQualityString) {
+                gDisenchantQuality = qualityBitmask;
             } else {
                 // It's an item name
                 uint32_t cachedItemId = GetItemIdFromCache(param);

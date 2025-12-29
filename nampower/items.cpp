@@ -217,7 +217,7 @@ namespace Nampower {
         return result;
     }
 
-    PlayerItemSearchResult FindPlayerDisenchantItem(int32_t quality, bool includeSoulbound) {
+    PlayerItemSearchResult FindPlayerDisenchantItem(uint32_t qualityBitmask, bool includeSoulbound) {
         PlayerItemSearchResult result{};
 
         auto const getBagItem = reinterpret_cast<CGBag_C_GetItemAtSlotT>(Offsets::CGBag_C_GetItemAtSlot);
@@ -261,22 +261,24 @@ namespace Nampower {
                 return false;
             }
 
-            if (itemStats->m_quality != quality) {
+            // Check if item quality matches the bitmask
+            uint32_t qualityBit = 0;
+            if (itemStats->m_quality == game::ITEM_QUALITY_UNCOMMON) {
+                qualityBit = 0x01;  // Green
+            } else if (itemStats->m_quality == game::ITEM_QUALITY_RARE) {
+                qualityBit = 0x02;  // Blue
+            } else if (itemStats->m_quality == game::ITEM_QUALITY_EPIC) {
+                qualityBit = 0x04;  // Purple
+            }
+
+            if ((qualityBitmask & qualityBit) == 0) {
                 return false;
             }
 
             return true;
         };
 
-        for (uint32_t slot = 0; slot <= 18; slot++) {
-            auto item = getBagItem(inventory, slot);
-            if (matchesItem(item)) {
-                result.item = item;
-                result.bagIndex = EQUIPPED_BAG_INDEX;
-                result.slot = slot;
-                return result;
-            }
-        }
+        // Skip equipped gear slots (0-18) - only search bags
 
         for (uint32_t slot = 23; slot <= 38; slot++) {
             auto item = getBagItem(inventory, slot);

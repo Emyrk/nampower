@@ -452,6 +452,9 @@ namespace Nampower {
         // it is possible when spamming to attempt to cast before queues are processed
         processQueues();
 
+        // clear flag to avoid canceling spell cast due to cooldown
+        gCastData.ignoreCancelDueToCooldown = false;
+
         auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
         auto playerUnit = (playerGuid > 0) ? game::GetObjectPtr(playerGuid) : nullptr;
 
@@ -843,7 +846,7 @@ namespace Nampower {
         // haven't gotten spell result from the previous cast yet, probably due to latency.
         // simulate a cancel to clear the cast bar but only when there should be a cast time
         // mining/herbing have cast time but aren't on Gcd, don't cancel them
-        if (!ret && gLastCastData.castTimeMs > 0 && gLastCastData.wasOnGcd) {
+        if (!ret && gLastCastData.castTimeMs > 0 && gLastCastData.wasOnGcd && !gCastData.ignoreCancelDueToCooldown) {
             if (*reinterpret_cast<int *>(Offsets::SpellIsTargeting) == 0 && !gCastData.pendingOnSwingCast &&
                 !IsSpellOnCooldown(spellId)) {
                 DEBUG_LOG("Canceling spell cast due to previous spell having cast time of "
@@ -1016,8 +1019,6 @@ namespace Nampower {
         if (gUserSettings.enableAuraCastEvents && doesSpellApplyAura(spell)) {
             auto targetGuidVal = targetGUID ? *targetGUID : *casterGUID;
 
-            DEBUG_LOG("Triggering aura cast event for " << game::GetSpellName(spell->Id)
-                << " (" << spell->Id << ") caster: " << *casterGUID << " target: " << targetGuidVal);
             TriggerAuraCastEvent(spell, *casterGUID, targetGuidVal, activePlayerGuid, castByActivePlayer);
         }
     }
@@ -1025,6 +1026,14 @@ namespace Nampower {
     void
     CancelSpellHook(hadesmem::PatchDetourBase *detour, bool failed, bool notifyServer,
                     game::SpellCastResult reason) {
+        // avoid canceling spell cast if it failed due to cooldown
+        if (gCastData.ignoreCancelDueToCooldown &&
+            (reason == game::SpellCastResult::SPELL_FAILED_NOT_READY ||
+             reason == game::SpellCastResult::SPELL_FAILED_ITEM_NOT_READY)) {
+            DEBUG_LOG("Ignoring cancel spell cast due to cooldown, reason:" << int(reason));
+            return;
+        }
+
         // triggered by us, reset the cast bar
         if (notifyServer) {
             ResetCastFlags();

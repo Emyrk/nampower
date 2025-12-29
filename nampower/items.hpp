@@ -101,7 +101,7 @@ namespace Nampower {
     void CacheItemNameToId(const char *itemName, uint32_t itemId);
     bool DoesItemMatch(uint32_t itemId, uint32_t searchItemId, const char *searchItemName);
     PlayerItemSearchResult FindPlayerItem(uint32_t searchItemId, const char *searchItemName);
-    PlayerItemSearchResult FindPlayerDisenchantItem(int32_t quality, bool includeSoulbound = false);
+    PlayerItemSearchResult FindPlayerDisenchantItem(uint32_t qualityBitmask, bool includeSoulbound = false);
     uintptr_t *GetBagPtrFromContainer(uintptr_t *containerPtr);
 
 }

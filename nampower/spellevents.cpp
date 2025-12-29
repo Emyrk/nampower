@@ -7,6 +7,7 @@
 #include "logging.hpp"
 #include "spellcast.hpp"
 #include "helper.hpp"
+#include "cooldown.hpp"
 
 namespace Nampower {
     uint32_t lastCastResultTimeMs;
@@ -88,6 +89,8 @@ namespace Nampower {
                     if (castParams) {
                         // mark as failed so it can be cast again
                         castParams->castResult = CastResult::SERVER_FAILURE;
+                        // set flag to avoid canceling spell cast
+                        gCastData.ignoreCancelDueToCooldown = true;
                     }
 
                     // check if we should do cooldown queuing
@@ -117,6 +120,21 @@ namespace Nampower {
                         }
                     } else {
                         DEBUG_LOG("Spell " << game::GetSpellName(spellId) << " is still on cooldown " << spellCooldown);
+                        return;
+                    }
+                }
+            } else if (spellResult == game::SpellCastResult::SPELL_FAILED_ITEM_NOT_READY) {
+                // check if item is just on cooldown still
+                auto castParams = gCastHistory.findSpellId(spellId);
+                if (castParams && castParams->item) {
+                    auto const itemId = game::GetItemId(castParams->item);
+                    auto const itemCooldown = GetItemCooldownDetail(itemId);
+                    if (itemCooldown.cooldownRemainingMs > 0) {
+                        // mark as failed so it can be cast again
+                        castParams->castResult = CastResult::SERVER_FAILURE;
+                        // set flag to avoid canceling spell cast
+                        gCastData.ignoreCancelDueToCooldown = true;
+                        DEBUG_LOG("Item " << itemId << " is still on cooldown " << itemCooldown.cooldownRemainingMs);
                         return;
                     }
                 }
