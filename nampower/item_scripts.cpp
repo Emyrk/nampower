@@ -1016,8 +1016,8 @@ namespace Nampower {
 
             return 1;
         }
-
-        // TODO Error for not finding the bag
+        
+        lua_error(luaState, "Invalid bag index. Valid values: 0, 1-4, -1, 5-9 (bank)");
         return 0;
     }
 
