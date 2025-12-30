@@ -1132,13 +1132,96 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<FuncT> >
     createHook(const hadesmem::Process &process, Offsets offset, HookT hookFunc) {
         auto const originalFunc = hadesmem::detail::AliasCast<FuncT>(offset);
-        auto detour = std::make_unique<hadesmem::PatchDetour<FuncT> >(process, originalFunc, hookFunc);
-        detour->Apply();
-        return detour;
+
+        const int maxRetries = 10;
+        std::string lastError;
+
+        for (int attempt = 0; attempt < maxRetries; ++attempt) {
+            try {
+                auto detour = std::make_unique<hadesmem::PatchDetour<FuncT> >(process, originalFunc, hookFunc);
+                detour->Apply();
+
+                if (attempt > 0) {
+                    DEBUG_LOG("  Hook succeeded after " << (attempt + 1) << " attempts (offset 0x"
+                        << std::hex << static_cast<uint32_t>(offset) << std::dec << ")");
+                }
+
+                return detour;
+            } catch (const hadesmem::Error& e) {
+                lastError = e.what();
+
+                if (attempt == 0) {
+                    DEBUG_LOG("  Hook failed on offset 0x" << std::hex << static_cast<uint32_t>(offset)
+                        << std::dec << ": " << lastError << " - retrying...");
+                }
+
+                if (attempt < maxRetries - 1) {
+                    Sleep(10);  // Wait 10ms before retry
+                    continue;
+                } else {
+                    // Out of retries
+                    DEBUG_LOG("  FAILED after " << maxRetries << " attempts (offset 0x"
+                        << std::hex << static_cast<uint32_t>(offset) << std::dec
+                        << "): " << lastError);
+                    throw;
+                }
+            } catch (const std::exception& e) {
+                lastError = e.what();
+
+                if (attempt == 0) {
+                    DEBUG_LOG("  Hook failed with std::exception on offset 0x"
+                        << std::hex << static_cast<uint32_t>(offset) << std::dec
+                        << ": " << lastError << " - retrying...");
+                }
+
+                if (attempt < maxRetries - 1) {
+                    Sleep(10);  // Wait 10ms before retry
+                    continue;
+                } else {
+                    DEBUG_LOG("  FAILED after " << maxRetries << " attempts (offset 0x"
+                        << std::hex << static_cast<uint32_t>(offset) << std::dec
+                        << "): " << lastError);
+                    throw;
+                }
+            } catch (...) {
+                lastError = "Unknown exception";
+
+                if (attempt == 0) {
+                    DEBUG_LOG("  Hook failed with unknown exception on offset 0x"
+                        << std::hex << static_cast<uint32_t>(offset) << std::dec << " - retrying...");
+
+                    // Try to get more info about the memory at this address
+                    MEMORY_BASIC_INFORMATION mbi;
+                    if (VirtualQuery(reinterpret_cast<LPCVOID>(offset), &mbi, sizeof(mbi))) {
+                        DEBUG_LOG("  Memory info - Base: 0x" << std::hex << mbi.BaseAddress
+                            << " Size: " << mbi.RegionSize
+                            << " State: " << mbi.State
+                            << " Protect: " << mbi.Protect
+                            << " Type: " << mbi.Type << std::dec);
+                    }
+                }
+
+                if (attempt < maxRetries - 1) {
+                    Sleep(10);  // Wait 10ms before retry
+                    continue;
+                } else {
+                    DEBUG_LOG("  FAILED after " << maxRetries << " attempts (offset 0x"
+                        << std::hex << static_cast<uint32_t>(offset) << std::dec
+                        << "): " << lastError);
+                    throw;
+                }
+            }
+        }
+
+        // Shouldn't reach here, but just in case
+        HADESMEM_DETAIL_THROW_EXCEPTION(
+            hadesmem::Error{} << hadesmem::ErrorString{"Failed to create hook after all retry attempts"});
     }
 
     void initHooks() {
         const hadesmem::Process process(::GetCurrentProcessId());
+
+        DEBUG_LOG("=== Starting hook initialization ===");
 
         gSetCVarDetour = createHook<SetCVarT>(process, Offsets::Script_SetCVar, &Script_SetCVarHook);
         gCGSpellBook_CastSpellDetour = createHook<CGSpellBook_CastSpellT>(
@@ -1199,6 +1282,8 @@ namespace Nampower {
                                                                     &FrameScript_CreateEventsHook);
         gSetEventCountDetour = createHook<FramescriptSetEventCountT>(process, Offsets::Framescript_SetEventCount,
                                                                      &Framescript_SetEventCountHook);
+
+        DEBUG_LOG("=== All hooks initialized successfully ===");
     }
 
     void SysMsgInitializeHook(hadesmem::PatchDetourBase *detour) {
