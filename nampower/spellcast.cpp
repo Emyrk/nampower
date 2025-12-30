@@ -107,6 +107,21 @@ namespace Nampower {
         }
     }
 
+    void
+    TriggerSpellBeginCastEvent(uint32_t spellId, std::uint64_t guid) {
+        char format[] = "%d%s";
+        char *guidStr = new char[21]; // 2 for 0x prefix, 18 for the number, and 1 for '\0'
+        std::snprintf(guidStr, 21, "0x%016llX", static_cast<unsigned long long>(guid));
+
+        ((int (__cdecl *)(int, char *, uint32_t, char *)) Offsets::SignalEventParam)(
+         game::SPELL_BEGIN_CAST_EVENT, // SPELL_BEGIN_CAST_EVENT event we are adding
+         format,
+         spellId,
+         guidStr);
+
+        delete[] guidStr;
+    }
+
     bool Spell_C_TargetSpellHook(hadesmem::PatchDetourBase *detour,
                                  uint32_t *player,
                                  uint32_t *spellId,
@@ -236,6 +251,9 @@ namespace Nampower {
         }
 
         gLastCastData.startTimeMs = currentTime;
+
+        
+        TriggerSpellBeginCastEvent(cast->spellId, cast->unitTarget);
     }
 
     void CastQueuedNonGcdSpell() {
@@ -340,21 +358,6 @@ namespace Nampower {
             castType,
             guidStr,
             itemId);
-
-        delete[] guidStr;
-    }
-
-    void
-    TriggerSpellSendingEvent(uint32_t spellId, std::uint64_t guid) {
-        char format[] = "%d%s";
-        char *guidStr = new char[21]; // 2 for 0x prefix, 18 for the number, and 1 for '\0'
-        std::snprintf(guidStr, 21, "0x%016llX", static_cast<unsigned long long>(guid));
-
-        ((int (__cdecl *)(int, char *, uint32_t, char *)) Offsets::SignalEventParam)(
-         game::SPELL_SENDING_EVENT, // SPELL_SENDING_EVENT event we are adding
-         format,
-         spellId,
-         guidStr);
 
         delete[] guidStr;
     }
@@ -1062,12 +1065,6 @@ namespace Nampower {
     }
 
     void SendCastHook(hadesmem::PatchDetourBase *detour, game::SpellCast *cast, char unk) {
-
-        if (cast != nullptr && cast->itemTarget == 0 && cast->caster == game::ClntObjMgrGetActivePlayerGuid()) {
-            const auto guid = cast->unitTarget;
-            const auto spellId = cast->spellId;
-            TriggerSpellSendingEvent(spellId, guid);
-        }
 
         auto const sendCast = detour->GetTrampolineT<SendCastT>();
         sendCast(cast, unk);
