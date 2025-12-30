@@ -14,7 +14,7 @@ For installation, configuration, and general usage information, see the main [RE
     - [UseItemIdOrName](#useitemidornameitemidorname-target)
     - [GetEquippedItems](#getequippeditemsunittoken)
     - [GetEquippedItem](#getequippeditemunittoken-slot)
-    - [GetBagItems](#getbagitems)
+    - [GetBagItems](#getbagitemsbagindex)
     - [GetBagItem](#getbagitembagindex-slot)
     - [GetSpellRec](#getspellrecspellid-copy)
     - [GetSpellRecField](#getspellrecfieldspellid-fieldname-copy)
