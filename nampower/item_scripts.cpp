@@ -767,8 +767,6 @@ namespace Nampower {
         }
     }
 
-
-
     uint32_t Script_GetBagItem(uintptr_t *luaState) {
         luaState = GetLuaStatePtr();
 
@@ -845,7 +843,7 @@ namespace Nampower {
                 lua_error(luaState, "For bag -1, slot must be 1-24 (bank) or 31-42 (buyback) (Lua 1-indexed)");
                 return 0;
             }
-        } else if (bagIndex >= 4 && bagIndex <= 8) {
+        } else if (bagIndex >= 5 && bagIndex <= 9) {
             uint64_t bankGuid = *reinterpret_cast<uint64_t *>(Offsets::BankGuid);
             if (bankGuid == 0) {
                 lua_error(luaState, "Bank is not open");
