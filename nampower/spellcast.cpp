@@ -344,6 +344,21 @@ namespace Nampower {
         delete[] guidStr;
     }
 
+    void
+    TriggerSpellSendingEvent(uint32_t spellId, std::uint64_t guid) {
+        char format[] = "%d%s";
+        char *guidStr = new char[21]; // 2 for 0x prefix, 18 for the number, and 1 for '\0'
+        std::snprintf(guidStr, 21, "0x%016llX", static_cast<unsigned long long>(guid));
+
+        ((int (__cdecl *)(int, char *, uint32_t, char *)) Offsets::SignalEventParam)(
+         game::SPELL_SENDING_EVENT, // SPELL_SENDING_EVENT event we are adding
+         format,
+         spellId,
+         guidStr);
+
+        delete[] guidStr;
+    }
+
     void clearCastingSpell() {
         // clearing current casting spell id if needed
         // this prevents client from failing to cast spells without a casttime
@@ -1047,6 +1062,13 @@ namespace Nampower {
     }
 
     void SendCastHook(hadesmem::PatchDetourBase *detour, game::SpellCast *cast, char unk) {
+
+        if (cast != nullptr && cast->itemTarget == 0 && cast->caster == game::ClntObjMgrGetActivePlayerGuid()) {
+            const auto guid = cast->unitTarget;
+            const auto spellId = cast->spellId;
+            TriggerSpellSendingEvent(spellId, guid);
+        }
+
         auto const sendCast = detour->GetTrampolineT<SendCastT>();
         sendCast(cast, unk);
 
