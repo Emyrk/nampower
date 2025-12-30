@@ -850,7 +850,7 @@ namespace Nampower {
                 return 0;
             }
 
-            uint64_t containerGuid = getContainerGuid(bagIndex);
+            uint64_t containerGuid = getContainerGuid(bagIndex-1);
             if (containerGuid == 0) {
                 lua_pushnil(luaState);
                 return 1;
