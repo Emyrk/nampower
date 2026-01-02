@@ -7,6 +7,7 @@ For custom Lua functions, see [SCRIPTS.md](SCRIPTS.md). For general usage inform
 ## Table of Contents
 - [SPELL_QUEUE_EVENT](#spell_queue_event)
 - [SPELL_CAST_EVENT](#spell_cast_event)
+- [SPELL_BEGIN_CAST_EVENT](#spell_begin_cast_event)
 - [SPELL_DAMAGE_EVENT_SELF and SPELL_DAMAGE_EVENT_OTHER](#spell_damage_event_self-and-spell_damage_event_other)
 - [Buff/Debuff Events](#buffdebuff-events)
 - [AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER](#aura_cast_on_self-and-aura_cast_on_other)
@@ -87,6 +88,23 @@ Cursive:RegisterEvent("SPELL_CAST_EVENT", function(success, spellId, castType, t
 	print(castType)
 	print(targetGuid)
 	print(itemId)
+end);
+```
+
+### SPELL_BEGIN_CAST_EVENT
+Event you can register in game to get updates when the clien is about to attempt casting a spell. At this stage the spell is ready and has a valid target, but the spell cast might still be rejected based on line of sight or other factors.
+
+The event is `SPELL_BEGIN_CAST_EVENT` and has 2 parameters:
+1.  int spellId
+2.  string targetGuid - guid string like "0xF5300000000000A5"
+
+targetGuid will be “0x0000000000000000” if the spell requires no target
+
+Example (uses ace RegisterEvent):
+```
+Cursive:RegisterEvent("SPELL_BEING_CAST_EVENT", function(spellId, targetGuid)
+	print(spellId)
+	print(targetGuid)
 end);
 ```
 
