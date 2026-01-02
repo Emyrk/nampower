@@ -34,96 +34,92 @@
 
 namespace game {
 #pragma pack(push, 1)
-    enum ItemClass
-    {
-        ITEM_CLASS_CONSUMABLE                       = 0,
-        ITEM_CLASS_CONTAINER                        = 1,
-        ITEM_CLASS_WEAPON                           = 2,
-        ITEM_CLASS_GEM                              = 3,
-        ITEM_CLASS_ARMOR                            = 4,
-        ITEM_CLASS_REAGENT                          = 5,
-        ITEM_CLASS_PROJECTILE                       = 6,
-        ITEM_CLASS_TRADE_GOODS                      = 7,
-        ITEM_CLASS_GENERIC                          = 8,
-        ITEM_CLASS_RECIPE                           = 9,
-        ITEM_CLASS_MONEY                            = 10,
-        ITEM_CLASS_QUIVER                           = 11,
-        ITEM_CLASS_QUEST                            = 12,
-        ITEM_CLASS_KEY                              = 13,
-        ITEM_CLASS_PERMANENT                        = 14,
-        ITEM_CLASS_JUNK                             = 15
+    enum ItemClass {
+        ITEM_CLASS_CONSUMABLE = 0,
+        ITEM_CLASS_CONTAINER = 1,
+        ITEM_CLASS_WEAPON = 2,
+        ITEM_CLASS_GEM = 3,
+        ITEM_CLASS_ARMOR = 4,
+        ITEM_CLASS_REAGENT = 5,
+        ITEM_CLASS_PROJECTILE = 6,
+        ITEM_CLASS_TRADE_GOODS = 7,
+        ITEM_CLASS_GENERIC = 8,
+        ITEM_CLASS_RECIPE = 9,
+        ITEM_CLASS_MONEY = 10,
+        ITEM_CLASS_QUIVER = 11,
+        ITEM_CLASS_QUEST = 12,
+        ITEM_CLASS_KEY = 13,
+        ITEM_CLASS_PERMANENT = 14,
+        ITEM_CLASS_JUNK = 15
     };
 
-    enum ItemSubclassWeapon
-    {
-        ITEM_SUBCLASS_WEAPON_AXE                    = 0,
-        ITEM_SUBCLASS_WEAPON_AXE2                   = 1,
-        ITEM_SUBCLASS_WEAPON_BOW                    = 2,
-        ITEM_SUBCLASS_WEAPON_GUN                    = 3,
-        ITEM_SUBCLASS_WEAPON_MACE                   = 4,
-        ITEM_SUBCLASS_WEAPON_MACE2                  = 5,
-        ITEM_SUBCLASS_WEAPON_POLEARM                = 6,
-        ITEM_SUBCLASS_WEAPON_SWORD                  = 7,
-        ITEM_SUBCLASS_WEAPON_SWORD2                 = 8,
-        ITEM_SUBCLASS_WEAPON_obsolete               = 9,
-        ITEM_SUBCLASS_WEAPON_STAFF                  = 10,
-        ITEM_SUBCLASS_WEAPON_EXOTIC                 = 11,
-        ITEM_SUBCLASS_WEAPON_EXOTIC2                = 12,
-        ITEM_SUBCLASS_WEAPON_FIST                   = 13,
-        ITEM_SUBCLASS_WEAPON_MISC                   = 14,
-        ITEM_SUBCLASS_WEAPON_DAGGER                 = 15,
-        ITEM_SUBCLASS_WEAPON_THROWN                 = 16,
-        ITEM_SUBCLASS_WEAPON_SPEAR                  = 17,
-        ITEM_SUBCLASS_WEAPON_CROSSBOW               = 18,
-        ITEM_SUBCLASS_WEAPON_WAND                   = 19,
-        ITEM_SUBCLASS_WEAPON_FISHING_POLE           = 20
+    enum ItemSubclassWeapon {
+        ITEM_SUBCLASS_WEAPON_AXE = 0,
+        ITEM_SUBCLASS_WEAPON_AXE2 = 1,
+        ITEM_SUBCLASS_WEAPON_BOW = 2,
+        ITEM_SUBCLASS_WEAPON_GUN = 3,
+        ITEM_SUBCLASS_WEAPON_MACE = 4,
+        ITEM_SUBCLASS_WEAPON_MACE2 = 5,
+        ITEM_SUBCLASS_WEAPON_POLEARM = 6,
+        ITEM_SUBCLASS_WEAPON_SWORD = 7,
+        ITEM_SUBCLASS_WEAPON_SWORD2 = 8,
+        ITEM_SUBCLASS_WEAPON_obsolete = 9,
+        ITEM_SUBCLASS_WEAPON_STAFF = 10,
+        ITEM_SUBCLASS_WEAPON_EXOTIC = 11,
+        ITEM_SUBCLASS_WEAPON_EXOTIC2 = 12,
+        ITEM_SUBCLASS_WEAPON_FIST = 13,
+        ITEM_SUBCLASS_WEAPON_MISC = 14,
+        ITEM_SUBCLASS_WEAPON_DAGGER = 15,
+        ITEM_SUBCLASS_WEAPON_THROWN = 16,
+        ITEM_SUBCLASS_WEAPON_SPEAR = 17,
+        ITEM_SUBCLASS_WEAPON_CROSSBOW = 18,
+        ITEM_SUBCLASS_WEAPON_WAND = 19,
+        ITEM_SUBCLASS_WEAPON_FISHING_POLE = 20
     };
 
-    enum ItemSubclassArmor
-    {
-        ITEM_SUBCLASS_ARMOR_MISC                    = 0,
-        ITEM_SUBCLASS_ARMOR_CLOTH                   = 1,
-        ITEM_SUBCLASS_ARMOR_LEATHER                 = 2,
-        ITEM_SUBCLASS_ARMOR_MAIL                    = 3,
-        ITEM_SUBCLASS_ARMOR_PLATE                   = 4,
-        ITEM_SUBCLASS_ARMOR_BUCKLER                 = 5,
-        ITEM_SUBCLASS_ARMOR_SHIELD                  = 6,
-        ITEM_SUBCLASS_ARMOR_LIBRAM                  = 7,
-        ITEM_SUBCLASS_ARMOR_IDOL                    = 8,
-        ITEM_SUBCLASS_ARMOR_TOTEM                   = 9
+    enum ItemSubclassArmor {
+        ITEM_SUBCLASS_ARMOR_MISC = 0,
+        ITEM_SUBCLASS_ARMOR_CLOTH = 1,
+        ITEM_SUBCLASS_ARMOR_LEATHER = 2,
+        ITEM_SUBCLASS_ARMOR_MAIL = 3,
+        ITEM_SUBCLASS_ARMOR_PLATE = 4,
+        ITEM_SUBCLASS_ARMOR_BUCKLER = 5,
+        ITEM_SUBCLASS_ARMOR_SHIELD = 6,
+        ITEM_SUBCLASS_ARMOR_LIBRAM = 7,
+        ITEM_SUBCLASS_ARMOR_IDOL = 8,
+        ITEM_SUBCLASS_ARMOR_TOTEM = 9
     };
 
-    enum InventoryType
-    {
-        INVTYPE_NON_EQUIP                           = 0,
-        INVTYPE_HEAD                                = 1,
-        INVTYPE_NECK                                = 2,
-        INVTYPE_SHOULDERS                           = 3,
-        INVTYPE_BODY                                = 4,
-        INVTYPE_CHEST                               = 5,
-        INVTYPE_WAIST                               = 6,
-        INVTYPE_LEGS                                = 7,
-        INVTYPE_FEET                                = 8,
-        INVTYPE_WRISTS                              = 9,
-        INVTYPE_HANDS                               = 10,
-        INVTYPE_FINGER                              = 11,
-        INVTYPE_TRINKET                             = 12,
-        INVTYPE_WEAPON                              = 13,
-        INVTYPE_SHIELD                              = 14,
-        INVTYPE_RANGED                              = 15,
-        INVTYPE_CLOAK                               = 16,
-        INVTYPE_2HWEAPON                            = 17,
-        INVTYPE_BAG                                 = 18,
-        INVTYPE_TABARD                              = 19,
-        INVTYPE_ROBE                                = 20,
-        INVTYPE_WEAPONMAINHAND                      = 21,
-        INVTYPE_WEAPONOFFHAND                       = 22,
-        INVTYPE_HOLDABLE                            = 23,
-        INVTYPE_AMMO                                = 24,
-        INVTYPE_THROWN                              = 25,
-        INVTYPE_RANGEDRIGHT                         = 26,
-        INVTYPE_QUIVER                              = 27,
-        INVTYPE_RELIC                               = 28
+    enum InventoryType {
+        INVTYPE_NON_EQUIP = 0,
+        INVTYPE_HEAD = 1,
+        INVTYPE_NECK = 2,
+        INVTYPE_SHOULDERS = 3,
+        INVTYPE_BODY = 4,
+        INVTYPE_CHEST = 5,
+        INVTYPE_WAIST = 6,
+        INVTYPE_LEGS = 7,
+        INVTYPE_FEET = 8,
+        INVTYPE_WRISTS = 9,
+        INVTYPE_HANDS = 10,
+        INVTYPE_FINGER = 11,
+        INVTYPE_TRINKET = 12,
+        INVTYPE_WEAPON = 13,
+        INVTYPE_SHIELD = 14,
+        INVTYPE_RANGED = 15,
+        INVTYPE_CLOAK = 16,
+        INVTYPE_2HWEAPON = 17,
+        INVTYPE_BAG = 18,
+        INVTYPE_TABARD = 19,
+        INVTYPE_ROBE = 20,
+        INVTYPE_WEAPONMAINHAND = 21,
+        INVTYPE_WEAPONOFFHAND = 22,
+        INVTYPE_HOLDABLE = 23,
+        INVTYPE_AMMO = 24,
+        INVTYPE_THROWN = 25,
+        INVTYPE_RANGEDRIGHT = 26,
+        INVTYPE_QUIVER = 27,
+        INVTYPE_RELIC = 28
     };
 
     struct SpellRec {
@@ -262,6 +258,13 @@ namespace game {
         uint32_t field_unknown3;
     };
 
+    struct CGBuffDesc {
+        uint32_t m_auraIndex;
+        uint32_t m_auraSpell;
+        uint32_t m_auraFlags;
+        uint32_t m_untilCancelled;
+    };
+
     struct CSpriteClickEvent {
         unsigned __int64 objectGUID;
         unsigned int button;
@@ -336,15 +339,14 @@ namespace game {
         int charges;
     };
 
-    enum ItemQualities
-    {
-        ITEM_QUALITY_POOR                  = 0,                 // GREY
-        ITEM_QUALITY_NORMAL                = 1,                 // WHITE
-        ITEM_QUALITY_UNCOMMON              = 2,                 // GREEN
-        ITEM_QUALITY_RARE                  = 3,                 // BLUE
-        ITEM_QUALITY_EPIC                  = 4,                 // PURPLE
-        ITEM_QUALITY_LEGENDARY             = 5,                 // ORANGE
-        ITEM_QUALITY_ARTIFACT              = 6                  // LIGHT YELLOW
+    enum ItemQualities {
+        ITEM_QUALITY_POOR = 0, // GREY
+        ITEM_QUALITY_NORMAL = 1, // WHITE
+        ITEM_QUALITY_UNCOMMON = 2, // GREEN
+        ITEM_QUALITY_RARE = 3, // BLUE
+        ITEM_QUALITY_EPIC = 4, // PURPLE
+        ITEM_QUALITY_LEGENDARY = 5, // ORANGE
+        ITEM_QUALITY_ARTIFACT = 6 // LIGHT YELLOW
     };
 
     struct CGObject {

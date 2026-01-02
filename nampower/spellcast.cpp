@@ -941,17 +941,17 @@ namespace Nampower {
                     auto auraCapStatus = static_cast<uint32_t>(targetIsBuffCapped) |
                                          (static_cast<uint32_t>(targetIsDebuffCapped) << 1);
 
-                    ((int (__cdecl *)(int eventCode,
-                                      char *fmt,
-                                      uint32_t spellIdParam,
-                                      char *casterGuidStrParam,
-                                      char *targetGuidStrParam,
-                                      uint32_t effectParam,
-                                      uint32_t auraNameParam,
-                                      uint32_t effectAmplitudeParam,
-                                      uint32_t effectMiscValueParam,
-                                      uint32_t durationParam,
-                                      uint32_t auraCapStatusParam)) Offsets::SignalEventParam)(
+                    reinterpret_cast<int (__cdecl *)(int eventCode,
+                                                     char *fmt,
+                                                     uint32_t spellIdParam,
+                                                     char *casterGuidStrParam,
+                                                     char *targetGuidStrParam,
+                                                     uint32_t effectParam,
+                                                     uint32_t auraNameParam,
+                                                     uint32_t effectAmplitudeParam,
+                                                     uint32_t effectMiscValueParam,
+                                                     uint32_t durationParam,
+                                                     uint32_t auraCapStatusParam)>(Offsets::SignalEventParam)(
                         eventToTrigger,
                         format,
                         spell->Id,
@@ -975,11 +975,30 @@ namespace Nampower {
     }
 
     void
-    SpellGoHook(hadesmem::PatchDetourBase *detour, uint64_t *casterGUID, uint64_t *targetGUID,
+    SpellGoHook(hadesmem::PatchDetourBase *detour, uint64_t *itemGUID, uint64_t *casterGUID,
                 uint32_t spellId,
                 CDataStore *spellData) {
+        auto const rpos = spellData->m_read;
+
+        int16_t castFlags;
+        spellData->Get(castFlags);
+
+        uint8_t numTargets;
+        spellData->Get(numTargets);
+
+        uint64_t targetGuid;
+        for (int i = 0; i < numTargets; ++i) {
+            // spell go uses the last target in the list, I think target list is usually just length 1
+            spellData->Get(targetGuid);
+        }
+
+        // reset read pointer
+        spellData->m_read = rpos;
+
+
         auto const spellGo = detour->GetTrampolineT<SpellGoT>();
-        spellGo(casterGUID, targetGUID, spellId, spellData);
+        // if this wasn't triggered by an item, itemGUID will just be the casterGUID duplicated
+        spellGo(itemGUID, casterGUID, spellId, spellData);
 
         auto const activePlayerGuid = game::ClntObjMgrGetActivePlayerGuid();
         auto const castByActivePlayer = activePlayerGuid == *casterGUID;
@@ -1017,9 +1036,16 @@ namespace Nampower {
         }
 
         if (gUserSettings.enableAuraCastEvents && doesSpellApplyAura(spell)) {
-            auto targetGuidVal = targetGUID ? *targetGUID : *casterGUID;
-
-            TriggerAuraCastEvent(spell, *casterGUID, targetGuidVal, activePlayerGuid, castByActivePlayer);
+            // not enough available args for itemId currently
+            // uint32_t itemId = 0;
+            // if (itemGUID && itemGUID != casterGUID) {
+            //     auto *item = reinterpret_cast<game::CGItem_C *>(game::ClntObjMgrObjectPtr(
+            //         game::TYPEMASK_ITEM, *itemGUID));
+            //     if (item) {
+            //         itemId = game::GetItemId(item);
+            //     }
+            // }
+            TriggerAuraCastEvent(spell, *casterGUID, targetGuid, activePlayerGuid, castByActivePlayer);
         }
     }
 

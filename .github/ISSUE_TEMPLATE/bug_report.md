@@ -11,7 +11,7 @@ assignees: ''
 A clear and concise description of what the bug is.
 
 **Debug logs**
-Please include the relevant nampower_debug.log which will be in the same directory as WoW.exe.  It helps significantly with figuring out what happened.
+Please include the relevant nampower_debug.log which will be in the Logs folder in the same directory as WoW.exe.  It helps significantly with figuring out what happened.
 
 **To Reproduce**
 Steps to reproduce the behavior:

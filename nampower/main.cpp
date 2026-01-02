@@ -54,6 +54,7 @@
 #include <sstream>
 #include <cstdio>
 #include <windows.h>
+#include <sys/stat.h>
 
 BOOL WINAPI DllMain(HINSTANCE, uint32_t, void *);
 
@@ -780,15 +781,28 @@ namespace Nampower {
         gStartTime = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::high_resolution_clock::now().time_since_epoch()).count());
 
+        // create logs directory if it doesn't exist
+        CreateDirectoryA("Logs", NULL);
+
+        // move any existing logs from root directory to Logs folder
+        if (GetFileAttributesA("nampower_debug.log") != INVALID_FILE_ATTRIBUTES)
+            safeRename("nampower_debug.log", "Logs\\nampower_debug.log");
+        if (GetFileAttributesA("nampower_debug.log.1") != INVALID_FILE_ATTRIBUTES)
+            safeRename("nampower_debug.log.1", "Logs\\nampower_debug.log.1");
+        if (GetFileAttributesA("nampower_debug.log.2") != INVALID_FILE_ATTRIBUTES)
+            safeRename("nampower_debug.log.2", "Logs\\nampower_debug.log.2");
+        if (GetFileAttributesA("nampower_debug.log.3") != INVALID_FILE_ATTRIBUTES)
+            safeRename("nampower_debug.log.3", "Logs\\nampower_debug.log.3");
+
         // remove/rename previous logs
-        safeRemove("nampower_debug.log.3");
-        safeRename("nampower_debug.log.2", "nampower_debug.log.3");
-        safeRename("nampower_debug.log.1", "nampower_debug.log.2");
-        safeRename("nampower_debug.log", "nampower_debug.log.1");
+        safeRemove("Logs\\nampower_debug.log.3");
+        safeRename("Logs\\nampower_debug.log.2", "Logs\\nampower_debug.log.3");
+        safeRename("Logs\\nampower_debug.log.1", "Logs\\nampower_debug.log.2");
+        safeRename("Logs\\nampower_debug.log", "Logs\\nampower_debug.log.1");
 
 
         // open new log file
-        debugLogFile.open("nampower_debug.log");
+        debugLogFile.open("Logs\\nampower_debug.log");
 
         DEBUG_LOG("Loading nampower v" << MAJOR_VERSION << "." << MINOR_VERSION << "." << PATCH_VERSION);
 

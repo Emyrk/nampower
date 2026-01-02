@@ -19,7 +19,7 @@ namespace Nampower {
         // Trigger the appropriate event based on buff/debuff, add/remove, and self/other
         game::Events eventToTrigger;
 
-        int luaSlot = slot + 1; // lua uses 1-based indexing for slots
+        int luaUnitSlot = slot + 1; // lua uses 1-based indexing for slots.  This is the slot for UnitBuff/UnitDebuff
 
         auto *unitFields = *reinterpret_cast<game::UnitFields **>(unit + 68);
 
@@ -37,7 +37,7 @@ namespace Nampower {
                     emptyCount++;
                 }
             }
-            luaSlot = luaSlot - emptyCount;
+            luaUnitSlot = luaUnitSlot - emptyCount;
 
             if (wasAdded) {
                 luaStacks += 1; // count offset by 1
@@ -49,7 +49,7 @@ namespace Nampower {
                 eventToTrigger = isSelf ? game::BUFF_REMOVED_SELF : game::BUFF_REMOVED_OTHER;
             }
         } else {
-            luaSlot = luaSlot - 32; // adjust slot for debuffs
+            luaUnitSlot = luaUnitSlot - 32; // adjust slot for debuffs
 
             // count empty debuff slots before slot to adjust luaSlot for actual buff/debuff index
             int emptyCount = 0;
@@ -58,7 +58,7 @@ namespace Nampower {
                     emptyCount++;
                 }
             }
-            luaSlot = luaSlot - emptyCount;
+            luaUnitSlot = luaUnitSlot - emptyCount;
 
             if (wasAdded) {
                 luaStacks += 1; // count offset by 1
@@ -80,14 +80,14 @@ namespace Nampower {
         }
 
         // Trigger the event with spellId as parameter
-        ((int (__cdecl *)(int, char *, char *, uint32_t, uint32_t, uint32_t, uint32_t)) Offsets::SignalEventParam)(
-            eventToTrigger,
-            format,
-            guidStr,
-            luaSlot,
-            spellId,
-            luaStacks,
-            auraLevels[slot]);
+            ((int (__cdecl *)(int, char *, char *, uint32_t, uint32_t, uint32_t, uint32_t)) Offsets::SignalEventParam)(
+                eventToTrigger,
+                format,
+                guidStr,
+                luaUnitSlot,
+                spellId,
+                luaStacks,
+                auraLevels[slot]);
 
         delete[] guidStr;
     }
