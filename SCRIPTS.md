@@ -14,7 +14,7 @@ For installation, configuration, and general usage information, see the main [RE
     - [UseItemIdOrName](#useitemidornameitemidorname-target)
     - [GetEquippedItems](#getequippeditemsunittoken)
     - [GetEquippedItem](#getequippeditemunittoken-slot)
-    - [GetBagItems](#getbagitems)
+    - [GetBagItems](#getbagitemsbagindex)
     - [GetBagItem](#getbagitembagindex-slot)
     - [GetSpellRec](#getspellrecspellid-copy)
     - [GetSpellRecField](#getspellrecfieldspellid-fieldname-copy)
@@ -56,7 +56,7 @@ The following functions use reusable table references:
 
 - **`GetCastInfo()`** - Returns cast information table
 - **`GetEquippedItems([unitToken])`** - Returns equipped items table
-- **`GetBagItems()`** - Returns bag items table
+- **`GetBagItems([bagIndex])`** - Returns bag items table
 - **`GetBagItem(bagIndex, slot)`** - Returns item info table
 - **`GetEquippedItem(unitToken, slot)`** - Returns item info table
 - **`GetSpellIdCooldown(spellId)`** - Returns cooldown detail table
@@ -338,8 +338,8 @@ if helm and helm.durability then
 end
 ```
 
-#### GetBagItems()
-Returns a nested table reference containing all items in all bags (including bank if open).
+#### GetBagItems([bagIndex])
+If no bagIndex is specified, the function returns a nested table reference containing all items in all bags (including bank if open). With specified index, it only returns the contents of that bag
 
 **Returns:**
 - A Lua table reference with bag indices as keys and bag contents as values
@@ -365,6 +365,12 @@ for bagIndex, bagContents in pairs(allItems) do
     for slot, itemInfo in pairs(bagContents) do
         print("  Slot " .. slot .. ": " .. itemInfo.itemId .. " (x" .. itemInfo.stackCount .. ")")
     end
+end
+
+-- Get all items in backbag
+local bagContents = GetBagItems(0)
+for slot, itemInfo in pairs(bagContents) do
+    print("  Slot " .. slot .. ": " .. itemInfo.itemId .. " (x" .. itemInfo.stackCount .. ")")
 end
 
 -- Count total number of a specific item

@@ -843,14 +843,14 @@ namespace Nampower {
                 lua_error(luaState, "For bag -1, slot must be 1-24 (bank) or 31-42 (buyback) (Lua 1-indexed)");
                 return 0;
             }
-        } else if (bagIndex >= 4 && bagIndex <= 8) {
+        } else if (bagIndex >= 5 && bagIndex <= 9) {
             uint64_t bankGuid = *reinterpret_cast<uint64_t *>(Offsets::BankGuid);
             if (bankGuid == 0) {
                 lua_error(luaState, "Bank is not open");
                 return 0;
             }
 
-            uint64_t containerGuid = getContainerGuid(bagIndex);
+            uint64_t containerGuid = getContainerGuid(bagIndex-1);
             if (containerGuid == 0) {
                 lua_pushnil(luaState);
                 return 1;
@@ -890,57 +890,117 @@ namespace Nampower {
         return 1;
     }
 
-    uint32_t Script_GetBagItems(uintptr_t *luaState) {
-        luaState = GetLuaStatePtr();
-
+    uint32_t GetSingleBagItems(uintptr_t *luaState, int32_t bagIndex) {
         auto const getContainerGuid = reinterpret_cast<GetContainerGuidT>(Offsets::GetContainerGuid);
         auto const getBagItem = reinterpret_cast<CGBag_C_GetItemAtSlotT>(Offsets::CGBag_C_GetItemAtSlot);
 
-        // Get or create reusable main table
-        GetTableRef(luaState, bagItemsTableRef);
+        if (bagIndex == 0 || bagIndex == -1) {
+            const auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+            const auto player = game::GetObjectPtr(playerGuid);
+            const auto inventory = game::GetPlayerInventoryPtr(player);
 
-        auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
-        auto player = game::GetObjectPtr(playerGuid);
-        auto inventory = game::GetPlayerInventoryPtr(player);
+            GetTableRef(luaState, bagTableRefs[0]);
 
-        // Backpack (bag 0)
-        lua_pushnumber(luaState, static_cast<double>(0));
-        GetTableRef(luaState, bagTableRefs[0]);
+            if (bagIndex == 0) {
+                for (uint32_t slot = 0; slot <= 16; slot++) {
+                    uint32_t adjustedSlot = slot + 23; // Backbag goes from 23 to 39
+                    auto item = getBagItem(inventory, adjustedSlot);
+                    if (item) {
+                        PushBagCGItemToTable(luaState, 0, adjustedSlot, item);
+                    } else {
+                        // Check if item was removed from this slot
+                        ClearBagSlot(luaState, 0, slot);
+                    }
+                }
+                return 1;
+            }
 
-        for (uint32_t slot = 23; slot <= 38; slot++) {
-            auto item = getBagItem(inventory, slot);
-            uint32_t adjustedSlot = slot - 0x17;
-            if (item) {
-                PushBagCGItemToTable(luaState, 0, slot, item);
-            } else {
-                // Check if item was removed from this slot
-                ClearBagSlot(luaState, 0, adjustedSlot);
+            if (bagIndex == -1) {
+                uint64_t bankGuid = *reinterpret_cast<uint64_t *>(Offsets::BankGuid);
+              
+                if (bankGuid <= 0) {
+                    return 0;
+                }
+
+                for (uint32_t slot = 0; slot <= 24; slot++) {
+                    uint32_t adjustedSlot = slot + 39;
+                    auto item = getBagItem(inventory, adjustedSlot);
+                    if (item) {
+                        PushBagCGItemToTable(luaState, -1, adjustedSlot, item);
+                    }
+                    else {
+                        // Check if item was removed from this slot
+                        ClearBagSlot(luaState, -1, slot);
+                    }
+                }
+                return 1;
             }
         }
 
-        lua_settable(luaState, -3);
 
-        // Bags 1-4
-        for (int32_t bagIndex = 1; bagIndex <= 4; bagIndex++) {
+        if (bagIndex >= 1 && bagIndex <= 4) {
             uint64_t containerGuid = getContainerGuid(bagIndex - 1); // bagIndex 1-4 maps to container 0-3
             if (containerGuid == 0) {
                 // Bag slot is empty, clear all cached items for this bag
-                lua_pushnumber(luaState, static_cast<double>(bagIndex));
+                GetTableRef(luaState, bagTableRefs[bagIndex]);
+                for (uint32_t slot = 0; slot < MAX_BAG_SLOTS; slot++) {
+                    ClearBagSlot(luaState, bagIndex, slot);
+                }
+                return 1;
+            }
+
+            auto containerPtr = game::ClntObjMgrObjectPtr(game::TYPEMASK_CONTAINER, containerGuid);
+            if (!containerPtr) {
+                return 0;
+            }
+
+            auto bagPtr = GetBagPtrFromContainer(containerPtr);
+            if (!bagPtr) {
+                return 0;
+            }
+
+            GetTableRef(luaState, bagTableRefs[bagIndex]);
+
+            auto bagSize = *bagPtr;
+            // Check all possible slots up to bag size
+            for (uint32_t slot = 0;
+                 slot < bagSize && slot < MAX_BAG_SLOTS; slot++) {
+                auto item = getBagItem(bagPtr, slot);
+                if (item) {
+                    PushBagCGItemToTable(luaState, bagIndex, slot, item);
+                } else {
+                    ClearBagSlot(luaState, bagIndex, slot);
+                }
+            }
+            return 1;
+        }
+
+        if (bagIndex >= 5 && bagIndex <= 9) {
+            uint64_t bankGuid = *reinterpret_cast<uint64_t *>(Offsets::BankGuid);
+            if (bankGuid <= 0) {
+                return 0;
+            }
+            uint64_t containerGuid = getContainerGuid(bagIndex - 1); // bagIndex 5-9 maps to container 4-8
+            if (containerGuid == 0) {
+                // Bag slot is empty, clear all cached items for this bag
                 GetTableRef(luaState, bagTableRefs[bagIndex]);
                 for (uint32_t slot = 0; slot < MAX_BAG_SLOTS; slot++) {
                     ClearBagSlot(luaState, bagIndex, slot);
                 }
                 lua_settable(luaState, -3);
-                continue;
+                return 1;
             }
 
             auto containerPtr = game::ClntObjMgrObjectPtr(game::TYPEMASK_CONTAINER, containerGuid);
-            if (!containerPtr) continue;
+            if (!containerPtr) {
+                return 0;
+            }
 
             auto bagPtr = GetBagPtrFromContainer(containerPtr);
-            if (!bagPtr) continue;
+            if (!bagPtr) {
+                return 0;
+            }
 
-            lua_pushnumber(luaState, static_cast<double>(bagIndex));
             GetTableRef(luaState, bagTableRefs[bagIndex]);
 
             auto bagSize = *bagPtr;
@@ -954,50 +1014,74 @@ namespace Nampower {
                 }
             }
 
-            lua_settable(luaState, -3);
+            return 1;
         }
+        
+        lua_error(luaState, "Invalid bag index. Valid values: 0, 1-4, -1, 5-9 (bank)");
+        return 0;
+    }
 
-        // Bank bags 5-9
-        uint64_t bankGuid = *reinterpret_cast<uint64_t *>(Offsets::BankGuid);
-        if (bankGuid > 0) {
-            for (int32_t bagIndex = 5; bagIndex <= 9; bagIndex++) {
-                uint64_t containerGuid = getContainerGuid(bagIndex - 1); // bagIndex 5-9 maps to container 4-8
-                if (containerGuid == 0) {
-                    // Bag slot is empty, clear all cached items for this bag
-                    lua_pushnumber(luaState, static_cast<double>(bagIndex));
-                    GetTableRef(luaState, bagTableRefs[bagIndex]);
-                    for (uint32_t slot = 0; slot < MAX_BAG_SLOTS; slot++) {
-                        ClearBagSlot(luaState, bagIndex, slot);
-                    }
-                    lua_settable(luaState, -3);
-                    continue;
-                }
+    uint32_t GetAllBagItems(uintptr_t* luaState) {
+        // Get or create reusable main table
+        GetTableRef(luaState, bagItemsTableRef);
 
-                auto containerPtr = game::ClntObjMgrObjectPtr(game::TYPEMASK_CONTAINER, containerGuid);
-                if (!containerPtr) continue;
+        // Backpack (bag 0)
+        lua_pushnumber(luaState, static_cast<double>(0));
+        GetSingleBagItems(luaState, 0);
+        lua_settable(luaState, -3);
 
-                auto bagPtr = GetBagPtrFromContainer(containerPtr);
-                if (!bagPtr) continue;
+        // Bags 1-4
+        for (int32_t bagIndex = 1; bagIndex <= 4; bagIndex++) {
 
-                lua_pushnumber(luaState, static_cast<double>(bagIndex));
-                GetTableRef(luaState, bagTableRefs[bagIndex]);
-
-                auto bagSize = *bagPtr;
-                // Check all possible slots up to bag size
-                for (uint32_t slot = 0; slot < bagSize && slot < MAX_BAG_SLOTS; slot++) {
-                    auto item = getBagItem(bagPtr, slot);
-                    if (item) {
-                        PushBagCGItemToTable(luaState, bagIndex, slot, item);
-                    } else {
-                        ClearBagSlot(luaState, bagIndex, slot);
-                    }
-                }
-
+            const auto top = lua_gettop(luaState);
+            lua_pushnumber(luaState, static_cast<double>(bagIndex));
+            const auto bagResult = GetSingleBagItems(luaState, bagIndex);
+            if (!bagResult) {
+                lua_settop(luaState, top);
+            }
+            else {
                 lua_settable(luaState, -3);
             }
         }
 
+        // Bank bags 5-9
+        uint64_t bankGuid = *reinterpret_cast<uint64_t*>(Offsets::BankGuid);
+        if (bankGuid > 0) {
+            lua_pushnumber(luaState, static_cast<double>(-1));
+            GetSingleBagItems(luaState, -1);
+            lua_settable(luaState, -3);
+
+            for (int32_t bagIndex = 5; bagIndex <= 9; bagIndex++) {
+                const auto top = lua_gettop(luaState);
+                lua_pushnumber(luaState, static_cast<double>(bagIndex));
+                const auto bagResult = GetSingleBagItems(luaState, bagIndex);
+                if (!bagResult) {
+                    lua_settop(luaState, top);
+                }
+                else {
+                    lua_settable(luaState, -3);
+                }
+            }
+        }
+
         return 1;
+    }
+
+    uint32_t Script_GetBagItems(uintptr_t* luaState) {
+        luaState = GetLuaStatePtr();
+
+        if (lua_gettop(luaState) == 1) {
+
+            if (!lua_isnumber(luaState, 1)) {
+                lua_error(luaState, "Bag index must be a number");
+                return 0;
+            }
+
+            const auto bagIndex = static_cast<int32_t>(lua_tonumber(luaState, 1));
+            return GetSingleBagItems(luaState, bagIndex);
+        }
+
+        return GetAllBagItems(luaState);
     }
 
 
