@@ -1443,8 +1443,6 @@ namespace game {
 
         AURA_CAST_ON_SELF = 560,
         AURA_CAST_ON_OTHER = 561,
-        
-        SPELL_BEGIN_CAST_EVENT = 562,
     };
 
     enum TypeMask {

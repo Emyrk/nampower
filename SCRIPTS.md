@@ -192,7 +192,7 @@ Searches the player's inventory for an item by ID or name and returns its locati
   - `0` = Inventory pack
   - `1-4` = Regular bags
   - `-1` = Bank item slots
-  - `5-9` = Bank bags
+  - `5-10` = Bank bags
   - `-2` = Keyring
 - 2nd param (number): Slot number within the bag (or equipment slot if 1st param is nil)
   - For equipped items: 0-18 (equipment slots are 0-indexed)
@@ -200,7 +200,7 @@ Searches the player's inventory for an item by ID or name and returns its locati
     - Bag 0: slots 1-16 (corresponding to absolute slots 23-38)
     - Bag -1: slots 1-24 (corresponding to absolute bank slots 39-62)
     - Bag -2: slots 1-16 (corresponding to absolute keyring slots 81-96)
-  - For regular bags (1-4) and bank bags (5-9): Returns 1-indexed slot within the bag
+  - For regular bags (1-4) and bank bags (5-10): Returns 1-indexed slot within the bag
 - Returns `nil,nil` if the item is not found
 
 **Examples:**
@@ -348,7 +348,7 @@ If no bagIndex is specified, the function returns a nested table reference conta
   - 0 = Inventory pack (16 slots)
   - 1-4 = Regular bags
   - -1 = Bank item slots (24 slots, only if bank is open)
-  - 5-9 = Bank bags (only if bank is open)
+  - 5-10 = Bank bags (only if bank is open)
   - -2 = Keyring
 
 Item info table fields (same as GetEquippedItems for player):
@@ -399,7 +399,7 @@ Returns item info for a specific slot in a specific bag.
   - 0 = Inventory pack
   - 1-4 = Regular bags
   - -1 = Bank item slots or buyback slots
-  - 5-9 = Bank bags (requires bank to be open)
+  - 5-10 = Bank bags (requires bank to be open)
   - -2 = Keyring
 - `slot` (number): **1-indexed** slot number within the bag
 

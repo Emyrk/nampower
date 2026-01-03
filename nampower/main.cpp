@@ -1332,9 +1332,6 @@ namespace Nampower {
         char SPELL_DAMAGE_EVENT_OTHER[] = "SPELL_DAMAGE_EVENT_OTHER";
         addCustomEvent(game::SPELL_DAMAGE_EVENT_OTHER, SPELL_DAMAGE_EVENT_OTHER);
 
-        char SPELL_BEGIN_CAST_EVENT[] = "SPELL_BEGIN_CAST_EVENT";
-        addCustomEvent(game::SPELL_BEGIN_CAST_EVENT, SPELL_BEGIN_CAST_EVENT);
-
         char DEBUFF_ADDED_SELF[] = "DEBUFF_ADDED_SELF";
         addCustomEvent(game::DEBUFF_ADDED_SELF, DEBUFF_ADDED_SELF);
 

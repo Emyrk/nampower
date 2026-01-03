@@ -181,8 +181,8 @@ namespace Nampower {
                 }
             }
 
-            for (int32_t bagIndex = 5; bagIndex <= 9; bagIndex++) {
-                uint64_t containerGuid = getContainerGuid(bagIndex - 1); // bagIndex 5-9 maps to container 4-8
+            for (int32_t bagIndex = 5; bagIndex <= 10; bagIndex++) {
+                uint64_t containerGuid = getContainerGuid(bagIndex - 1); // bagIndex 5-10 maps to container 4-9
                 if (containerGuid == 0) continue;
 
                 auto containerPtr = game::ClntObjMgrObjectPtr(game::TYPEMASK_CONTAINER, containerGuid);

@@ -20,9 +20,9 @@ namespace Nampower {
     constexpr int32_t KEYRING_BAG_INDEX = -2;
 
     // Cache constants
-    constexpr uint32_t MAX_BAGS = 12;  // 0-9 for regular bags, 10 for -1 (bank), 11 for -2 (keyring)
-    constexpr uint32_t BANK_CACHE_INDEX = 10;
-    constexpr uint32_t KEYRING_CACHE_INDEX = 11;
+    constexpr uint32_t MAX_BAGS = 13;  // 0-10 for regular bags, 11 for -1 (bank), 12 for -2 (keyring)
+    constexpr uint32_t BANK_CACHE_INDEX = 11;
+    constexpr uint32_t KEYRING_CACHE_INDEX = 12;
     constexpr uint32_t MAX_BAG_SLOTS = 64;  // Increased to 64 for future-proofing
     constexpr uint32_t MAX_EQUIPPED_SLOTS = 19;
 

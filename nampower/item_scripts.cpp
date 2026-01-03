@@ -18,7 +18,7 @@ namespace Nampower {
     static int trinketsTableRef = LUA_REFNIL;
     static uint32_t lastTrinketCount = 0;
 
-    // Bag items table references (10 bags: 0-9, plus special indices for -1 bank, -2 keyring)
+    // Bag items table references (11 bags: 0-10, plus special indices for -1 bank, -2 keyring)
     static std::array<int, MAX_BAGS> bagTableRefs{};
 
     // Item entry table references: 2D matrix [bagIndex][slot] for direct mapping
@@ -110,8 +110,8 @@ namespace Nampower {
             if (adjustedSlot < MAX_BAG_SLOTS) {
                 cachedData = &bagItemDataCache[KEYRING_CACHE_INDEX][adjustedSlot];
             }
-        } else if (bagIndex >= 0 && bagIndex < 10 && adjustedSlot < MAX_BAG_SLOTS) {
-            // Regular bags (0-9)
+        } else if (bagIndex >= 0 && bagIndex <= 10 && adjustedSlot < MAX_BAG_SLOTS) {
+            // Regular bags (0-10)
             cachedData = &bagItemDataCache[bagIndex][adjustedSlot];
         }
 
@@ -179,8 +179,8 @@ namespace Nampower {
             if (adjustedSlot < MAX_BAG_SLOTS) {
                 cachedData = &bagItemDataCache[KEYRING_CACHE_INDEX][adjustedSlot];
             }
-        } else if (bagIndex >= 0 && bagIndex < 10) {
-            // Regular bag items (0-9)
+        } else if (bagIndex >= 0 && bagIndex <= 10) {
+            // Regular bag items (0-10)
             if (adjustedSlot < MAX_BAG_SLOTS) {
                 cachedData = &bagItemDataCache[bagIndex][adjustedSlot];
             }
@@ -211,7 +211,7 @@ namespace Nampower {
                     cacheIndexForTableRef = BANK_CACHE_INDEX;
                 } else if (bagIndex == -2) {
                     cacheIndexForTableRef = KEYRING_CACHE_INDEX;
-                } else if (bagIndex >= 0 && bagIndex < 10) {
+                } else if (bagIndex >= 0 && bagIndex <= 10) {
                     cacheIndexForTableRef = bagIndex;
                 }
 
@@ -487,7 +487,7 @@ namespace Nampower {
                 if (adjustedSlot < MAX_BAG_SLOTS) {
                     cachedData = &bagTrinketDataCache[KEYRING_CACHE_INDEX][adjustedSlot];
                 }
-            } else if (bagIndex >= 0 && bagIndex < 10) {
+            } else if (bagIndex >= 0 && bagIndex <= 10) {
                 if (adjustedSlot < MAX_BAG_SLOTS) {
                     cachedData = &bagTrinketDataCache[bagIndex][adjustedSlot];
                 }
@@ -534,7 +534,7 @@ namespace Nampower {
                             cacheIndexForTableRef = BANK_CACHE_INDEX;
                         } else if (bagIndex == KEYRING_BAG_INDEX) {
                             cacheIndexForTableRef = KEYRING_CACHE_INDEX;
-                        } else if (bagIndex >= 0 && bagIndex < 10) {
+                        } else if (bagIndex >= 0 && bagIndex <= 10) {
                             cacheIndexForTableRef = bagIndex;
                         }
 
@@ -843,14 +843,14 @@ namespace Nampower {
                 lua_error(luaState, "For bag -1, slot must be 1-24 (bank) or 31-42 (buyback) (Lua 1-indexed)");
                 return 0;
             }
-        } else if (bagIndex >= 5 && bagIndex <= 9) {
+        } else if (bagIndex >= 5 && bagIndex <= 10) {
             uint64_t bankGuid = *reinterpret_cast<uint64_t *>(Offsets::BankGuid);
             if (bankGuid == 0) {
                 lua_error(luaState, "Bank is not open");
                 return 0;
             }
 
-            uint64_t containerGuid = getContainerGuid(bagIndex-1);
+            uint64_t containerGuid = getContainerGuid(bagIndex-1); // bank bagIndex 5-10 maps to container 4-9
             if (containerGuid == 0) {
                 lua_pushnil(luaState);
                 return 1;
@@ -882,7 +882,7 @@ namespace Nampower {
             }
             item = getBagItem(inventory, slot);
         } else {
-            lua_error(luaState, "Invalid bag index. Valid values: 0, 1-4, -1, 5-9 (bank), -2 (keyring)");
+            lua_error(luaState, "Invalid bag index. Valid values: 0, 1-4, -1, 5-10 (bank), -2 (keyring)");
             return 0;
         }
 
@@ -899,11 +899,11 @@ namespace Nampower {
             const auto player = game::GetObjectPtr(playerGuid);
             const auto inventory = game::GetPlayerInventoryPtr(player);
 
-            GetTableRef(luaState, bagTableRefs[0]);
-
             if (bagIndex == 0) {
-                for (uint32_t slot = 0; slot <= 16; slot++) {
-                    uint32_t adjustedSlot = slot + 23; // Backbag goes from 23 to 39
+                GetTableRef(luaState, bagTableRefs[0]);
+
+                for (uint32_t slot = 0; slot <= 15; slot++) {
+                    uint32_t adjustedSlot = slot + 23; // Backbag goes from 23 to 38
                     auto item = getBagItem(inventory, adjustedSlot);
                     if (item) {
                         PushBagCGItemToTable(luaState, 0, adjustedSlot, item);
@@ -917,13 +917,15 @@ namespace Nampower {
 
             if (bagIndex == -1) {
                 uint64_t bankGuid = *reinterpret_cast<uint64_t *>(Offsets::BankGuid);
-              
+
                 if (bankGuid <= 0) {
                     return 0;
                 }
 
-                for (uint32_t slot = 0; slot <= 24; slot++) {
-                    uint32_t adjustedSlot = slot + 39;
+                GetTableRef(luaState, bagTableRefs[BANK_CACHE_INDEX]);
+
+                for (uint32_t slot = 0; slot <= 23; slot++) {
+                    uint32_t adjustedSlot = slot + 39; // Bank backpack goes from 39 to 62
                     auto item = getBagItem(inventory, adjustedSlot);
                     if (item) {
                         PushBagCGItemToTable(luaState, -1, adjustedSlot, item);
@@ -975,12 +977,12 @@ namespace Nampower {
             return 1;
         }
 
-        if (bagIndex >= 5 && bagIndex <= 9) {
+        if (bagIndex >= 5 && bagIndex <= 10) {
             uint64_t bankGuid = *reinterpret_cast<uint64_t *>(Offsets::BankGuid);
             if (bankGuid <= 0) {
                 return 0;
             }
-            uint64_t containerGuid = getContainerGuid(bagIndex - 1); // bagIndex 5-9 maps to container 4-8
+            uint64_t containerGuid = getContainerGuid(bagIndex - 1); // bagIndex 5-10 maps to container 4-9
             if (containerGuid == 0) {
                 // Bag slot is empty, clear all cached items for this bag
                 GetTableRef(luaState, bagTableRefs[bagIndex]);
@@ -1017,7 +1019,7 @@ namespace Nampower {
             return 1;
         }
         
-        lua_error(luaState, "Invalid bag index. Valid values: 0, 1-4, -1, 5-9 (bank)");
+        lua_error(luaState, "Invalid bag index. Valid values: 0 (backpack), 1-4, -1 (bank backpack), 5-10 (bank)");
         return 0;
     }
 
@@ -1044,14 +1046,14 @@ namespace Nampower {
             }
         }
 
-        // Bank bags 5-9
+        // Bank bags 5-10
         uint64_t bankGuid = *reinterpret_cast<uint64_t*>(Offsets::BankGuid);
         if (bankGuid > 0) {
             lua_pushnumber(luaState, static_cast<double>(-1));
             GetSingleBagItems(luaState, -1);
             lua_settable(luaState, -3);
 
-            for (int32_t bagIndex = 5; bagIndex <= 9; bagIndex++) {
+            for (int32_t bagIndex = 5; bagIndex <= 10; bagIndex++) {
                 const auto top = lua_gettop(luaState);
                 lua_pushnumber(luaState, static_cast<double>(bagIndex));
                 const auto bagResult = GetSingleBagItems(luaState, bagIndex);
@@ -1071,7 +1073,6 @@ namespace Nampower {
         luaState = GetLuaStatePtr();
 
         if (lua_gettop(luaState) == 1) {
-
             if (!lua_isnumber(luaState, 1)) {
                 lua_error(luaState, "Bag index must be a number");
                 return 0;
