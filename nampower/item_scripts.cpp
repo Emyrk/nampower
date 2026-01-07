@@ -989,7 +989,6 @@ namespace Nampower {
                 for (uint32_t slot = 0; slot < MAX_BAG_SLOTS; slot++) {
                     ClearBagSlot(luaState, bagIndex, slot);
                 }
-                lua_settable(luaState, -3);
                 return 1;
             }
 
