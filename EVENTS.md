@@ -165,9 +165,20 @@ end
 Fire when a spell cast applies an aura. "Self" covers casts that land on the active player (including cases where the active player is the caster with no explicit target); "Other" covers all other targets.
 
 These events are gated behind the `NP_EnableAuraCastEvents` CVar (default 0). Set it to `1` to enable.
-**Note:** some auras do not have spell effects and won’t trigger these events; the BUFF/DEBUFF gain events are the only way to track those.
+**Note:** some auras do not have spell effects and won't trigger these events; the BUFF/DEBUFF gain events are the only way to track those.
 
 These events are primarily intended for basic tracking of aura applications when buff/debuff caps prevent normal GAINS events from firing.
+
+#### Multi-Target Behavior
+These events fire separately for each target affected by the spell:
+- **Self-targeting spells** (e.g., buffs with TARGET_UNIT_CASTER) trigger once on the caster
+- **Single-target spells** (e.g., healing/damage spells) trigger once on the primary target
+- **AOE spells** (e.g., area buffs/debuffs) trigger once for each affected target based on the spell's implicit targeting rules
+- For AOE enemy spells, the event fires on all targets except the caster (if the caster is in the area)
+
+Each event fires once per qualifying spell effect per target. A spell with multiple aura-applying effects will trigger multiple events for the same target.
+
+**Note:** There may be edge cases or bugs with certain spells where targeting logic doesn't work as expected. If you encounter issues with specific spells not firing events correctly or firing too many/too few times, please report them in the issues tracker.
 
 Parameters:
 1.  int spellId
