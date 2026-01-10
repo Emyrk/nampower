@@ -9,6 +9,7 @@
 
 namespace Nampower {
     auto const APPLY_BUFFER_TO_GCD = false; // gcd issue seems fixed for now
+    constexpr int MAX_ALLOWED_SPELL_TARGETS = 100;
 
     void SetReleaseAction(uint32_t input) {
         uint32_t activeControl = *reinterpret_cast<uint32_t *>(Offsets::CGInputControlGetActive);
@@ -902,18 +903,24 @@ namespace Nampower {
         return false;
     }
 
-    void TriggerAuraCastEvent(const game::SpellRec *spell,
-                              uint64_t casterGuid,
-                              uint64_t targetGuid,
-                              uint64_t activePlayerGuid,
-                              bool castByActivePlayer) {
+    void triggerAuraCastEventOnTarget(const game::SpellRec *spell,
+                                      int spellEffectIndex,
+                                      char *casterGuidStr,
+                                      char *targetGuidStr, // if provided use this instead of creating one
+                                      uint64_t targetGuid,
+                                      uint64_t activePlayerGuid,
+                                      uint32_t effectType,
+                                      uint32_t duration) {
+        static char format[] = "%d%s%s%d%d%d%d%d%d";
+
         auto eventToTrigger = game::AURA_CAST_ON_OTHER;
         if (targetGuid == activePlayerGuid) {
             eventToTrigger = game::AURA_CAST_ON_SELF;
         }
 
-        // ignore modifiers if not cast by active player
-        auto duration = game::GetSpellDuration(spell, !castByActivePlayer);
+        auto auraName = spell->EffectApplyAuraName[spellEffectIndex];
+        auto effectAmplitude = spell->EffectAmplitude[spellEffectIndex];
+        auto effectMiscValue = spell->EffectMiscValue[spellEffectIndex];
 
         auto *targetUnit = game::ClntObjMgrObjectPtr(
             static_cast<game::TypeMask>(game::TYPEMASK_PLAYER | game::TYPEMASK_UNIT), targetGuid);
@@ -921,9 +928,54 @@ namespace Nampower {
         bool targetIsBuffCapped = game::UnitIsBuffCapped(targetUnit);
         bool targetIsDebuffCapped = game::UnitIsDebuffCapped(targetUnit);
 
+        bool createdGuidStr = false;
+        if (!targetGuidStr) {
+            if (targetGuid > 0) {
+                targetGuidStr = ConvertGuidToString(targetGuid);
+                createdGuidStr = true;
+            }
+        }
+
+        auto auraCapStatus = static_cast<uint32_t>(targetIsBuffCapped) |
+                             (static_cast<uint32_t>(targetIsDebuffCapped) << 1);
+
+        reinterpret_cast<int (__cdecl *)(int eventCode,
+                                         char *fmt,
+                                         uint32_t spellIdParam,
+                                         char *casterGuidStrParam,
+                                         char *targetGuidStrParam,
+                                         uint32_t effectParam,
+                                         uint32_t auraNameParam,
+                                         uint32_t effectAmplitudeParam,
+                                         uint32_t effectMiscValueParam,
+                                         uint32_t durationParam,
+                                         uint32_t auraCapStatusParam)>(Offsets::SignalEventParam)(
+            eventToTrigger,
+            format,
+            spell->Id,
+            casterGuidStr,
+            targetGuidStr,
+            effectType,
+            auraName,
+            effectAmplitude,
+            effectMiscValue,
+            duration,
+            auraCapStatus);
+
+        if (createdGuidStr) {
+            delete [] targetGuidStr;
+        }
+    }
+
+    void TriggerAuraCastEvent(const game::SpellRec *spell,
+                              uint64_t casterGuid,
+                              uint64_t targetGuids[MAX_ALLOWED_SPELL_TARGETS],
+                              uint8_t numTargets,
+                              uint64_t activePlayerGuid,
+                              bool castByActivePlayer) {
+        // ignore modifiers if not cast by active player
+        auto duration = game::GetSpellDuration(spell, !castByActivePlayer);
         char *casterGuidStr = ConvertGuidToString(casterGuid);
-        char *targetGuidStr = ConvertGuidToString(targetGuid);
-        char format[] = "%d%s%s%d%d%d%d%d%d";
 
         for (int i = 0; i < 3; ++i) {
             auto const effectType = spell->Effect[i];
@@ -934,35 +986,59 @@ namespace Nampower {
                 case game::SPELL_EFFECT_APPLY_AREA_AURA_FRIEND:
                 case game::SPELL_EFFECT_APPLY_AREA_AURA_ENEMY:
                 case game::SPELL_EFFECT_APPLY_AREA_AURA_PET: {
-                    auto auraName = spell->EffectApplyAuraName[i];
-                    auto effectAmplitude = spell->EffectAmplitude[i];
-                    auto effectMiscValue = spell->EffectMiscValue[i];
+                    auto const implicitTargetA = spell->EffectImplicitTargetA[i];
+                    auto const implicitTargetB = spell->EffectImplicitTargetB[i];
 
-                    auto auraCapStatus = static_cast<uint32_t>(targetIsBuffCapped) |
-                                         (static_cast<uint32_t>(targetIsDebuffCapped) << 1);
+                    if (implicitTargetA == game::TARGET_UNIT_CASTER) {
+                        triggerAuraCastEventOnTarget(spell, i, casterGuidStr, casterGuidStr, casterGuid,
+                                                     activePlayerGuid,
+                                                     effectType, duration);
+                        break;
+                    }
 
-                    reinterpret_cast<int (__cdecl *)(int eventCode,
-                                                     char *fmt,
-                                                     uint32_t spellIdParam,
-                                                     char *casterGuidStrParam,
-                                                     char *targetGuidStrParam,
-                                                     uint32_t effectParam,
-                                                     uint32_t auraNameParam,
-                                                     uint32_t effectAmplitudeParam,
-                                                     uint32_t effectMiscValueParam,
-                                                     uint32_t durationParam,
-                                                     uint32_t auraCapStatusParam)>(Offsets::SignalEventParam)(
-                        eventToTrigger,
-                        format,
-                        spell->Id,
-                        casterGuidStr,
-                        targetGuidStr,
-                        effectType,
-                        auraName,
-                        effectAmplitude,
-                        effectMiscValue,
-                        duration,
-                        auraCapStatus);
+                    // handle no targets
+                    if (numTargets == 0 || implicitTargetA == game::TARGET_NONE) {
+                        triggerAuraCastEventOnTarget(spell, i, casterGuidStr, nullptr, 0, activePlayerGuid,
+                                                     effectType, duration);
+                    } else if ((implicitTargetA >= game::TARGET_UNIT_ENEMY_NEAR_CASTER && implicitTargetA <=
+                                game::TARGET_UNIT_ENEMY) ||
+                               (implicitTargetA >= game::TARGET_PLAYER_NYI && implicitTargetA <=
+                                game::TARGET_PLAYER_FRIEND_NYI) ||
+                               implicitTargetA == game::TARGET_UNIT_FRIEND ||
+                               implicitTargetA == game::TARGET_UNIT ||
+                               implicitTargetA == game::TARGET_UNIT_CASTER_MASTER) {
+                        // trigger on first target
+                        triggerAuraCastEventOnTarget(spell, i, casterGuidStr, nullptr, targetGuids[0], activePlayerGuid,
+                                                     effectType, duration);
+                    } else if (implicitTargetA == game::TARGET_ENUM_UNITS_ENEMY_AOE_AT_SRC_LOC ||
+                               implicitTargetA == game::TARGET_ENUM_UNITS_ENEMY_AOE_AT_DEST_LOC ||
+                               implicitTargetA == game::TARGET_ENUM_UNITS_ENEMY_IN_CONE_24 ||
+                               implicitTargetA == game::TARGET_ENUM_UNITS_ENEMY_AOE_AT_DYNOBJ_LOC ||
+                               implicitTargetA == game::TARGET_ENUM_UNITS_ENEMY_WITHIN_CASTER_RANGE ||
+                               implicitTargetA == game::TARGET_ENUM_UNITS_ENEMY_IN_CONE_54 ||
+                               implicitTargetB == game::TARGET_ENUM_UNITS_ENEMY_AOE_AT_SRC_LOC ||
+                               implicitTargetB == game::TARGET_ENUM_UNITS_ENEMY_AOE_AT_DEST_LOC ||
+                               implicitTargetB == game::TARGET_ENUM_UNITS_ENEMY_IN_CONE_24 ||
+                               implicitTargetB == game::TARGET_ENUM_UNITS_ENEMY_AOE_AT_DYNOBJ_LOC ||
+                               implicitTargetB == game::TARGET_ENUM_UNITS_ENEMY_WITHIN_CASTER_RANGE ||
+                               implicitTargetB == game::TARGET_ENUM_UNITS_ENEMY_IN_CONE_54) {
+                        // trigger on all targets except caster
+                        for (int t = 0; t < numTargets; ++t) {
+                            if (targetGuids[t] != casterGuid) {
+                                triggerAuraCastEventOnTarget(spell, i, casterGuidStr, nullptr, targetGuids[t],
+                                                             activePlayerGuid,
+                                                             effectType, duration);
+                            }
+                        }
+                    } else {
+                        // trigger on all targets (probably some exceptions but good enough for now)
+                        for (int t = 0; t < numTargets; ++t) {
+                            triggerAuraCastEventOnTarget(spell, i, casterGuidStr, nullptr, targetGuids[t],
+                                                         activePlayerGuid,
+                                                         effectType, duration);
+                        }
+                    }
+
                     break;
                 }
                 default:
@@ -971,7 +1047,6 @@ namespace Nampower {
         }
 
         delete[] casterGuidStr;
-        delete[] targetGuidStr;
     }
 
     void
@@ -986,10 +1061,11 @@ namespace Nampower {
         uint8_t numTargets;
         spellData->Get(numTargets);
 
-        uint64_t targetGuid;
-        for (int i = 0; i < numTargets; ++i) {
-            // spell go uses the last target in the list, I think target list is usually just length 1
-            spellData->Get(targetGuid);
+        static uint64_t targetGuids[MAX_ALLOWED_SPELL_TARGETS]; // don't allocate new array each time
+        // each target corresponds to a spell effect, should never have more than 3
+        for (int i = 0; i < numTargets && i < MAX_ALLOWED_SPELL_TARGETS; ++i) {
+            targetGuids[i] = 0;
+            spellData->Get(targetGuids[i]);
         }
 
         // reset read pointer
@@ -1045,7 +1121,7 @@ namespace Nampower {
             //         itemId = game::GetItemId(item);
             //     }
             // }
-            TriggerAuraCastEvent(spell, *casterGUID, targetGuid, activePlayerGuid, castByActivePlayer);
+            TriggerAuraCastEvent(spell, *casterGUID, targetGuids, numTargets, activePlayerGuid, castByActivePlayer);
         }
     }
 
@@ -1073,7 +1149,6 @@ namespace Nampower {
     }
 
     void SendCastHook(hadesmem::PatchDetourBase *detour, game::SpellCast *cast, char unk) {
-
         auto const sendCast = detour->GetTrampolineT<SendCastT>();
         sendCast(cast, unk);
 

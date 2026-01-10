@@ -200,6 +200,8 @@ enum class Offsets : std::uint32_t {
     CGUnit_C_OnAuraAdded = 0x006123f0,
     CGUnit_C_OnAuraAddedStack = 0x0062b800,
     UnitCombatLogUnitDead = 0x0062c160,
+    CGUnitGetUnitName = 0x00609210,
+    CGUnitCanAttack = 0x00606980,
 
     CGPlayer_C_OnAttackIconPressed = 0X006131A0,
 

@@ -235,6 +235,26 @@ namespace game {
         return true;
     }
 
+    char *UnitGetName(uintptr_t *unit) {
+        if (!unit) {
+            return nullptr;
+        }
+
+        using CGUnitGetNameT = char *(__thiscall *)(uintptr_t *this_ptr, uint32_t flag);
+        auto const GetUnitName = reinterpret_cast<CGUnitGetNameT>(Offsets::CGUnitGetUnitName);
+        return GetUnitName(unit, 0);
+    }
+
+    bool UnitCanAttackUnit(uintptr_t *unit1, uintptr_t *unit2) {
+        if (unit1 == nullptr || unit2 == nullptr) {
+            return false;
+        }
+
+        using CGUnitCanAttackT = bool (__thiscall *)(uintptr_t *this_ptr, uintptr_t *unit);
+        auto const canAttackFn = reinterpret_cast<CGUnitCanAttackT>(Offsets::CGUnitCanAttack);
+        return canAttackFn(unit1, unit2);
+    }
+
     uint32_t UnitGetMountDisplayId(uintptr_t *unit) {
         if (!unit) {
             return 0;
