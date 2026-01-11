@@ -204,7 +204,7 @@ Parameters:
 3.  int totalDamage - total damage dealt by the attack
 4.  int hitInfo - bitfield containing hit flags (see below)
 5.  int victimState - state of the victim after the attack (see below)
-6.  int subDamageCount - number of damage components (usually 1, can be up to 3 for main-hand + off-hand + ranged)
+6.  int subDamageCount - number of damage components (usually 1, can be up to 3 for weapons with elemental damages and maybe other cases)
 7.  int blockedAmount - amount of damage blocked
 8.  int totalAbsorb - total damage absorbed across all sub-damage components
 9.  int totalResist - total damage resisted across all sub-damage components
