@@ -43,6 +43,7 @@
 #include "item_scripts.hpp"
 #include "auras.hpp"
 #include "lua_refs.hpp"
+#include "autoattack.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -136,6 +137,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT> > gSpellNonMeleeDmgLogHandlerDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<CGPlayer_C_OnAttackIconPressedT> > gCGPlayer_C_OnAttackIconPressedDetour;
+    std::unique_ptr<hadesmem::PatchDetour<AttackRoundInfo_ReadPacketT> > gAttackRoundInfo_ReadPacketDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGActionBar_UseActionT> > gCGActionBar_UseActionDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraRemovedT> > gCGUnit_C_OnAuraRemovedDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraAddedT> > gCGUnit_C_OnAuraAddedDetour;
@@ -672,6 +674,9 @@ namespace Nampower {
         } else if (strcmp(cvar, "NP_EnableAuraCastEvents") == 0) {
             gUserSettings.enableAuraCastEvents = atoi(value) != 0;
             DEBUG_LOG("Set NP_EnableAuraCastEvents to " << gUserSettings.enableAuraCastEvents);
+        } else if (strcmp(cvar, "NP_EnableAutoAttackEvents") == 0) {
+            gUserSettings.enableAutoAttackEvents = atoi(value) != 0;
+            DEBUG_LOG("Set NP_EnableAutoAttackEvents to " << gUserSettings.enableAutoAttackEvents);
         } else if (strcmp(cvar, "NP_PreventMountingWhenBuffCapped") == 0) {
             gUserSettings.preventMountingWhenBuffCapped = atoi(value) != 0;
             DEBUG_LOG("Set NP_PreventMountingWhenBuffCapped to " << gUserSettings.preventMountingWhenBuffCapped);
@@ -986,6 +991,16 @@ namespace Nampower {
                      0, // unk2
                      0); // unk3
 
+        char NP_EnableAutoAttackEvents[] = "NP_EnableAutoAttackEvents";
+        CVarRegister(NP_EnableAutoAttackEvents, // name
+                     nullptr, // help
+                     0, // unk1
+                     gUserSettings.enableAutoAttackEvents ? defaultTrue : defaultFalse, // default value address
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
         char NP_PreventMountingWhenBuffCapped[] = "NP_PreventMountingWhenBuffCapped";
         CVarRegister(NP_PreventMountingWhenBuffCapped, // name
                      nullptr, // help
@@ -1122,6 +1137,7 @@ namespace Nampower {
 
         loadUserVar("NP_SpamProtectionEnabled");
         loadUserVar("NP_EnableAuraCastEvents");
+        loadUserVar("NP_EnableAutoAttackEvents");
         loadUserVar("NP_PreventMountingWhenBuffCapped");
 
         loadUserVar("NP_MinBufferTimeMs");
@@ -1290,6 +1306,8 @@ namespace Nampower {
             &CGUnit_C_OnAuraAddedStackHook);
         gUnitCombatLogUnitDeadDetour = createHook<UnitCombatLogUnitDeadT>(process, Offsets::UnitCombatLogUnitDead,
                                                                           &UnitCombatLogUnitDeadHook);
+        gAttackRoundInfo_ReadPacketDetour = createHook<AttackRoundInfo_ReadPacketT>(process, Offsets::AttackRoundInfo_ReadPacket,
+                                                                                     &AttackRoundInfo_ReadPacketHook);
         gLoadScriptFunctionsDetour = createHook<LoadScriptFunctionsT>(process, Offsets::LoadScriptFunctions,
                                                                       &LoadScriptFunctionsHook);
         gCreateEventsDetour = createHook<FrameScript_CreateEventsT>(process, Offsets::FrameScript_CreateEvents,
@@ -1364,6 +1382,12 @@ namespace Nampower {
 
         char AURA_CAST_ON_OTHER[] = "AURA_CAST_ON_OTHER";
         addCustomEvent(game::AURA_CAST_ON_OTHER, AURA_CAST_ON_OTHER);
+
+        char AUTO_ATTACK_SELF[] = "AUTO_ATTACK_SELF";
+        addCustomEvent(game::AUTO_ATTACK_SELF, AUTO_ATTACK_SELF);
+
+        char AUTO_ATTACK_OTHER[] = "AUTO_ATTACK_OTHER";
+        addCustomEvent(game::AUTO_ATTACK_OTHER, AUTO_ATTACK_OTHER);
     }
 
     void FrameScript_CreateEventsHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t maxEventId) {

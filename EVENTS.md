@@ -10,6 +10,7 @@ For custom Lua functions, see [SCRIPTS.md](SCRIPTS.md). For general usage inform
 - [SPELL_DAMAGE_EVENT_SELF and SPELL_DAMAGE_EVENT_OTHER](#spell_damage_event_self-and-spell_damage_event_other)
 - [Buff/Debuff Events](#buffdebuff-events)
 - [AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER](#aura_cast_on_self-and-aura_cast_on_other)
+- [AUTO_ATTACK_SELF and AUTO_ATTACK_OTHER](#auto_attack_self-and-auto_attack_other)
 - [UNIT_DIED](#unit_died)
 
 ---
@@ -172,9 +173,8 @@ These events are primarily intended for basic tracking of aura applications when
 #### Multi-Target Behavior
 These events fire separately for each target affected by the spell:
 - **Self-targeting spells** (e.g., buffs with TARGET_UNIT_CASTER) trigger once on the caster
-- **Single-target spells** (e.g., healing/damage spells) trigger once on the primary target
+- **Single-target spells** (e.g., spells that target specific units) trigger once on the primary target
 - **AOE spells** (e.g., area buffs/debuffs) trigger once for each affected target based on the spell's implicit targeting rules
-- For AOE enemy spells, the event fires on all targets except the caster (if the caster is in the area)
 
 Each event fires once per qualifying spell effect per target. A spell with multiple aura-applying effects will trigger multiple events for the same target.
 
@@ -190,6 +190,90 @@ Parameters:
 7.  int effectMiscValue - EffectMiscValue entry for the selected aura effect
 8.  int durationMs - spell duration in milliseconds (includes client modifiers if you are the caster)
 9.  int auraCapStatus - bitfield: 1 = buff bar full, 2 = debuff bar full (3 means both)
+
+### AUTO_ATTACK_SELF and AUTO_ATTACK_OTHER
+Fire when auto attack damage is processed. "Self" fires when the active player is the target of the attack; "Other" fires when the active player is the attacker or a different unit is the target.
+
+These events are gated behind the `NP_EnableAutoAttackEvents` CVar (default 0). Set it to `1` to enable.
+
+These events provide detailed information about auto attack rounds including damage, hit type (critical, glancing, crushing), victim state (dodged, parried, blocked), and mitigation amounts.
+
+Parameters:
+1.  string attackerGuid - attacker guid like "0xF5300000000000A5"
+2.  string targetGuid - target guid like "0xF5300000000000A5"
+3.  int totalDamage - total damage dealt by the attack
+4.  int hitInfo - bitfield containing hit flags (see below)
+5.  int victimState - state of the victim after the attack (see below)
+6.  int subDamageCount - number of damage components (usually 1, can be up to 3 for main-hand + off-hand + ranged)
+7.  int blockedAmount - amount of damage blocked
+8.  int totalAbsorb - total damage absorbed across all sub-damage components
+9.  int totalResist - total damage resisted across all sub-damage components
+
+#### HitInfo Flags
+Bitfield values that can be combined:
+```
+HITINFO_NORMALSWING = 0 (0x0)
+HITINFO_UNK0 = 1 (0x1)
+HITINFO_AFFECTS_VICTIM = 2 (0x2)
+HITINFO_LEFTSWING = 4 (0x4)        -- Off-hand attack
+HITINFO_UNK3 = 8 (0x8)
+HITINFO_MISS = 16 (0x10)
+HITINFO_ABSORB = 32 (0x20)
+HITINFO_RESIST = 64 (0x40)
+HITINFO_CRITICALHIT = 128 (0x80)
+HITINFO_UNK8 = 256 (0x100)
+HITINFO_UNK9 = 8192 (0x2000)
+HITINFO_GLANCING = 16384 (0x4000)
+HITINFO_CRUSHING = 32768 (0x8000)
+HITINFO_NOACTION = 65536 (0x10000)
+HITINFO_SWINGNOHITSOUND = 524288 (0x80000)
+```
+
+#### Victim States
+```
+VICTIMSTATE_UNAFFECTED = 0  -- Seen with HITINFO_MISS
+VICTIMSTATE_NORMAL = 1
+VICTIMSTATE_DODGE = 2
+VICTIMSTATE_PARRY = 3
+VICTIMSTATE_INTERRUPT = 4
+VICTIMSTATE_BLOCKS = 5
+VICTIMSTATE_EVADES = 6
+VICTIMSTATE_IS_IMMUNE = 7
+VICTIMSTATE_DEFLECTS = 8
+```
+
+Example:
+```
+local HITINFO_CRITICALHIT = 128  -- 0x80
+local HITINFO_GLANCING = 16384   -- 0x4000
+local HITINFO_CRUSHING = 32768   -- 0x8000
+
+local function onAutoAttack(attackerGuid, targetGuid, totalDamage, hitInfo, victimState, subDamageCount, blockedAmount, totalAbsorb, totalResist)
+    local isCrit = bit.band(hitInfo, HITINFO_CRITICALHIT) ~= 0
+    local isGlancing = bit.band(hitInfo, HITINFO_GLANCING) ~= 0
+    local isCrushing = bit.band(hitInfo, HITINFO_CRUSHING) ~= 0
+
+    local hitType = "Normal"
+    if isCrit then hitType = "Critical"
+    elseif isGlancing then hitType = "Glancing"
+    elseif isCrushing then hitType = "Crushing"
+    end
+
+    local victimStateNames = {
+        [0] = "Unaffected", [1] = "Normal", [2] = "Dodged", [3] = "Parried",
+        [4] = "Interrupted", [5] = "Blocked", [6] = "Evaded", [7] = "Immune", [8] = "Deflected"
+    }
+
+    DEFAULT_CHAT_FRAME:AddMessage(string.format(
+        "%s hit for %d (%s) - State: %s, Absorbed: %d, Resisted: %d, Blocked: %d",
+        hitType, totalDamage, attackerGuid, victimStateNames[victimState] or "Unknown",
+        totalAbsorb, totalResist, blockedAmount
+    ))
+end
+
+frame:RegisterEvent("AUTO_ATTACK_SELF", onAutoAttack)
+frame:RegisterEvent("AUTO_ATTACK_OTHER", onAutoAttack)
+```
 
 ### UNIT_DIED
 Fires when a unit death is recorded in the combat log.

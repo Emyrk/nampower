@@ -777,6 +777,36 @@ namespace game {
         SPELL_FAILED_TOO_CLOSE = 118
     };
 
+    enum HitInfo {
+        HITINFO_NORMALSWING = 0,
+        HITINFO_UNK0 = 0x1,
+        HITINFO_AFFECTS_VICTIM = 0x2,
+        HITINFO_LEFTSWING = 0x4,
+        HITINFO_UNK3 = 0x8,
+        HITINFO_MISS = 0x10,
+        HITINFO_ABSORB = 0x20,
+        HITINFO_RESIST = 0x40,
+        HITINFO_CRITICALHIT = 0x80,
+        HITINFO_UNK8 = 0x100,
+        HITINFO_UNK9 = 0x2000,
+        HITINFO_GLANCING = 0x4000,
+        HITINFO_CRUSHING = 0x8000,
+        HITINFO_NOACTION = 0x10000,
+        HITINFO_SWINGNOHITSOUND = 0x80000
+    };
+
+    enum VictimState {
+        VICTIMSTATE_UNAFFECTED = 0, // seen in relation with HITINFO_MISS
+        VICTIMSTATE_NORMAL = 1,
+        VICTIMSTATE_DODGE = 2,
+        VICTIMSTATE_PARRY = 3,
+        VICTIMSTATE_INTERRUPT = 4,
+        VICTIMSTATE_BLOCKS = 5,
+        VICTIMSTATE_EVADES = 6,
+        VICTIMSTATE_IS_IMMUNE = 7,
+        VICTIMSTATE_DEFLECTS = 8
+    };
+
     enum SpellAttributes {
         SPELL_ATTR_UNK0 = 0x1,
         SPELL_ATTR_RANGED = 0x2,
@@ -1445,6 +1475,9 @@ namespace game {
 
         AURA_CAST_ON_SELF = 560,
         AURA_CAST_ON_OTHER = 561,
+
+        AUTO_ATTACK_SELF = 562,
+        AUTO_ATTACK_OTHER = 563,
     };
 
     enum TypeMask {

@@ -205,6 +205,8 @@ enum class Offsets : std::uint32_t {
 
     CGPlayer_C_OnAttackIconPressed = 0X006131A0,
 
+    AttackRoundInfo_ReadPacket = 0x00625c60,
+
     CGCharacterInfo_UseItem = 0x004c7970,
 
     CGItem_C_Use = 0x005D8D00,

@@ -41,6 +41,8 @@ set(SOURCE_FILES
         auras.cpp
         lua_refs.hpp
         lua_refs.cpp
+        autoattack.hpp
+        autoattack.cpp
 )
 
 add_library(${DLL_NAME} SHARED ${SOURCE_FILES})

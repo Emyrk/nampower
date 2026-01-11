@@ -35,8 +35,8 @@ namespace Nampower {
     constexpr uint32_t DISENCHANT_QUALITY_PURPLE = 0x04;  // Epic
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 23;
-    constexpr uint32_t PATCH_VERSION = 5;
+    constexpr uint32_t MINOR_VERSION = 24;
+    constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
@@ -111,6 +111,7 @@ namespace Nampower {
     using Spell_C_GetSpellModifiersT = void (__fastcall *)(const game::SpellRec *spellRec, int *returnVal, game::SpellModOp modOp);
 
     using CGPlayer_C_OnAttackIconPressedT = int (__fastcall *)(uintptr_t *this_ptr, void *dummy_edx, uint64_t guid);
+    using AttackRoundInfo_ReadPacketT = void (__fastcall *)(void *thisptr, void *dummy_edx, CDataStore *param_2);
     using CGActionBar_UseActionT = void (__fastcall *)(uint32_t param_1, int param_2, int param_3);
     using CGCharacterInfo_UseItemT = void (__fastcall *)(uintptr_t *this_ptr, void *dummy_edx, uint32_t itemSlot, uint64_t *targetGuid);
 
