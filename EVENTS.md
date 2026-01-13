@@ -192,7 +192,7 @@ Parameters:
 9.  int auraCapStatus - bitfield: 1 = buff bar full, 2 = debuff bar full (3 means both)
 
 ### AUTO_ATTACK_SELF and AUTO_ATTACK_OTHER
-Fire when auto attack damage is processed. "Self" fires when the active player is the target of the attack; "Other" fires when the active player is the attacker or a different unit is the target.
+Fire when auto attack damage is processed. "Self" fires when the active player is the attacker; "Other" fires someone other than the active player is the attacker.
 
 These events are gated behind the `NP_EnableAutoAttackEvents` CVar (default 0). Set it to `1` to enable.
 
