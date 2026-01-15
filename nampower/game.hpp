@@ -1067,6 +1067,61 @@ namespace game {
         MAX_SPELL_TARGETS
     };
 
+    enum SpellMissInfo
+    {
+        SPELL_MISS_NONE                    = 0,
+        SPELL_MISS_MISS                    = 1,
+        SPELL_MISS_RESIST                  = 2,
+        SPELL_MISS_DODGE                   = 3,
+        SPELL_MISS_PARRY                   = 4,
+        SPELL_MISS_BLOCK                   = 5,
+        SPELL_MISS_EVADE                   = 6,
+        SPELL_MISS_IMMUNE                  = 7,
+        SPELL_MISS_IMMUNE2                 = 8,
+        SPELL_MISS_DEFLECT                 = 9,
+        SPELL_MISS_ABSORB                  = 10,
+        SPELL_MISS_REFLECT                 = 11
+    };
+
+    enum SpellHitType
+    {
+        SPELL_HIT_TYPE_CRIT_DEBUG           = 0x01,
+        SPELL_HIT_TYPE_CRIT                 = 0x02,
+        SPELL_HIT_TYPE_HIT_DEBUG            = 0x04,
+        SPELL_HIT_TYPE_SPLIT                = 0x08,
+        SPELL_HIT_TYPE_VICTIM_IS_ATTACKER   = 0x10,
+        SPELL_HIT_TYPE_ATTACK_TABLE_DEBUG   = 0x20
+    };
+
+    enum SpellDmgClass
+    {
+        SPELL_DAMAGE_CLASS_NONE     = 0,
+        SPELL_DAMAGE_CLASS_MAGIC    = 1,
+        SPELL_DAMAGE_CLASS_MELEE    = 2,
+        SPELL_DAMAGE_CLASS_RANGED   = 3
+    };
+
+    enum SpellPreventionType
+    {
+        SPELL_PREVENTION_TYPE_NONE      = 0,
+        SPELL_PREVENTION_TYPE_SILENCE   = 1,
+        SPELL_PREVENTION_TYPE_PACIFY    = 2
+    };
+
+    enum SpellCastFlags
+    {
+        CAST_FLAG_NONE              = 0x00000000,
+        CAST_FLAG_HIDDEN_COMBATLOG  = 0x00000001,               // hide in combat log?
+        CAST_FLAG_UNKNOWN2          = 0x00000002,
+        CAST_FLAG_UNKNOWN3          = 0x00000004,
+        CAST_FLAG_UNKNOWN4          = 0x00000008,
+        CAST_FLAG_UNKNOWN5          = 0x00000010,
+        CAST_FLAG_AMMO              = 0x00000020,               // Projectiles visual
+        CAST_FLAG_UNKNOWN7          = 0x00000040,               // !0x41 mask used to call CGTradeSkillInfo::DoRecast
+        CAST_FLAG_UNKNOWN8          = 0x00000080,
+        CAST_FLAG_UNKNOWN9          = 0x00000100,
+    };
+
     // SpellEntry::Targets
     enum SpellCastTargetFlags {
         TARGET_FLAG_SELF = 0x00000000,
@@ -1478,6 +1533,21 @@ namespace game {
 
         AUTO_ATTACK_SELF = 562,
         AUTO_ATTACK_OTHER = 563,
+
+        SPELL_START_SELF = 564,
+        SPELL_START_OTHER = 565,
+
+        SPELL_GO_SELF = 566,
+        SPELL_GO_OTHER = 567,
+
+        SPELL_FAILED_SELF = 568,
+        SPELL_FAILED_OTHER = 569,
+
+        SPELL_DELAYED_SELF = 570,
+        SPELL_DELAYED_OTHER = 571,
+
+        SPELL_CHANNEL_START = 572,
+        SPELL_CHANNEL_UPDATE = 573,
     };
 
     enum TypeMask {

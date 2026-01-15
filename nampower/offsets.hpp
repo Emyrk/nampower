@@ -44,7 +44,7 @@ enum class Offsets : std::uint32_t {
     SpellDb = 0xC0D780,
     CursorMode = 0xBE2C4C,
     CursorType = 0X00BE2C2C,
-    SpellIsTargeting = 0xCECAC0,
+    SpellNeedTargets = 0xCECAC0,
     CastingItemIdPtr = 0X00CECAB0,
     CastingSpellId = 0xCECA88,
     AutoRepeatingSpellId = 0xCEAC30,

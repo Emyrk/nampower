@@ -6,8 +6,52 @@
 #include "spellcast.hpp"
 #include "logging.hpp"
 #include "offsets.hpp"
+#include "helper.hpp"
 
 namespace Nampower {
+    void TriggerSpellChannelStartEvent(uint32_t spellId, uint32_t duration) {
+        static char format[] = "%d%s%d";
+
+        auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto playerUnit = game::GetObjectPtr(playerGuid);
+        auto unitTargetGuid = game::UnitGetTargetGuid(playerUnit); // channel target guid gets updated later
+
+        char *targetGuidStr = ConvertGuidToString(unitTargetGuid);
+
+        ((int (__cdecl *)(int eventCode,
+                          char *fmt,
+                          uint32_t spellIdParam,
+                          char *targetGuidParam,
+                          uint32_t durationParam)) Offsets::SignalEventParam)(
+            game::SPELL_CHANNEL_START,
+            format,
+            spellId,
+            targetGuidStr,
+            duration);
+
+        delete[] targetGuidStr;
+    }
+
+    void TriggerSpellChannelUpdateEvent(uint32_t spellId, uint32_t channelRemainingTime) {
+        static char format[] = "%d%s%d";
+
+        auto channelTargetGuid = *reinterpret_cast<uint64_t *>(Offsets::ChannelTargetGuid);
+        char *targetGuidStr = ConvertGuidToString(channelTargetGuid);
+
+        ((int (__cdecl *)(int eventCode,
+                          char *fmt,
+                          uint32_t spellIdParam,
+                          char *targetGuidParam,
+                          uint32_t remainingParam)) Offsets::SignalEventParam)(
+            game::SPELL_CHANNEL_UPDATE,
+            format,
+            spellId,
+            targetGuidStr,
+            channelRemainingTime);
+
+        delete[] targetGuidStr;
+    }
+
     int SpellChannelStartHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet) {
         auto const rpos = packet->m_read;
 
@@ -96,7 +140,11 @@ namespace Nampower {
         }
 
         auto const spellChannelStartHandler = detour->GetTrampolineT<PacketHandlerT>();
-        return spellChannelStartHandler(opCode, packet);
+        auto ret = spellChannelStartHandler(opCode, packet);
+
+        TriggerSpellChannelStartEvent(spellId, duration);
+
+        return ret;
     }
 
     // this gets called on damage and when channel ends with the end time of the channel
@@ -107,6 +155,8 @@ namespace Nampower {
         packet->Get(channelRemainingTime);
 
         packet->m_read = rpos;
+
+        TriggerSpellChannelUpdateEvent(gCastData.channelSpellId, channelRemainingTime);
 
         if (channelRemainingTime <= 0) {
             DEBUG_LOG("Channel done: " << game::GetSpellName(gCastData.channelSpellId)

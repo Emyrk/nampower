@@ -30,7 +30,7 @@ namespace Nampower {
     CancelSpellHook(hadesmem::PatchDetourBase *detour, bool failed, bool notifyServer, game::SpellCastResult reason);
 
     void SpellGoHook(hadesmem::PatchDetourBase *detour, uint64_t *itemGUID, uint64_t *casterGUID, uint32_t spellId,
-                     CDataStore *spellData);
+                     CDataStore *packet);
 
     bool Spell_C_TargetSpellHook(hadesmem::PatchDetourBase *detour,
                                  uint32_t *player,

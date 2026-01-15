@@ -30,6 +30,8 @@ struct UserSettings {
     bool spamProtectionEnabled = true;
     bool enableAuraCastEvents = false;
     bool enableAutoAttackEvents = false;
+    bool enableSpellStartEvents = false;
+    bool enableSpellGoEvents = false;
     bool preventMountingWhenBuffCapped = true;
 
     uint32_t spellQueueWindowMs = 500;

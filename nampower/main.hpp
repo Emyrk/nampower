@@ -35,7 +35,7 @@ namespace Nampower {
     constexpr uint32_t DISENCHANT_QUALITY_PURPLE = 0x04;  // Epic
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 24;
+    constexpr uint32_t MINOR_VERSION = 25;
     constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
@@ -92,7 +92,7 @@ namespace Nampower {
     using EndSceneT = int (__fastcall *)(uintptr_t *unk);
     using OnSpriteRightClickT = int (__fastcall *)(uint64_t objectGUID);
     using CGGameUI_TargetT = void (__stdcall *)(uint64_t objectGUID);
-    using Spell_C_SpellFailedT = void (__fastcall *)(uint32_t, game::SpellCastResult, int, int, char unk3);
+    using Spell_C_SpellFailedT = void (__fastcall *)(uint32_t, game::SpellCastResult, int, int, bool);
     using Spell_C_GetAutoRepeatingSpellT = int (__cdecl *)();
     using SpellGoT = void (__fastcall *)(uint64_t *, uint64_t *, uint32_t, CDataStore *);
     using Spell_C_HandleSpriteClickT = bool (__fastcall *)(game::CSpriteClickEvent *event);

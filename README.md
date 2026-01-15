@@ -99,6 +99,10 @@ SET NP_TargetingQueueWindowMs "1000"
 
 - `NP_EnableAutoAttackEvents` - Whether to enable AUTO_ATTACK_SELF and AUTO_ATTACK_OTHER events. 0 to disable, 1 to enable. Default is 0.
 
+- `NP_EnableSpellStartEvents` - Whether to enable SPELL_START_SELF and SPELL_START_OTHER events. 0 to disable, 1 to enable. Default is 0.
+
+- `NP_EnableSpellGoEvents` - Whether to enable SPELL_GO_SELF and SPELL_GO_OTHER events. 0 to disable, 1 to enable. Default is 0.
+
 - `NP_ChannelLatencyReductionPercentage` - The percentage of your latency to subtract from the end of a channel duration to optimize cast time while hopefully not losing any ticks (more explanation below). Default is 75.
 
 - `NP_NameplateDistance` - The distance in yards to display nameplates.  Defaults to whatever was set by the game or vanilla tweaks.
@@ -145,7 +149,9 @@ For complete documentation of all custom events added by Nampower, see **[EVENTS
 
 Available events:
 - SPELL_QUEUE_EVENT - Fires when spells are queued or dequeued
-- SPELL_CAST_EVENT - Fires when you cast a spell with additional information
+- SPELL_CAST_EVENT - Fires when you cast a spell with additional information. Triggered when you start casting a spell in the client before it is sent to the server.
+- SPELL_START_SELF and SPELL_START_OTHER - Triggered by the server to notify that a spell with a cast time has begun.
+- SPELL_GO_SELF and SPELL_GO_OTHER - Triggered by the server to indicate a spell completed casting.
 - SPELL_DAMAGE_EVENT_SELF and SPELL_DAMAGE_EVENT_OTHER - Combat damage events
 - Buff/Debuff Events (BUFF_ADDED_SELF, BUFF_REMOVED_SELF, etc.)
 - AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER - Aura application events (fires once per aura effect per target; "Self" fires when the aura lands on the active player, including self-cast with no explicit target; includes aura metadata + amplitude/misc + aura cap bitfield for buff/debuff slots). Handles single-target and multi-target (AOE) spells. Some auras don't have spell effects and won't trigger this; use BUFF/DEBUFF gains for those. Set `NP_EnableAuraCastEvents=1` to enable. See EVENTS.md for details on multi-target behavior and known limitations.

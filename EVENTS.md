@@ -7,6 +7,11 @@ For custom Lua functions, see [SCRIPTS.md](SCRIPTS.md). For general usage inform
 ## Table of Contents
 - [SPELL_QUEUE_EVENT](#spell_queue_event)
 - [SPELL_CAST_EVENT](#spell_cast_event)
+- [SPELL_START_SELF and SPELL_START_OTHER](#spell_start_self-and-spell_start_other)
+- [SPELL_GO_SELF and SPELL_GO_OTHER](#spell_go_self-and-spell_go_other)
+- [SPELL_FAILED_SELF and SPELL_FAILED_OTHER](#spell_failed_self-and-spell_failed_other)
+- [SPELL_DELAYED_SELF and SPELL_DELAYED_OTHER](#spell_delayed_self-and-spell_delayed_other)
+- [SPELL_CHANNEL_START and SPELL_CHANNEL_UPDATE](#spell_channel_start-and-spell_channel_update)
 - [SPELL_DAMAGE_EVENT_SELF and SPELL_DAMAGE_EVENT_OTHER](#spell_damage_event_self-and-spell_damage_event_other)
 - [Buff/Debuff Events](#buffdebuff-events)
 - [AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER](#aura_cast_on_self-and-aura_cast_on_other)
@@ -57,7 +62,7 @@ NampowerSettings:RegisterEvent("SPELL_QUEUE_EVENT", spellQueueEvent)
 ```
 
 ### SPELL_CAST_EVENT
-Event you can register in game to get updates when you cast spells with some additional information.  This will only fire for spells you (and certain pets) initiated.
+Event you can register in game to get updates when you cast spells with some additional information.  This will only fire for spells you (and certain pets) initiated. Triggered when you start casting a spell in the client before it is sent to the server.
 
 The event is `SPELL_CAST_EVENT` and has 5 parameters:
 1.  int success - 1 if cast succeeded, 0 if failed
@@ -90,6 +95,81 @@ Cursive:RegisterEvent("SPELL_CAST_EVENT", function(success, spellId, castType, t
 	print(itemId)
 end);
 ```
+
+### SPELL_START_SELF and SPELL_START_OTHER
+Fire when a spell start packet is received. "Self" fires when the active player is the caster, "Other" fires for any other caster. Triggered by the server to notify that a spell with a cast time has begun.
+
+These events are gated behind the `NP_EnableSpellStartEvents` CVar (default 0). Set it to `1` to enable.
+
+Parameters:
+1.  int itemId - the id of the item that triggered the spell, 0 if it wasn't triggered by an item
+2.  int spellId
+3.  string casterGuid - caster guid like "0xF5300000000000A5"
+4.  string targetGuid - target guid like "0xF5300000000000A5" or "0x0000000000000000" if none
+5.  int castFlags
+6.  int castTime - cast time in milliseconds
+
+### SPELL_GO_SELF and SPELL_GO_OTHER
+Fire when a spell go packet is received. "Self" fires when the active player is the caster, "Other" fires for any other caster. Triggered by the server to indicate a spell completed casting.
+
+These events are gated behind the `NP_EnableSpellGoEvents` CVar (default 0). Set it to `1` to enable.
+
+Parameters:
+1.  int itemId - the id of the item that triggered the spell, 0 if it wasn't triggered by an item
+2.  int spellId
+3.  string casterGuid - caster guid like "0xF5300000000000A5"
+4.  string targetGuid - target guid like "0xF5300000000000A5" or "0x0000000000000000" if none
+5.  int castFlags
+6.  int numTargetsHit
+7.  int numTargetsMissed
+
+#### CastFlags (bitmask)
+```
+CAST_FLAG_NONE = 0 (0x00000000)
+CAST_FLAG_HIDDEN_COMBATLOG = 1 (0x00000001)
+CAST_FLAG_UNKNOWN2 = 2 (0x00000002)
+CAST_FLAG_UNKNOWN3 = 4 (0x00000004)
+CAST_FLAG_UNKNOWN4 = 8 (0x00000008)
+CAST_FLAG_UNKNOWN5 = 16 (0x00000010)
+CAST_FLAG_AMMO = 32 (0x00000020)
+CAST_FLAG_UNKNOWN7 = 64 (0x00000040)
+CAST_FLAG_UNKNOWN8 = 128 (0x00000080)
+CAST_FLAG_UNKNOWN9 = 256 (0x00000100)
+```
+
+### SPELL_FAILED_SELF and SPELL_FAILED_OTHER
+Fire when a spell failure is reported. "Self" is fired from the client spell failure hook, "Other" is fired from the server handler (only includes caster guid and spell id).
+
+Parameters for `SPELL_FAILED_SELF`:
+1.  int spellId
+2.  int spellResult - SpellCastResult enum value
+3.  int failedByServer - 1 if failed by server, 0 otherwise
+
+Parameters for `SPELL_FAILED_OTHER`:
+1.  string casterGuid - caster guid like "0xF5300000000000A5"
+2.  int spellId
+
+### SPELL_DELAYED_SELF and SPELL_DELAYED_OTHER
+Fire when a spell is delayed, generally due to taking damage. "Self" fires when the active player is affected, "Other" for other players.
+
+Parameters:
+1.  string casterGuid - caster guid like "0xF5300000000000A5"
+2.  int delayMs - delay in milliseconds
+
+### SPELL_CHANNEL_START and SPELL_CHANNEL_UPDATE
+Fire when the active player starts or updates a channeled spell. These are self-only events.
+
+Channel target guid is read from `ChannelTargetGuid = 0xC4D980` and included in these events.
+
+Parameters for `SPELL_CHANNEL_START`:
+1.  int spellId
+2.  string targetGuid - target guid like "0xF5300000000000A5" or "0x0000000000000000" if none
+3.  int durationMs - channel duration in milliseconds
+
+Parameters for `SPELL_CHANNEL_UPDATE`:
+1.  int spellId
+2.  string targetGuid - target guid like "0xF5300000000000A5" or "0x0000000000000000" if none
+3.  int remainingMs - remaining channel time in milliseconds
 
 ### SPELL_DAMAGE_EVENT_SELF and SPELL_DAMAGE_EVENT_OTHER
 New events you can register in game to get updates whenever spell damage occurs. SPELL_DAMAGE_EVENT_SELF will only trigger for damage you deal, while SPELL_DAMAGE_EVENT_OTHER will only trigger for damage dealt by others.

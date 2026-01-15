@@ -677,6 +677,12 @@ namespace Nampower {
         } else if (strcmp(cvar, "NP_EnableAutoAttackEvents") == 0) {
             gUserSettings.enableAutoAttackEvents = atoi(value) != 0;
             DEBUG_LOG("Set NP_EnableAutoAttackEvents to " << gUserSettings.enableAutoAttackEvents);
+        } else if (strcmp(cvar, "NP_EnableSpellStartEvents") == 0) {
+            gUserSettings.enableSpellStartEvents = atoi(value) != 0;
+            DEBUG_LOG("Set NP_EnableSpellStartEvents to " << gUserSettings.enableSpellStartEvents);
+        } else if (strcmp(cvar, "NP_EnableSpellGoEvents") == 0) {
+            gUserSettings.enableSpellGoEvents = atoi(value) != 0;
+            DEBUG_LOG("Set NP_EnableSpellGoEvents to " << gUserSettings.enableSpellGoEvents);
         } else if (strcmp(cvar, "NP_PreventMountingWhenBuffCapped") == 0) {
             gUserSettings.preventMountingWhenBuffCapped = atoi(value) != 0;
             DEBUG_LOG("Set NP_PreventMountingWhenBuffCapped to " << gUserSettings.preventMountingWhenBuffCapped);
@@ -1001,6 +1007,26 @@ namespace Nampower {
                      0, // unk2
                      0); // unk3
 
+        char NP_EnableSpellStartEvents[] = "NP_EnableSpellStartEvents";
+        CVarRegister(NP_EnableSpellStartEvents, // name
+                     nullptr, // help
+                     0, // unk1
+                     gUserSettings.enableSpellStartEvents ? defaultTrue : defaultFalse, // default value address
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
+        char NP_EnableSpellGoEvents[] = "NP_EnableSpellGoEvents";
+        CVarRegister(NP_EnableSpellGoEvents, // name
+                     nullptr, // help
+                     0, // unk1
+                     gUserSettings.enableSpellGoEvents ? defaultTrue : defaultFalse, // default value address
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
         char NP_PreventMountingWhenBuffCapped[] = "NP_PreventMountingWhenBuffCapped";
         CVarRegister(NP_PreventMountingWhenBuffCapped, // name
                      nullptr, // help
@@ -1138,6 +1164,8 @@ namespace Nampower {
         loadUserVar("NP_SpamProtectionEnabled");
         loadUserVar("NP_EnableAuraCastEvents");
         loadUserVar("NP_EnableAutoAttackEvents");
+        loadUserVar("NP_EnableSpellStartEvents");
+        loadUserVar("NP_EnableSpellGoEvents");
         loadUserVar("NP_PreventMountingWhenBuffCapped");
 
         loadUserVar("NP_MinBufferTimeMs");
@@ -1388,6 +1416,36 @@ namespace Nampower {
 
         char AUTO_ATTACK_OTHER[] = "AUTO_ATTACK_OTHER";
         addCustomEvent(game::AUTO_ATTACK_OTHER, AUTO_ATTACK_OTHER);
+
+        char SPELL_START_SELF[] = "SPELL_START_SELF";
+        addCustomEvent(game::SPELL_START_SELF, SPELL_START_SELF);
+
+        char SPELL_START_OTHER[] = "SPELL_START_OTHER";
+        addCustomEvent(game::SPELL_START_OTHER, SPELL_START_OTHER);
+
+        char SPELL_GO_SELF[] = "SPELL_GO_SELF";
+        addCustomEvent(game::SPELL_GO_SELF, SPELL_GO_SELF);
+
+        char SPELL_GO_OTHER[] = "SPELL_GO_OTHER";
+        addCustomEvent(game::SPELL_GO_OTHER, SPELL_GO_OTHER);
+
+        char SPELL_FAILED_SELF[] = "SPELL_FAILED_SELF";
+        addCustomEvent(game::SPELL_FAILED_SELF, SPELL_FAILED_SELF);
+
+        char SPELL_FAILED_OTHER[] = "SPELL_FAILED_OTHER";
+        addCustomEvent(game::SPELL_FAILED_OTHER, SPELL_FAILED_OTHER);
+
+        char SPELL_DELAYED_SELF[] = "SPELL_DELAYED_SELF";
+        addCustomEvent(game::SPELL_DELAYED_SELF, SPELL_DELAYED_SELF);
+
+        char SPELL_DELAYED_OTHER[] = "SPELL_DELAYED_OTHER";
+        addCustomEvent(game::SPELL_DELAYED_OTHER, SPELL_DELAYED_OTHER);
+
+        char SPELL_CHANNEL_START[] = "SPELL_CHANNEL_START";
+        addCustomEvent(game::SPELL_CHANNEL_START, SPELL_CHANNEL_START);
+
+        char SPELL_CHANNEL_UPDATE[] = "SPELL_CHANNEL_UPDATE";
+        addCustomEvent(game::SPELL_CHANNEL_UPDATE, SPELL_CHANNEL_UPDATE);
     }
 
     void FrameScript_CreateEventsHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t maxEventId) {

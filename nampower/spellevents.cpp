@@ -11,6 +11,7 @@
 
 namespace Nampower {
     uint32_t lastCastResultTimeMs;
+    constexpr int MAX_ALLOWED_SPELL_TARGETS = 100;
 
     void SignalEventHook(hadesmem::PatchDetourBase *detour, game::Events eventId) {
         auto const signalEvent = detour->GetTrampolineT<SignalEventT>();
@@ -43,10 +44,46 @@ namespace Nampower {
         return spellTargetUnit(luaState);
     }
 
+
+    void TriggerSpellFailedSelfEvent(uint32_t spellId,
+                                     game::SpellCastResult spellResult,
+                                     bool failedByServer) {
+        static char format[] = "%d%d%d";
+
+        ((int (__cdecl *)(int eventCode,
+                          char *fmt,
+                          uint32_t spellIdParam,
+                          uint32_t spellResultParam,
+                          uint32_t failedByServerParam)) Offsets::SignalEventParam)(
+            game::SPELL_FAILED_SELF,
+            format,
+            spellId,
+            static_cast<uint32_t>(spellResult),
+            failedByServer ? 1 : 0);
+    }
+
+    void TriggerSpellFailedOtherEvent(uint64_t casterGuid,
+                                      uint32_t spellId) {
+        static char format[] = "%s%d";
+
+        char *casterGuidStr = ConvertGuidToString(casterGuid);
+
+        ((int (__cdecl *)(int eventCode,
+                          char *fmt,
+                          char *casterGuidParam,
+                          uint32_t spellIdParam)) Offsets::SignalEventParam)(
+            game::SPELL_FAILED_OTHER,
+            format,
+            casterGuidStr,
+            spellId);
+
+        delete[] casterGuidStr;
+    }
+
     void Spell_C_SpellFailedHook(hadesmem::PatchDetourBase *detour, uint32_t spellId,
-                                 game::SpellCastResult spellResult, int unk1, int unk2, char unk3) {
+                                 game::SpellCastResult spellResult, int unk1, int unk2, bool failedByServer) {
         auto const spellFailed = detour->GetTrampolineT<Spell_C_SpellFailedT>();
-        spellFailed(spellId, spellResult, unk1, unk2, unk3);
+        spellFailed(spellId, spellResult, unk1, unk2, failedByServer);
 
         // ignore fake failure (used by Unleashed Potential and not sure what else)
         if (spellResult == game::SpellCastResult::SPELL_FAILED_DONT_REPORT) {
@@ -65,9 +102,11 @@ namespace Nampower {
              spellId == 51934 ||
              spellId == 51935 ||
              spellId == 51936)
-                ) {
+        ) {
             return;
         }
+
+        TriggerSpellFailedSelfEvent(spellId, spellResult, failedByServer);
 
         ResetCastFlags();
 
@@ -78,7 +117,7 @@ namespace Nampower {
         if ((spellResult == game::SpellCastResult::SPELL_FAILED_NOT_READY ||
              spellResult == game::SpellCastResult::SPELL_FAILED_ITEM_NOT_READY ||
              spellResult == game::SpellCastResult::SPELL_FAILED_SPELL_IN_PROGRESS)
-                ) {
+        ) {
             auto const currentTime = GetTime();
 
             if (spellResult == game::SpellCastResult::SPELL_FAILED_NOT_READY) {
@@ -99,8 +138,8 @@ namespace Nampower {
                             if (castParams->castType == CastType::NON_GCD ||
                                 castParams->castType == CastType::TARGETING_NON_GCD) {
                                 DEBUG_LOG("Non gcd spell " << game::GetSpellName(spellId) << " is still on cooldown "
-                                                           << spellCooldown
-                                                           << " queuing retry");
+                                    << spellCooldown
+                                    << " queuing retry");
                                 gCastData.cooldownNonGcdSpellQueued = true;
                                 gCastData.cooldownNonGcdEndMs = spellCooldown + currentTime;
 
@@ -108,8 +147,8 @@ namespace Nampower {
                                 gNonGcdCastQueue.push(*castParams, gUserSettings.replaceMatchingNonGcdCategory);
                             } else {
                                 DEBUG_LOG("Spell " << game::GetSpellName(spellId) << " is still on cooldown "
-                                                   << spellCooldown
-                                                   << " queuing retry");
+                                    << spellCooldown
+                                    << " queuing retry");
                                 gCastData.cooldownNormalSpellQueued = true;
                                 gCastData.cooldownNormalEndMs = spellCooldown + currentTime;
 
@@ -142,8 +181,8 @@ namespace Nampower {
 
             if (!gUserSettings.retryServerRejectedSpells) {
                 DEBUG_LOG("Cast failed for " << game::GetSpellName(spellId)
-                                             << " code " << int(spellResult)
-                                             << " not queuing retry due to retryServerRejectedSpells=false");
+                    << " code " << int(spellResult)
+                    << " not queuing retry due to retryServerRejectedSpells=false");
                 return;
             }
             gLastErrorTimeMs = currentTime;
@@ -162,22 +201,21 @@ namespace Nampower {
 
                         if (castParams->castType == CastType::NON_GCD ||
                             castParams->castType == CastType::TARGETING_NON_GCD) {
-
                             // see if we have a recent successful cast of this spell
                             auto successfulCastParams = gCastHistory.findNewestSuccessfulSpellId(spellId);
                             if (successfulCastParams && successfulCastParams->castStartTimeMs > currentTime - 1000) {
                                 // we found a recent successful cast of this spell, ignore the failure that was the result
                                 // of spamming the cast
                                 DEBUG_LOG("Cast failed for #" << lastCastId << " " << game::GetSpellName(spellId) << " "
-                                                              << " non gcd code " << int(spellResult)
-                                                              << ", but a recent cast succeeded, not retrying");
+                                    << " non gcd code " << int(spellResult)
+                                    << ", but a recent cast succeeded, not retrying");
                                 return;
                             }
 
                             DEBUG_LOG("Cast failed for #" << lastCastId << " " << game::GetSpellName(spellId) << " "
-                                                          << " non gcd code " << int(spellResult)
-                                                          << ", retry " << castParams->numRetries
-                                                          << " result " << castParams->castResult);
+                                << " non gcd code " << int(spellResult)
+                                << ", retry " << castParams->numRetries
+                                << " result " << castParams->castResult);
                             gCastData.delayEndMs = currentTime + gBufferTimeMs; // retry after buffer delay
                             TriggerSpellQueuedEvent(QueueEvents::NON_GCD_QUEUED, spellId);
                             gCastData.nonGcdSpellQueued = true;
@@ -186,13 +224,13 @@ namespace Nampower {
                             // if gcd is active, do nothing
                             if (gCastData.gcdEndMs > currentTime) {
                                 DEBUG_LOG("Cast failed for #" << lastCastId << " " << game::GetSpellName(spellId) << " "
-                                                              << " code " << int(spellResult)
-                                                              << ", gcd active not retrying");
+                                    << " code " << int(spellResult)
+                                    << ", gcd active not retrying");
                             } else {
                                 DEBUG_LOG("Cast failed for #" << lastCastId << " " << game::GetSpellName(spellId) << " "
-                                                              << " code " << int(spellResult)
-                                                              << ", retry " << castParams->numRetries
-                                                              << " result " << castParams->castResult);
+                                    << " code " << int(spellResult)
+                                    << ", retry " << castParams->numRetries
+                                    << " result " << castParams->castResult);
 
                                 TriggerSpellQueuedEvent(QueueEvents::NORMAL_QUEUED, spellId);
                                 gCastData.normalSpellQueued = true;
@@ -201,13 +239,13 @@ namespace Nampower {
                         }
                     } else {
                         DEBUG_LOG("Cast failed for #" << lastCastId << " " << game::GetSpellName(spellId) << " "
-                                                      << " code " << int(spellResult)
-                                                      << ", not retrying as it has already been retried 3 times");
+                            << " code " << int(spellResult)
+                            << ", not retrying as it has already been retried 3 times");
                     }
                 } else {
                     DEBUG_LOG("Cast failed for #" << lastCastId << " " << game::GetSpellName(spellId) << " "
-                                                  << " code " << int(spellResult)
-                                                  << ", no recent cast params found in history");
+                        << " code " << int(spellResult)
+                        << ", no recent cast params found in history");
                 }
 
 
@@ -223,10 +261,10 @@ namespace Nampower {
             }
         } else if (gCastData.normalSpellQueued) {
             DEBUG_LOG("Cast failed for " << game::GetSpellName(spellId)
-                                         << " spell queued + ignored code " << int(spellResult));
+                << " spell queued + ignored code " << int(spellResult));
         } else {
             DEBUG_LOG("Cast failed for " << game::GetSpellName(spellId)
-                                         << " ignored code " << int(spellResult));
+                << " ignored code " << int(spellResult));
         }
     }
 
@@ -248,10 +286,34 @@ namespace Nampower {
             packet->m_read = rpos;
 
             DEBUG_LOG("Spell cooldown opcode:" << opCode << " for " << game::GetSpellName(spellId) << " cooldown "
-                                               << cooldown);
+                << cooldown);
         }
 
         return spellCooldownHandler(opCode, packet);
+    }
+
+
+    void TriggerSpellDelayedEvent(uint64_t casterGuid,
+                                  uint32_t delayMs) {
+        static char format[] = "%s%d";
+
+        char *casterGuidStr = ConvertGuidToString(casterGuid);
+
+        auto event = game::SPELL_DELAYED_OTHER;
+        if (casterGuid == game::ClntObjMgrGetActivePlayerGuid()) {
+            event = game::SPELL_DELAYED_SELF;
+        }
+
+        ((int (__cdecl *)(int eventCode,
+                          char *fmt,
+                          char *casterGuidParam,
+                          uint32_t delayParam)) Offsets::SignalEventParam)(
+            event,
+            format,
+            casterGuidStr,
+            delayMs);
+
+        delete[] casterGuidStr;
     }
 
     void Spell_C_CooldownEventTriggeredHook(hadesmem::PatchDetourBase *detour,
@@ -260,7 +322,7 @@ namespace Nampower {
                                             int param_3,
                                             int clearCooldowns) {
         DEBUG_LOG("Cooldown event triggered for " << game::GetSpellName(spellId) << " " <<
-                                                  targetGUID << " " << param_3 << " " << clearCooldowns);
+            targetGUID << " " << param_3 << " " << clearCooldowns);
 
         auto const cooldownEventTriggered = detour->GetTrampolineT<Spell_C_CooldownEventTriggeredT>();
         cooldownEventTriggered(spellId, targetGUID, param_3, clearCooldowns);
@@ -279,6 +341,8 @@ namespace Nampower {
 
         packet->m_read = rpos;
 
+        TriggerSpellDelayedEvent(guid, delay);
+
         auto const activePlayer = game::ClntObjMgrGetActivePlayerGuid();
 
         if (guid == activePlayer) {
@@ -291,8 +355,8 @@ namespace Nampower {
                 auto lastCastParams = gCastHistory.peek();
                 if (lastCastParams != nullptr) {
                     DEBUG_LOG("Spell delayed by " << delay << " for cast #" << lastCastParams->castId << " "
-                                                  << game::GetSpellName(lastCastParams->spellId)
-                                                  << " cast end " << gCastData.castEndMs);
+                        << game::GetSpellName(lastCastParams->spellId)
+                        << " cast end " << gCastData.castEndMs);
                 }
             }
         }
@@ -373,19 +437,19 @@ namespace Nampower {
 
         if (gLastServerSpellDelayMs > 0) {
             DEBUG_LOG("Cast result for #" << matchingCastId << " "
-                                          << game::GetSpellName(spellId)
-                                          << "(" << spellId << ")"
-                                          << " status " << int(status)
-                                          << " result " << int(spellCastResult) << " latency " << currentLatency
-                                          << " server delay " << gLastServerSpellDelayMs
-                                          << " since last cast result " << currentTime - lastCastResultTimeMs);
+                << game::GetSpellName(spellId)
+                << "(" << spellId << ")"
+                << " status " << int(status)
+                << " result " << int(spellCastResult) << " latency " << currentLatency
+                << " server delay " << gLastServerSpellDelayMs
+                << " since last cast result " << currentTime - lastCastResultTimeMs);
         } else {
             DEBUG_LOG("Cast result for #" << matchingCastId << " "
-                                          << game::GetSpellName(spellId)
-                                          << "(" << spellId << ")"
-                                          << " status " << int(status)
-                                          << " result " << int(spellCastResult) << " latency " << currentLatency
-                                          << " since last cast result " << currentTime - lastCastResultTimeMs);
+                << game::GetSpellName(spellId)
+                << "(" << spellId << ")"
+                << " status " << int(status)
+                << " result " << int(spellCastResult) << " latency " << currentLatency
+                << " since last cast result " << currentTime - lastCastResultTimeMs);
         }
 
         lastCastResultTimeMs = currentTime;
@@ -408,7 +472,356 @@ namespace Nampower {
 
         DEBUG_LOG("Spell failed opcode:" << opCode << " for " << game::GetSpellName(spellId) << " guid " << guid);
 
+        TriggerSpellFailedOtherEvent(guid, spellId);
+
         return spellFailedHandler(opCode, packet);
+    }
+
+    bool doesSpellApplyAura(const game::SpellRec *spell) {
+        if (!spell) {
+            return false;
+        }
+
+        for (unsigned int i: spell->Effect) {
+            switch (i) {
+                case game::SPELL_EFFECT_APPLY_AURA:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_PARTY:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_RAID:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_FRIEND:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_ENEMY:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_PET:
+                    return true;
+                default:
+                    break;
+            }
+        }
+
+        return false;
+    }
+
+    void triggerAuraCastEventOnTarget(const game::SpellRec *spell,
+                                      int spellEffectIndex,
+                                      char *casterGuidStr,
+                                      char *targetGuidStr, // if provided use this instead of creating one
+                                      uint64_t targetGuid,
+                                      uint64_t activePlayerGuid,
+                                      uint32_t effectType,
+                                      uint32_t duration) {
+        static char format[] = "%d%s%s%d%d%d%d%d%d";
+
+        auto eventToTrigger = game::AURA_CAST_ON_OTHER;
+        if (targetGuid == activePlayerGuid) {
+            eventToTrigger = game::AURA_CAST_ON_SELF;
+        }
+
+        auto auraName = spell->EffectApplyAuraName[spellEffectIndex];
+        auto effectAmplitude = spell->EffectAmplitude[spellEffectIndex];
+        auto effectMiscValue = spell->EffectMiscValue[spellEffectIndex];
+
+        auto *targetUnit = game::ClntObjMgrObjectPtr(
+            static_cast<game::TypeMask>(game::TYPEMASK_PLAYER | game::TYPEMASK_UNIT), targetGuid);
+
+        bool targetIsBuffCapped = game::UnitIsBuffCapped(targetUnit);
+        bool targetIsDebuffCapped = game::UnitIsDebuffCapped(targetUnit);
+
+        bool createdGuidStr = false;
+        if (!targetGuidStr) {
+            if (targetGuid > 0) {
+                targetGuidStr = ConvertGuidToString(targetGuid);
+                createdGuidStr = true;
+            }
+        }
+
+        auto auraCapStatus = static_cast<uint32_t>(targetIsBuffCapped) |
+                             (static_cast<uint32_t>(targetIsDebuffCapped) << 1);
+
+        reinterpret_cast<int (__cdecl *)(int eventCode,
+                                         char *fmt,
+                                         uint32_t spellIdParam,
+                                         char *casterGuidStrParam,
+                                         char *targetGuidStrParam,
+                                         uint32_t effectParam,
+                                         uint32_t auraNameParam,
+                                         uint32_t effectAmplitudeParam,
+                                         uint32_t effectMiscValueParam,
+                                         uint32_t durationParam,
+                                         uint32_t auraCapStatusParam)>(Offsets::SignalEventParam)(
+            eventToTrigger,
+            format,
+            spell->Id,
+            casterGuidStr,
+            targetGuidStr,
+            effectType,
+            auraName,
+            effectAmplitude,
+            effectMiscValue,
+            duration,
+            auraCapStatus);
+
+        if (createdGuidStr) {
+            delete [] targetGuidStr;
+        }
+    }
+
+    void TriggerAuraCastEvent(const game::SpellRec *spell,
+                              uint64_t casterGuid,
+                              uint64_t targetGuids[MAX_ALLOWED_SPELL_TARGETS],
+                              uint8_t numTargets,
+                              uint64_t activePlayerGuid,
+                              bool castByActivePlayer) {
+        // ignore modifiers if not cast by active player
+        auto duration = game::GetSpellDuration(spell, !castByActivePlayer);
+        char *casterGuidStr = ConvertGuidToString(casterGuid);
+
+        for (int i = 0; i < 3; ++i) {
+            auto const effectType = spell->Effect[i];
+            switch (effectType) {
+                case game::SPELL_EFFECT_APPLY_AURA:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_PARTY:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_RAID:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_FRIEND:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_ENEMY:
+                case game::SPELL_EFFECT_APPLY_AREA_AURA_PET: {
+                    auto const implicitTargetA = spell->EffectImplicitTargetA[i];
+                    auto const implicitTargetB = spell->EffectImplicitTargetB[i];
+
+                    if (implicitTargetA == game::TARGET_UNIT_CASTER) {
+                        triggerAuraCastEventOnTarget(spell, i, casterGuidStr, casterGuidStr, casterGuid,
+                                                     activePlayerGuid,
+                                                     effectType, duration);
+                        break;
+                    }
+
+                    // handle no targets
+                    if (numTargets == 0 || implicitTargetA == game::TARGET_NONE) {
+                        triggerAuraCastEventOnTarget(spell, i, casterGuidStr, nullptr, 0, activePlayerGuid,
+                                                     effectType, duration);
+                    } else if ((implicitTargetA >= game::TARGET_UNIT_ENEMY_NEAR_CASTER && implicitTargetA <=
+                                game::TARGET_UNIT_ENEMY) ||
+                               (implicitTargetA >= game::TARGET_PLAYER_NYI && implicitTargetA <=
+                                game::TARGET_PLAYER_FRIEND_NYI) ||
+                               implicitTargetA == game::TARGET_UNIT_FRIEND ||
+                               implicitTargetA == game::TARGET_UNIT ||
+                               implicitTargetA == game::TARGET_UNIT_CASTER_MASTER) {
+                        // trigger on first target
+                        triggerAuraCastEventOnTarget(spell, i, casterGuidStr, nullptr, targetGuids[0], activePlayerGuid,
+                                                     effectType, duration);
+                    } else if (implicitTargetA == game::TARGET_ENUM_UNITS_ENEMY_AOE_AT_SRC_LOC ||
+                               implicitTargetA == game::TARGET_ENUM_UNITS_ENEMY_AOE_AT_DEST_LOC ||
+                               implicitTargetA == game::TARGET_ENUM_UNITS_ENEMY_IN_CONE_24 ||
+                               implicitTargetA == game::TARGET_ENUM_UNITS_ENEMY_AOE_AT_DYNOBJ_LOC ||
+                               implicitTargetA == game::TARGET_ENUM_UNITS_ENEMY_WITHIN_CASTER_RANGE ||
+                               implicitTargetA == game::TARGET_ENUM_UNITS_ENEMY_IN_CONE_54 ||
+                               implicitTargetB == game::TARGET_ENUM_UNITS_ENEMY_AOE_AT_SRC_LOC ||
+                               implicitTargetB == game::TARGET_ENUM_UNITS_ENEMY_AOE_AT_DEST_LOC ||
+                               implicitTargetB == game::TARGET_ENUM_UNITS_ENEMY_IN_CONE_24 ||
+                               implicitTargetB == game::TARGET_ENUM_UNITS_ENEMY_AOE_AT_DYNOBJ_LOC ||
+                               implicitTargetB == game::TARGET_ENUM_UNITS_ENEMY_WITHIN_CASTER_RANGE ||
+                               implicitTargetB == game::TARGET_ENUM_UNITS_ENEMY_IN_CONE_54) {
+                        // trigger on all targets except caster
+                        for (int t = 0; t < numTargets; ++t) {
+                            if (targetGuids[t] != casterGuid) {
+                                triggerAuraCastEventOnTarget(spell, i, casterGuidStr, nullptr, targetGuids[t],
+                                                             activePlayerGuid,
+                                                             effectType, duration);
+                            }
+                        }
+                    } else {
+                        // trigger on all targets (probably some exceptions but good enough for now)
+                        for (int t = 0; t < numTargets; ++t) {
+                            triggerAuraCastEventOnTarget(spell, i, casterGuidStr, nullptr, targetGuids[t],
+                                                         activePlayerGuid,
+                                                         effectType, duration);
+                        }
+                    }
+
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+
+        delete[] casterGuidStr;
+    }
+
+    void TriggerSpellStartEvent(uint32_t itemId,
+                                uint32_t spellId,
+                                uint64_t casterGuid,
+                                uint64_t targetGuid,
+                                uint16_t castFlags,
+                                uint32_t castTime) {
+        static char format[] = "%d%d%s%s%d%d";
+
+        char *casterGuidStr = ConvertGuidToString(casterGuid);
+        char *targetGuidStr = ConvertGuidToString(targetGuid);
+
+        auto event = game::SPELL_START_OTHER;
+        if (casterGuid == game::ClntObjMgrGetActivePlayerGuid()) {
+            event = game::SPELL_START_SELF;
+        }
+
+        ((int (__cdecl *)(int eventCode,
+                          char *fmt,
+                          uint32_t itemIdParam,
+                          uint32_t spellIdParam,
+                          char *casterGuidParam,
+                          char *targetGuidParam,
+                          uint32_t castFlagsParam,
+                          uint32_t castTimeParam)) Offsets::SignalEventParam)(
+            event,
+            format,
+            itemId,
+            spellId,
+            casterGuidStr,
+            targetGuidStr,
+            castFlags,
+            castTime);
+
+        delete[] casterGuidStr;
+        delete[] targetGuidStr;
+    }
+
+    void TriggerSpellGoEvent(uint32_t itemId,
+                             uint32_t spellId,
+                             const uint64_t *casterGuid,
+                             uint64_t targetGuid,
+                             uint16_t castFlags,
+                             uint8_t numTargetsHit,
+                             uint8_t numTargetsMissed) {
+        static char format[] = "%d%d%s%s%d%d%d";
+
+        uint64_t casterGuidValue = casterGuid ? *casterGuid : 0;
+        char *casterGuidStr = ConvertGuidToString(casterGuidValue);
+        char *targetGuidStr = ConvertGuidToString(targetGuid);
+
+        auto event = game::SPELL_GO_OTHER;
+        if (casterGuidValue == game::ClntObjMgrGetActivePlayerGuid()) {
+            event = game::SPELL_GO_SELF;
+        }
+
+        ((int (__cdecl *)(int eventCode,
+                          char *fmt,
+                          uint32_t itemIdParam,
+                          uint32_t spellIdParam,
+                          char *casterGuidParam,
+                          char *targetGuidParam,
+                          uint32_t castFlagsParam,
+                          uint32_t numTargetsHitParam,
+                          uint32_t numTargetsMissedParam)) Offsets::SignalEventParam)(
+            event,
+            format,
+            itemId,
+            spellId,
+            casterGuidStr,
+            targetGuidStr,
+            castFlags,
+            numTargetsHit,
+            numTargetsMissed);
+
+        delete[] casterGuidStr;
+        delete[] targetGuidStr;
+    }
+
+    void SpellGoHook(hadesmem::PatchDetourBase *detour, uint64_t *itemGUID, uint64_t *casterGUID,
+                     uint32_t spellId, CDataStore *packet) {
+        auto const rpos = packet->m_read;
+
+        int16_t castFlags;
+        packet->Get(castFlags);
+
+        uint8_t numTargetsHit;
+        packet->Get(numTargetsHit);
+
+        static uint64_t targetHitGuids[MAX_ALLOWED_SPELL_TARGETS]; // don't allocate new array each time
+        // each target corresponds to a spell effect, should never have more than 3
+        for (int i = 0; i < numTargetsHit && i < MAX_ALLOWED_SPELL_TARGETS; ++i) {
+            targetHitGuids[i] = 0;
+            packet->Get(targetHitGuids[i]);
+        }
+
+        uint8_t numTargetsMissed;
+        packet->Get(numTargetsMissed);
+        for (int i = 0; i < numTargetsMissed; ++i) {
+            uint64_t missedTargetGuid;
+            packet->Get(missedTargetGuid); // not worth storing missed targets
+
+            uint8_t missCondition;
+            packet->Get(missCondition);
+            // Reflect entries include an extra result byte in SpellGoTargets.
+            if (missCondition == game::SPELL_MISS_REFLECT) {
+                uint8_t reflectResult;
+                packet->Get(reflectResult);
+            }
+        }
+
+        int16_t spellCastTargetMask;
+        packet->Get(spellCastTargetMask);
+
+        uint64_t unitTargetGUID = 0;
+        if (spellCastTargetMask & (game::TARGET_FLAG_UNIT | game::TARGET_FLAG_UNK2))
+            packet->GetPackedGuid(unitTargetGUID);
+
+        uint32_t itemId = 0;
+        uint64_t casterGuidValue = casterGUID ? *casterGUID : 0;
+        if (itemGUID && *itemGUID != 0 && *itemGUID != casterGuidValue) {
+            auto *item = reinterpret_cast<game::CGItem_C *>(game::ClntObjMgrObjectPtr(
+                game::TYPEMASK_ITEM, *itemGUID));
+            if (item) {
+                itemId = game::GetItemId(item);
+            }
+        }
+
+        if (gUserSettings.enableSpellGoEvents) {
+            TriggerSpellGoEvent(itemId, spellId, casterGUID, unitTargetGUID, castFlags,
+                                numTargetsHit, numTargetsMissed);
+        }
+
+        // reset read pointer
+        packet->m_read = rpos;
+
+        auto const spellGo = detour->GetTrampolineT<SpellGoT>();
+        // if this wasn't triggered by an item, itemGUID will just be the casterGUID duplicated
+        spellGo(itemGUID, casterGUID, spellId, packet);
+
+        auto const activePlayerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto const castByActivePlayer = activePlayerGuid == casterGuidValue;
+        auto const spell = game::GetSpellInfo(spellId);
+
+        if (!spell || spell->Id <= 0) {
+            DEBUG_LOG("Unable to determine spell information in SpellGo for " << spellId);
+            return;
+        }
+
+        if (castByActivePlayer) {
+            auto const currentTime = GetTime();
+            // only care about our own casts
+            if (!gCastData.channeling) {
+                // check if spell is on swing
+                if (spell->Attributes & game::SPELL_ATTR_ON_NEXT_SWING_1) {
+                    gLastCastData.onSwingStartTimeMs = currentTime;
+
+                    gCastData.pendingOnSwingCast = false;
+
+                    if (gCastData.onSwingQueued) {
+                        DEBUG_LOG("On swing spell " << game::GetSpellName(spellId) <<
+                            " resolved, casting queued on swing spell "
+                            << game::GetSpellName(gLastOnSwingCastParams.spellId));
+
+                        TriggerSpellQueuedEvent(ON_SWING_QUEUE_POPPED, gLastOnSwingCastParams.spellId);
+                        Spell_C_CastSpellHook(castSpellDetour, gLastOnSwingCastParams.casterUnit,
+                                              gLastOnSwingCastParams.spellId,
+                                              gLastOnSwingCastParams.item, gLastOnSwingCastParams.guid);
+                        gCastData.onSwingQueued = false;
+                    }
+                }
+            }
+        }
+
+        if (gUserSettings.enableAuraCastEvents && doesSpellApplyAura(spell)) {
+            TriggerAuraCastEvent(spell, *casterGUID, targetHitGuids, numTargetsHit, activePlayerGuid,
+                                 castByActivePlayer);
+        }
     }
 
     int SpellStartHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t unk, uint32_t opCode, uint32_t unk2,
@@ -427,16 +840,36 @@ namespace Nampower {
             uint64_t casterGuid;
             packet->GetPackedGuid(casterGuid);
 
+            uint32_t spellId;
+            packet->Get(spellId);
+
+            uint16_t castFlags;
+            packet->Get(castFlags);
+
+            uint32_t castTime;
+            packet->Get(castTime);
+
+            int16_t spellCastTargetMask;
+            packet->Get(spellCastTargetMask);
+
+            uint64_t unitTargetGUID = 0;
+            if (spellCastTargetMask & (game::TARGET_FLAG_UNIT | game::TARGET_FLAG_UNK2))
+                packet->GetPackedGuid(unitTargetGUID);
+
+            uint32_t itemId = 0;
+            if (itemGuid != 0 && itemGuid != casterGuid) {
+                auto *item = reinterpret_cast<game::CGItem_C *>(game::ClntObjMgrObjectPtr(
+                    game::TYPEMASK_ITEM, itemGuid));
+                if (item) {
+                    itemId = game::GetItemId(item);
+                }
+            }
+
+            if (gUserSettings.enableSpellStartEvents) {
+                TriggerSpellStartEvent(itemId, spellId, casterGuid, unitTargetGUID, castFlags, castTime);
+            }
+
             if (casterGuid == game::ClntObjMgrGetActivePlayerGuid()) {
-                uint32_t spellId;
-                packet->Get(spellId);
-
-                uint16_t castFlags;
-                packet->Get(castFlags);
-
-                uint32_t castTime;
-                packet->Get(castTime);
-
                 bool isAutoRepeat = false;
 
                 auto spellInfo = game::GetSpellInfo(spellId);
@@ -460,8 +893,8 @@ namespace Nampower {
 
                             castParams->castTimeMs = castTime;
                             DEBUG_LOG("Server cast time for " << game::GetSpellName(spellId) << " increased by "
-                                                              << castTimeDifference << "ms.  Updated cast end time to "
-                                                              << gCastData.castEndMs);
+                                << castTimeDifference << "ms.  Updated cast end time to "
+                                << gCastData.castEndMs);
                         }
                     } else if (!isAutoRepeat && castParams->castTimeMs > castTime) {
                         // server cast time decreased
@@ -470,23 +903,23 @@ namespace Nampower {
                         if (castTimeDifference > 5) {
                             auto gcdTime = GetGcdOrCooldownForSpell(spellId);
                             if (gcdTime > 1500) {
-                                gcdTime = 1500; // items with spells on gcd will return their item gcd, make sure not to use that
+                                gcdTime = 1500;
+                                // items with spells on gcd will return their item gcd, make sure not to use that
                             }
 
                             if (gcdTime > castTime) {
                                 DEBUG_LOG("Server cast time " << castTime << " was reduced below gcd of " << gcdTime
-                                                              << " using gcd instead");
+                                    << " using gcd instead");
                                 castTime = gcdTime;
                                 gCastData.castEndMs = castParams->castStartTimeMs + gcdTime;
                             } else {
                                 gCastData.castEndMs = castParams->castStartTimeMs + castTime + gBufferTimeMs;
-
                             }
 
                             castParams->castTimeMs = castTime;
                             DEBUG_LOG("Server cast time for " << game::GetSpellName(spellId) << " decreased by "
-                                                              << castTimeDifference << "ms.  Updated cast end time to "
-                                                              << gCastData.castEndMs);
+                                << castTimeDifference << "ms.  Updated cast end time to "
+                                << gCastData.castEndMs);
                         }
                     }
 
@@ -535,7 +968,7 @@ namespace Nampower {
                             int32_t resist,
                             uint32_t auraType,
                             uint32_t hitInfo) {
-        char format[] = "%s%s%d%d%s%d%d%s";
+        static char format[] = "%s%s%d%d%s%d%d%s";
 
         char *targetGuidStr = ConvertGuidToString(targetGuid);
 
@@ -575,16 +1008,16 @@ namespace Nampower {
                           uint32_t hitInfo,
                           uint32_t spellSchool,
                           const char *effectAuraStr)) Offsets::SignalEventParam)(
-                event,
-                format,
-                targetGuidStr,
-                casterGuidStr,
-                spellId,
-                amount,
-                mitigationStream.str().c_str(),
-                hitInfo,
-                spellSchool,
-                effectsAuraTypeStream.str().c_str());
+            event,
+            format,
+            targetGuidStr,
+            casterGuidStr,
+            spellId,
+            amount,
+            mitigationStream.str().c_str(),
+            hitInfo,
+            spellSchool,
+            effectsAuraTypeStream.str().c_str());
 
         delete[] targetGuidStr;
         delete[] casterGuidStr;
@@ -615,7 +1048,7 @@ namespace Nampower {
         switch (auraType) {
             case 3: // SPELL_AURA_PERIODIC_DAMAGE
             case 89: // SPELL_AURA_PERIODIC_DAMAGE_PERCENT
-                packet->Get(amount);  // damage amount
+                packet->Get(amount); // damage amount
 
                 uint32_t spellSchool;
                 packet->Get(spellSchool);
@@ -632,7 +1065,7 @@ namespace Nampower {
                 break;
             case 8: // SPELL_AURA_PERIODIC_HEAL
             case 20: // SPELL_AURA_OBS_MOD_HEALTH
-                packet->Get(amount);  // heal amount
+                packet->Get(amount); // heal amount
 
                 // No custom event for these for now
                 break;
@@ -640,16 +1073,16 @@ namespace Nampower {
             case 24: // SPELL_AURA_PERIODIC_ENERGIZE
                 packet->Get(powerType);
 
-                packet->Get(amount);  // power type amount
+                packet->Get(amount); // power type amount
 
                 // No custom event for these for now
                 break;
             case 64: // SPELL_AURA_PERIODIC_MANA_LEECH
                 packet->Get(powerType);
-                packet->Get(amount);  // power type amount
+                packet->Get(amount); // power type amount
 
                 uint32_t multiplier;
-                packet->Get(multiplier);  // gain multiplier
+                packet->Get(multiplier); // gain multiplier
 
                 // No custom event for these for now
                 break;
@@ -726,7 +1159,7 @@ namespace Nampower {
 
         DEBUG_LOG("Play spell visual id " << spellVisualKitIndex << " for guid " << targetGuid);
 
-//        return playSpellVisualHandler(opCode, packet);
+        //        return playSpellVisualHandler(opCode, packet);
 
         return 1;
     }

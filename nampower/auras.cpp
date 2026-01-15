@@ -71,7 +71,7 @@ namespace Nampower {
             }
         }
 
-        char format[] = "%s%d%d%d%d";
+        static char format[] = "%s%d%d%d%d";
         char *guidStr = new char[21]; // 2 for 0x prefix, 18 for the number, and 1 for '\0'
         if (isSelf) {
             std::snprintf(guidStr, 21, "0x%016llX", static_cast<unsigned long long>(playerGuid));
@@ -134,7 +134,7 @@ namespace Nampower {
         unitCombatLogUnitDead(guid);
 
         // Trigger UNIT_DIED event
-        char format[] = "%s";
+        static char format[] = "%s";
         char *guidStr = new char[21]; // 2 for 0x prefix, 18 for the number, and 1 for '\0'
         std::snprintf(guidStr, 21, "0x%016llX", static_cast<unsigned long long>(guid));
 
