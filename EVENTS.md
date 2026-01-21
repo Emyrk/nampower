@@ -16,6 +16,8 @@ For custom Lua functions, see [SCRIPTS.md](SCRIPTS.md). For general usage inform
 - [Buff/Debuff Events](#buffdebuff-events)
 - [AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER](#aura_cast_on_self-and-aura_cast_on_other)
 - [AUTO_ATTACK_SELF and AUTO_ATTACK_OTHER](#auto_attack_self-and-auto_attack_other)
+- [SPELL_HEAL_BY_SELF, SPELL_HEAL_BY_OTHER, and SPELL_HEAL_ON_SELF](#spell_heal_by_self-spell_heal_by_other-and-spell_heal_on_self)
+- [SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_OTHER, and SPELL_ENERGIZE_ON_SELF](#spell_energize_by_self-spell_energize_by_other-and-spell_energize_on_self)
 - [UNIT_DIED](#unit_died)
 
 ---
@@ -150,7 +152,9 @@ Parameters for `SPELL_FAILED_OTHER`:
 2.  int spellId
 
 ### SPELL_DELAYED_SELF and SPELL_DELAYED_OTHER
-Fire when a spell is delayed, generally due to taking damage. "Self" fires when the active player is affected, "Other" for other players.
+Fire when a spell is delayed, generally due to taking damage. "Self" fires when the active player is affected, "Other" fires for other players.
+
+**Note:** `SPELL_DELAYED_OTHER` currently does not work because the server only sends the spell delayed packet to the affected player. This means you will only ever receive `SPELL_DELAYED_SELF` events for your own spell pushbacks. Leaving `SPELL_DELAYED_OTHER` in case this changes in the future.
 
 Parameters:
 1.  string casterGuid - caster guid like "0xF5300000000000A5"
@@ -353,6 +357,96 @@ end
 
 frame:RegisterEvent("AUTO_ATTACK_SELF", onAutoAttack)
 frame:RegisterEvent("AUTO_ATTACK_OTHER", onAutoAttack)
+```
+
+### SPELL_HEAL_BY_SELF, SPELL_HEAL_BY_OTHER, and SPELL_HEAL_ON_SELF
+Fire when a spell healing log is received from the server. These events let you track heals in real-time.
+
+- `SPELL_HEAL_BY_SELF` - Fires when the active player is the caster (you healed someone)
+- `SPELL_HEAL_BY_OTHER` - Fires when someone other than the active player is the caster (someone else healed someone)
+- `SPELL_HEAL_ON_SELF` - Fires when the active player is the target (you received a heal)
+
+Note that `SPELL_HEAL_BY_SELF` and `SPELL_HEAL_ON_SELF` can both fire for the same heal if you heal yourself.
+
+These events are gated behind the `NP_EnableSpellHealEvents` CVar (default 0). Set it to `1` to enable.
+
+Parameters (same for all three events):
+1.  string targetGuid - guid of the heal target like "0xF5300000000000A5"
+2.  string casterGuid - guid of the healer like "0xF5300000000000A5"
+3.  int spellId - the spell ID that caused the heal
+4.  int amount - the amount healed
+5.  int critical - 1 if the heal was a critical, 0 otherwise
+6.  int periodic - 1 if the heal came from a periodic aura, 0 otherwise
+
+Example:
+```lua
+local function onHeal(targetGuid, casterGuid, spellId, amount, critical, periodic)
+    local critText = critical == 1 and " (CRIT)" or ""
+    local periodicText = periodic == 1 and " (PERIODIC)" or ""
+    local spellName = GetSpellInfo(spellId) or "Unknown"
+    DEFAULT_CHAT_FRAME:AddMessage(string.format(
+        "%s healed %s for %d with %s%s%s",
+        casterGuid, targetGuid, amount, spellName, critText, periodicText
+    ))
+end
+
+frame:RegisterEvent("SPELL_HEAL_BY_SELF", onHeal)    -- Heals you cast
+frame:RegisterEvent("SPELL_HEAL_BY_OTHER", onHeal)  -- Heals others cast
+frame:RegisterEvent("SPELL_HEAL_ON_SELF", onHeal)   -- Heals you receive
+```
+
+### SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_OTHER, and SPELL_ENERGIZE_ON_SELF
+Fire when a spell energize log is received from the server (power restoration like mana, rage, energy gains).
+
+- `SPELL_ENERGIZE_BY_SELF` - Fires when the active player is the caster (you restored power to someone)
+- `SPELL_ENERGIZE_BY_OTHER` - Fires when someone other than the active player is the caster (someone else restored power)
+- `SPELL_ENERGIZE_ON_SELF` - Fires when the active player is the target (you received power)
+
+Note that `SPELL_ENERGIZE_BY_SELF` and `SPELL_ENERGIZE_ON_SELF` can both fire for the same energize if you restore power to yourself.
+
+These events are gated behind the `NP_EnableSpellEnergizeEvents` CVar (default 0). Set it to `1` to enable.
+
+Parameters (same for all three events):
+1.  string targetGuid - guid of the power recipient like "0xF5300000000000A5"
+2.  string casterGuid - guid of the caster like "0xF5300000000000A5"
+3.  int spellId - the spell ID that caused the energize
+4.  int powerType - the type of power restored (see below)
+5.  int amount - the amount of power restored
+6.  int periodic - 1 if the energize came from a periodic aura, 0 otherwise
+
+#### Power Types
+```
+POWER_MANA      = 0  -- Mana
+POWER_RAGE      = 1  -- Rage
+POWER_FOCUS     = 2  -- Focus (hunter pets)
+POWER_ENERGY    = 3  -- Energy
+POWER_HAPPINESS = 4  -- Happiness (hunter pets)
+POWER_HEALTH    = -2 -- Health (0xFFFFFFFE as unsigned)
+```
+
+Example:
+```lua
+local POWER_NAMES = {
+    [0] = "Mana",
+    [1] = "Rage",
+    [2] = "Focus",
+    [3] = "Energy",
+    [4] = "Happiness",
+}
+
+local function onEnergize(targetGuid, casterGuid, spellId, powerType, amount, periodic)
+    local powerName = POWER_NAMES[powerType] or "Unknown"
+    local spellName = GetSpellInfo(spellId) or "Unknown"
+    local periodicText = periodic == 1 and " (PERIODIC)" or ""
+    DEFAULT_CHAT_FRAME:AddMessage(string.format(
+        "%s restored %d %s to %s with %s%s",
+        casterGuid, amount, powerName, targetGuid, spellName, periodicText
+    ))
+end
+
+frame:RegisterEvent("SPELL_ENERGIZE_BY_SELF", onEnergize)    -- Power you restore
+frame:RegisterEvent("SPELL_ENERGIZE_BY_OTHER", onEnergize)  -- Power others restore
+frame:RegisterEvent("SPELL_ENERGIZE_ON_SELF", onEnergize)   -- Power you receive
 ```
 
 ### UNIT_DIED

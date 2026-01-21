@@ -131,6 +131,8 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellChannelStartHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellChannelUpdateHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gPlaySpellVisualHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellHealingLogHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellEnergizeLogHandlerDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT> > gSpellStartHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT> > gPeriodicAuraLogHandlerDetour;
@@ -683,6 +685,12 @@ namespace Nampower {
         } else if (strcmp(cvar, "NP_EnableSpellGoEvents") == 0) {
             gUserSettings.enableSpellGoEvents = atoi(value) != 0;
             DEBUG_LOG("Set NP_EnableSpellGoEvents to " << gUserSettings.enableSpellGoEvents);
+        } else if (strcmp(cvar, "NP_EnableSpellHealEvents") == 0) {
+            gUserSettings.enableSpellHealEvents = atoi(value) != 0;
+            DEBUG_LOG("Set NP_EnableSpellHealEvents to " << gUserSettings.enableSpellHealEvents);
+        } else if (strcmp(cvar, "NP_EnableSpellEnergizeEvents") == 0) {
+            gUserSettings.enableSpellEnergizeEvents = atoi(value) != 0;
+            DEBUG_LOG("Set NP_EnableSpellEnergizeEvents to " << gUserSettings.enableSpellEnergizeEvents);
         } else if (strcmp(cvar, "NP_PreventMountingWhenBuffCapped") == 0) {
             gUserSettings.preventMountingWhenBuffCapped = atoi(value) != 0;
             DEBUG_LOG("Set NP_PreventMountingWhenBuffCapped to " << gUserSettings.preventMountingWhenBuffCapped);
@@ -775,10 +783,23 @@ namespace Nampower {
     }
 
     bool safeRemove(const char *filename) {
-        if (isFileInUse(filename)) {
-            return false;
+        // If file doesn't exist, consider it successfully removed
+        if (GetFileAttributesA(filename) == INVALID_FILE_ATTRIBUTES) {
+            return true;
         }
-        return remove(filename) == 0;
+
+        // Clear read-only attribute if set
+        SetFileAttributesA(filename, FILE_ATTRIBUTE_NORMAL);
+
+        // Try to delete with retries
+        for (int i = 0; i < 3; i++) {
+            if (DeleteFileA(filename)) {
+                return true;
+            }
+            Sleep(10);
+        }
+
+        return false;
     }
 
     bool safeRename(const char *oldname, const char *newname) {
@@ -1027,6 +1048,26 @@ namespace Nampower {
                      0, // unk2
                      0); // unk3
 
+        char NP_EnableSpellHealEvents[] = "NP_EnableSpellHealEvents";
+        CVarRegister(NP_EnableSpellHealEvents, // name
+                     nullptr, // help
+                     0, // unk1
+                     gUserSettings.enableSpellHealEvents ? defaultTrue : defaultFalse, // default value address
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
+        char NP_EnableSpellEnergizeEvents[] = "NP_EnableSpellEnergizeEvents";
+        CVarRegister(NP_EnableSpellEnergizeEvents, // name
+                     nullptr, // help
+                     0, // unk1
+                     gUserSettings.enableSpellEnergizeEvents ? defaultTrue : defaultFalse, // default value address
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
         char NP_PreventMountingWhenBuffCapped[] = "NP_PreventMountingWhenBuffCapped";
         CVarRegister(NP_PreventMountingWhenBuffCapped, // name
                      nullptr, // help
@@ -1166,6 +1207,8 @@ namespace Nampower {
         loadUserVar("NP_EnableAutoAttackEvents");
         loadUserVar("NP_EnableSpellStartEvents");
         loadUserVar("NP_EnableSpellGoEvents");
+        loadUserVar("NP_EnableSpellHealEvents");
+        loadUserVar("NP_EnableSpellEnergizeEvents");
         loadUserVar("NP_PreventMountingWhenBuffCapped");
 
         loadUserVar("NP_MinBufferTimeMs");
@@ -1302,6 +1345,10 @@ namespace Nampower {
                                                                      &SpellChannelStartHandlerHook);
         gSpellChannelUpdateHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellChannelUpdateHandler,
                                                                       &SpellChannelUpdateHandlerHook);
+        gSpellHealingLogHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellHealingLogHandler,
+                                                                   &SpellHealingLogHandlerHook);
+        gSpellEnergizeLogHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellEnergizeLogHandler,
+                                                                    &SpellEnergizeLogHandlerHook);
         gSpellFailedDetour = createHook<Spell_C_SpellFailedT>(process, Offsets::Spell_C_SpellFailed,
                                                               &Spell_C_SpellFailedHook);
         gSpellGoDetour = createHook<SpellGoT>(process, Offsets::SpellGo, &SpellGoHook);
@@ -1446,6 +1493,24 @@ namespace Nampower {
 
         char SPELL_CHANNEL_UPDATE[] = "SPELL_CHANNEL_UPDATE";
         addCustomEvent(game::SPELL_CHANNEL_UPDATE, SPELL_CHANNEL_UPDATE);
+
+        char SPELL_HEAL_BY_SELF[] = "SPELL_HEAL_BY_SELF";
+        addCustomEvent(game::SPELL_HEAL_BY_SELF, SPELL_HEAL_BY_SELF);
+
+        char SPELL_HEAL_BY_OTHER[] = "SPELL_HEAL_BY_OTHER";
+        addCustomEvent(game::SPELL_HEAL_BY_OTHER, SPELL_HEAL_BY_OTHER);
+
+        char SPELL_HEAL_ON_SELF[] = "SPELL_HEAL_ON_SELF";
+        addCustomEvent(game::SPELL_HEAL_ON_SELF, SPELL_HEAL_ON_SELF);
+
+        char SPELL_ENERGIZE_BY_SELF[] = "SPELL_ENERGIZE_BY_SELF";
+        addCustomEvent(game::SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_SELF);
+
+        char SPELL_ENERGIZE_BY_OTHER[] = "SPELL_ENERGIZE_BY_OTHER";
+        addCustomEvent(game::SPELL_ENERGIZE_BY_OTHER, SPELL_ENERGIZE_BY_OTHER);
+
+        char SPELL_ENERGIZE_ON_SELF[] = "SPELL_ENERGIZE_ON_SELF";
+        addCustomEvent(game::SPELL_ENERGIZE_ON_SELF, SPELL_ENERGIZE_ON_SELF);
     }
 
     void FrameScript_CreateEventsHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t maxEventId) {

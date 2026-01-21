@@ -103,6 +103,10 @@ SET NP_TargetingQueueWindowMs "1000"
 
 - `NP_EnableSpellGoEvents` - Whether to enable SPELL_GO_SELF and SPELL_GO_OTHER events. 0 to disable, 1 to enable. Default is 0.
 
+- `NP_EnableSpellHealEvents` - Whether to enable SPELL_HEAL_BY_SELF, SPELL_HEAL_BY_OTHER, and SPELL_HEAL_ON_SELF events. 0 to disable, 1 to enable. Default is 0.
+
+- `NP_EnableSpellEnergizeEvents` - Whether to enable SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_OTHER, and SPELL_ENERGIZE_ON_SELF events. 0 to disable, 1 to enable. Default is 0.
+
 - `NP_ChannelLatencyReductionPercentage` - The percentage of your latency to subtract from the end of a channel duration to optimize cast time while hopefully not losing any ticks (more explanation below). Default is 75.
 
 - `NP_NameplateDistance` - The distance in yards to display nameplates.  Defaults to whatever was set by the game or vanilla tweaks.
@@ -156,6 +160,8 @@ Available events:
 - Buff/Debuff Events (BUFF_ADDED_SELF, BUFF_REMOVED_SELF, etc.)
 - AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER - Aura application events (fires once per aura effect per target; "Self" fires when the aura lands on the active player, including self-cast with no explicit target; includes aura metadata + amplitude/misc + aura cap bitfield for buff/debuff slots). Handles single-target and multi-target (AOE) spells. Some auras don't have spell effects and won't trigger this; use BUFF/DEBUFF gains for those. Set `NP_EnableAuraCastEvents=1` to enable. See EVENTS.md for details on multi-target behavior and known limitations.
 - AUTO_ATTACK_SELF and AUTO_ATTACK_OTHER - Auto attack round events (fires when auto attack hits are processed; includes damage, hit info, victim state, absorb/resist/block amounts). Set `NP_EnableAutoAttackEvents=1` to enable. See EVENTS.md for details.
+- SPELL_HEAL_BY_SELF, SPELL_HEAL_BY_OTHER, and SPELL_HEAL_ON_SELF - Spell healing events (fires when spell heals are processed; includes target, caster, spell ID, amount, critical flag, and periodic flag). Set `NP_EnableSpellHealEvents=1` to enable. See EVENTS.md for details.
+- SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_OTHER, and SPELL_ENERGIZE_ON_SELF - Spell energize events (fires when power is restored via spells; includes target, caster, spell ID, power type, amount, and periodic flag). Set `NP_EnableSpellEnergizeEvents=1` to enable. See EVENTS.md for details.
 - UNIT_DIED - Fires when a unit dies
 
 ## Bug Reporting

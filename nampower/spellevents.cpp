@@ -13,6 +13,7 @@ namespace Nampower {
     uint32_t lastCastResultTimeMs;
     constexpr int MAX_ALLOWED_SPELL_TARGETS = 100;
 
+
     void SignalEventHook(hadesmem::PatchDetourBase *detour, game::Events eventId) {
         auto const signalEvent = detour->GetTrampolineT<SignalEventT>();
         signalEvent(eventId);
@@ -77,6 +78,128 @@ namespace Nampower {
             casterGuidStr,
             spellId);
 
+        delete[] casterGuidStr;
+    }
+
+
+    void TriggerSpellHealEvent(uint64_t targetGuid,
+                               uint64_t casterGuid,
+                               uint32_t spellId,
+                               uint32_t amount,
+                               uint8_t critical,
+                               uint8_t periodic) {
+        static char format[] = "%s%s%d%d%d%d";
+
+        char *targetGuidStr = ConvertGuidToString(targetGuid);
+        char *casterGuidStr = ConvertGuidToString(casterGuid);
+
+        auto const activePlayerGuid = game::ClntObjMgrGetActivePlayerGuid();
+
+        // SPELL_HEAL_BY_SELF/SPELL_HEAL_BY_OTHER based on caster
+        auto casterEvent = game::SPELL_HEAL_BY_OTHER;
+        if (casterGuid == activePlayerGuid) {
+            casterEvent = game::SPELL_HEAL_BY_SELF;
+        }
+
+        ((int (__cdecl *)(int eventCode,
+                          char *format,
+                          char *targetGuid,
+                          char *casterGuid,
+                          uint32_t spellId,
+                          uint32_t amount,
+                          uint32_t critical,
+                          uint32_t periodic)) Offsets::SignalEventParam)(
+            casterEvent,
+            format,
+            targetGuidStr,
+            casterGuidStr,
+            spellId,
+            amount,
+            critical,
+            periodic);
+
+        // SPELL_HEAL_ON_SELF based on target
+        if (targetGuid == activePlayerGuid) {
+            ((int (__cdecl *)(int eventCode,
+                              char *format,
+                              char *targetGuid,
+                              char *casterGuid,
+                              uint32_t spellId,
+                              uint32_t amount,
+                              uint32_t critical,
+                              uint32_t periodic)) Offsets::SignalEventParam)(
+                game::SPELL_HEAL_ON_SELF,
+                format,
+                targetGuidStr,
+                casterGuidStr,
+                spellId,
+                amount,
+                critical,
+                periodic);
+        }
+
+        delete[] targetGuidStr;
+        delete[] casterGuidStr;
+    }
+
+
+    void TriggerSpellEnergizeEvent(uint64_t targetGuid,
+                                   uint64_t casterGuid,
+                                   uint32_t spellId,
+                                   uint32_t powerType,
+                                   uint32_t amount,
+                                   uint8_t periodic) {
+        static char format[] = "%s%s%d%d%d%d";
+
+        char *targetGuidStr = ConvertGuidToString(targetGuid);
+        char *casterGuidStr = ConvertGuidToString(casterGuid);
+
+        auto const activePlayerGuid = game::ClntObjMgrGetActivePlayerGuid();
+
+        // SPELL_ENERGIZE_BY_SELF/SPELL_ENERGIZE_BY_OTHER based on caster
+        auto casterEvent = game::SPELL_ENERGIZE_BY_OTHER;
+        if (casterGuid == activePlayerGuid) {
+            casterEvent = game::SPELL_ENERGIZE_BY_SELF;
+        }
+
+        ((int (__cdecl *)(int eventCode,
+                          char *format,
+                          char *targetGuid,
+                          char *casterGuid,
+                          uint32_t spellId,
+                          uint32_t powerType,
+                          uint32_t amount,
+                          uint32_t periodic)) Offsets::SignalEventParam)(
+            casterEvent,
+            format,
+            targetGuidStr,
+            casterGuidStr,
+            spellId,
+            powerType,
+            amount,
+            periodic);
+
+        // SPELL_ENERGIZE_ON_SELF based on target
+        if (targetGuid == activePlayerGuid) {
+            ((int (__cdecl *)(int eventCode,
+                              char *format,
+                              char *targetGuid,
+                              char *casterGuid,
+                              uint32_t spellId,
+                              uint32_t powerType,
+                              uint32_t amount,
+                              uint32_t periodic)) Offsets::SignalEventParam)(
+                game::SPELL_ENERGIZE_ON_SELF,
+                format,
+                targetGuidStr,
+                casterGuidStr,
+                spellId,
+                powerType,
+                amount,
+                periodic);
+        }
+
+        delete[] targetGuidStr;
         delete[] casterGuidStr;
     }
 
@@ -1067,7 +1190,9 @@ namespace Nampower {
             case 20: // SPELL_AURA_OBS_MOD_HEALTH
                 packet->Get(amount); // heal amount
 
-                // No custom event for these for now
+                if (gUserSettings.enableSpellHealEvents) {
+                    TriggerSpellHealEvent(targetGuid, casterGuid, spellId, amount, 0, 1);
+                }
                 break;
             case 21: // SPELL_AURA_OBS_MOD_MANA
             case 24: // SPELL_AURA_PERIODIC_ENERGIZE
@@ -1075,7 +1200,9 @@ namespace Nampower {
 
                 packet->Get(amount); // power type amount
 
-                // No custom event for these for now
+                if (gUserSettings.enableSpellEnergizeEvents) {
+                    TriggerSpellEnergizeEvent(targetGuid, casterGuid, spellId, powerType, amount, 1);
+                }
                 break;
             case 64: // SPELL_AURA_PERIODIC_MANA_LEECH
                 packet->Get(powerType);
@@ -1162,5 +1289,63 @@ namespace Nampower {
         //        return playSpellVisualHandler(opCode, packet);
 
         return 1;
+    }
+
+    int SpellHealingLogHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet) {
+        auto const spellHealingLogHandler = detour->GetTrampolineT<PacketHandlerT>();
+
+        auto const rpos = packet->m_read;
+
+        uint64_t targetGuid;
+        packet->GetPackedGuid(targetGuid);
+
+        uint64_t casterGuid;
+        packet->GetPackedGuid(casterGuid);
+
+        uint32_t spellId;
+        packet->Get(spellId);
+
+        uint32_t amount;
+        packet->Get(amount);
+
+        uint8_t critical;
+        packet->Get(critical);
+
+        packet->m_read = rpos;
+
+        if (gUserSettings.enableSpellHealEvents) {
+            TriggerSpellHealEvent(targetGuid, casterGuid, spellId, amount, critical, 0);
+        }
+
+        return spellHealingLogHandler(opCode, packet);
+    }
+
+    int SpellEnergizeLogHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet) {
+        auto const spellEnergizeLogHandler = detour->GetTrampolineT<PacketHandlerT>();
+
+        auto const rpos = packet->m_read;
+
+        uint64_t targetGuid;
+        packet->GetPackedGuid(targetGuid);
+
+        uint64_t casterGuid;
+        packet->GetPackedGuid(casterGuid);
+
+        uint32_t spellId;
+        packet->Get(spellId);
+
+        uint32_t powerType;
+        packet->Get(powerType);
+
+        uint32_t amount;
+        packet->Get(amount);
+
+        packet->m_read = rpos;
+
+        if (gUserSettings.enableSpellEnergizeEvents) {
+            TriggerSpellEnergizeEvent(targetGuid, casterGuid, spellId, powerType, amount, 0);
+        }
+
+        return spellEnergizeLogHandler(opCode, packet);
     }
 }

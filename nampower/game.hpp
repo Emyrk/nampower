@@ -1548,6 +1548,14 @@ namespace game {
 
         SPELL_CHANNEL_START = 572,
         SPELL_CHANNEL_UPDATE = 573,
+
+        SPELL_HEAL_BY_SELF = 574,
+        SPELL_HEAL_BY_OTHER = 575,
+        SPELL_HEAL_ON_SELF = 576,
+
+        SPELL_ENERGIZE_BY_SELF = 577,
+        SPELL_ENERGIZE_BY_OTHER = 578,
+        SPELL_ENERGIZE_ON_SELF = 579,
     };
 
     enum TypeMask {
