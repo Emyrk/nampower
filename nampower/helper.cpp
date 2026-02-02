@@ -74,7 +74,7 @@ namespace Nampower {
             }
 
             auto const language = *reinterpret_cast<uint32_t *>(Offsets::Language);
-            auto const actualName = reinterpret_cast<const char *>(spell->SpellName[language]);
+            auto const actualName = reinterpret_cast<const char *>(spell->Name[language]);
             if (!actualName) {
                 return false;
             }

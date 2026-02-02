@@ -26,6 +26,8 @@ For installation, configuration, and general usage information, see the main [RE
     - [GetSpellSlotTypeIdForName](#getspellslottypeidfornamenspellname)
     - [GetNampowerVersion](#getnampowerversion)
     - [GetItemLevel](#getitemlevelitemid)
+    - [GetItemTexture](#getitemtexturedisplayinfoid)
+    - [GetSpellTexture](#getspelltexturespelliconid)
   - [Spell Casting and Queuing](#spell-casting-and-queuing)
     - [QueueSpellByName](#queuespellbynamespellname)
     - [CastSpellByNameNoQueue](#castspellbynamenoqueuespellname)
@@ -927,6 +929,48 @@ Examples:
 ```
 /run local itemLevel=GetItemLevel(22589);print(itemLevel)
 should print 90 for atiesh
+```
+
+#### GetItemTexture(displayInfoId)
+Returns the texture path for an item given its display info ID. Returns nil if the texture is not found or is the question mark placeholder texture.
+
+**Parameters:**
+- `displayInfoId` (number): The item's display info ID (can be obtained from `GetItemStatsField(itemId, "displayInfoID")`)
+
+**Returns:**
+- The texture path string (e.g., "Interface\\Icons\\INV_Sword_04"), or nil if not found
+
+**Examples:**
+```lua
+-- Get texture for an item
+local displayInfoId = GetItemStatsField(19019, "displayInfoID")
+local texture = GetItemTexture(displayInfoId)
+if texture then
+    print("Texture: " .. texture)
+else
+    print("No texture found")
+end
+```
+
+#### GetSpellTexture(spellIconId)
+Returns the texture path for a spell given its spell icon ID. Returns nil if the texture is not found or is the question mark placeholder texture.
+
+**Parameters:**
+- `spellIconId` (number): The spell's icon ID (can be obtained from `GetSpellRecField(spellId, "spellIconID")`)
+
+**Returns:**
+- The texture path string with `Interface\Icons\` prefix (e.g., "Interface\\Icons\\Spell_Frost_FrostBolt02"), or nil if not found
+
+**Examples:**
+```lua
+-- Get texture for Frostbolt
+local spellIconId = GetSpellRecField(116, "spellIconID")
+local texture = GetSpellTexture(spellIconId)
+if texture then
+    print("Texture: " .. texture)
+else
+    print("No texture found")
+end
 ```
 
 #### ChannelStopCastingNextTick()

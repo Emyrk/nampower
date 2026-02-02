@@ -34,5 +34,9 @@ namespace Nampower {
 
     uint32_t Script_DisenchantAll(uintptr_t *luaState);
 
+    uint32_t Script_GetItemTexture(uintptr_t *luaState);
+
+    uint32_t Script_GetSpellTexture(uintptr_t *luaState);
+
     bool RunQueuedScript(int priority);
 }

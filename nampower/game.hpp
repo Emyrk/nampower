@@ -192,13 +192,13 @@ namespace game {
         unsigned int SpellIconID;
         unsigned int activeIconID;
         unsigned int spellPriority;
-        const char *SpellName[8];
+        const char *Name[8];
         unsigned int SpellNameFlag;
-        unsigned int Rank[8];
+        const char *Rank[8];
         unsigned int RankFlags;
-        unsigned int Description[8];
+        const char *Description[8];
         unsigned int DescriptionFlags;
-        unsigned int ToolTip[8];
+        const char *ToolTip[8];
         unsigned int ToolTipFlags;
         unsigned int ManaCostPercentage;
         unsigned int StartRecoveryCategory;

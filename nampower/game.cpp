@@ -124,7 +124,7 @@ namespace game {
 
         auto const language = *reinterpret_cast<std::uint32_t *>(Offsets::Language);
 
-        return spell->SpellName[language];
+        return spell->Name[language];
     }
 
     std::uint64_t ClntObjMgrGetActivePlayerGuid() {

@@ -75,6 +75,7 @@ Related structs live in `nampower/game.hpp` (notably `SpellRec` and `ItemStats_C
 - `castingTimeIndex`
 - `channelInterruptFlags`
 - `dispel`
+- `description` (string, defaults to current language)
 - `dmgClass`
 - `durationIndex`
 - `equippedItemClass`
@@ -87,6 +88,7 @@ Related structs live in `nampower/game.hpp` (notably `SpellRec` and `ItemStats_C
 - `manaCostPerlevel`
 - `manaPerSecond`
 - `manaPerSecondPerLevel`
+- `name` (string, defaults to current language)
 - `maxAffectedTargets`
 - `maxLevel`
 - `maxTargetLevel`
@@ -100,6 +102,7 @@ Related structs live in `nampower/game.hpp` (notably `SpellRec` and `ItemStats_C
 - `procCharges`
 - `procFlags`
 - `rangeIndex`
+- `rank` (string, defaults to current language)
 - `recoveryTime`
 - `requiredAuraVision`
 - `school`
@@ -118,8 +121,10 @@ Related structs live in `nampower/game.hpp` (notably `SpellRec` and `ItemStats_C
 - `targetAuraState`
 - `targetCreatureType`
 - `targets`
+- `tooltip` (string, defaults to current language)
 
 ### SpellRec Array Fields (alphabetical)
+- `description` (char* x8, one per language)
 - `dmgMultiplier`
 - `effect`
 - `effectAmplitude`
@@ -139,6 +144,9 @@ Related structs live in `nampower/game.hpp` (notably `SpellRec` and `ItemStats_C
 - `effectRadiusIndex`
 - `effectRealPointsPerLevel`
 - `effectTriggerSpell`
+- `name` (char* x8, one per language)
+- `rank` (char* x8, one per language)
 - `reagent`
 - `reagentCount`
+- `tooltip` (char* x8, one per language)
 - `totem`

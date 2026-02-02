@@ -204,7 +204,7 @@ namespace Nampower {
 
             if (spell) {
                 auto const language = *reinterpret_cast<std::uint32_t *>(Offsets::Language);
-                lua_pushstring(luaState, (char *) spell->SpellName[language]);
+                lua_pushstring(luaState, (char *) spell->Name[language]);
                 lua_pushstring(luaState, (char *) spell->Rank[language]);
                 return 2;
             } else {
@@ -306,12 +306,17 @@ namespace Nampower {
         // Push string fields manually (require language)
         auto const language = *reinterpret_cast<uint32_t *>(Offsets::Language);
         PushTableValue(luaState, const_cast<char *>("name"),
-                       spell->SpellName[language] ? const_cast<char *>(spell->SpellName[language])
-                                                  : const_cast<char *>(""));
+                       spell->Name[language] ? const_cast<char *>(spell->Name[language])
+                                             : const_cast<char *>(""));
         PushTableValue(luaState, const_cast<char *>("rank"),
-                       reinterpret_cast<const char *>(spell->Rank[language])
-                           ? const_cast<char *>(reinterpret_cast<const char *>(spell->Rank[language]))
-                           : const_cast<char *>(""));
+                       spell->Rank[language] ? const_cast<char *>(spell->Rank[language])
+                                             : const_cast<char *>(""));
+        PushTableValue(luaState, const_cast<char *>("description"),
+                       spell->Description[language] ? const_cast<char *>(spell->Description[language])
+                                                    : const_cast<char *>(""));
+        PushTableValue(luaState, const_cast<char *>("tooltip"),
+                       spell->ToolTip[language] ? const_cast<char *>(spell->ToolTip[language])
+                                                : const_cast<char *>(""));
 
         // Push all array fields using descriptors with or without references based on copy parameter
         if (useCopy) {
@@ -420,18 +425,26 @@ namespace Nampower {
             return 1;
         }
 
-        // Check for special string fields
+        // Check for special string fields (localized, need language index)
+        auto const language = *reinterpret_cast<uint32_t *>(Offsets::Language);
         if (strcmp(fieldName, "name") == 0) {
-            auto const language = *reinterpret_cast<uint32_t *>(Offsets::Language);
-            lua_pushstring(luaState, spell->SpellName[language] ? const_cast<char *>(spell->SpellName[language])
-                                                                : const_cast<char *>(""));
+            lua_pushstring(luaState, spell->Name[language] ? const_cast<char *>(spell->Name[language])
+                                                           : const_cast<char *>(""));
             return 1;
         }
         if (strcmp(fieldName, "rank") == 0) {
-            auto const language = *reinterpret_cast<uint32_t *>(Offsets::Language);
-            lua_pushstring(luaState, reinterpret_cast<const char *>(spell->Rank[language])
-                                     ? const_cast<char *>(reinterpret_cast<const char *>(spell->Rank[language]))
-                                     : const_cast<char *>(""));
+            lua_pushstring(luaState, spell->Rank[language] ? const_cast<char *>(spell->Rank[language])
+                                                           : const_cast<char *>(""));
+            return 1;
+        }
+        if (strcmp(fieldName, "description") == 0) {
+            lua_pushstring(luaState, spell->Description[language] ? const_cast<char *>(spell->Description[language])
+                                                                  : const_cast<char *>(""));
+            return 1;
+        }
+        if (strcmp(fieldName, "tooltip") == 0) {
+            lua_pushstring(luaState, spell->ToolTip[language] ? const_cast<char *>(spell->ToolTip[language])
+                                                              : const_cast<char *>(""));
             return 1;
         }
 

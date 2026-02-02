@@ -660,9 +660,9 @@ namespace Nampower {
         // Display which item is being disenchanted
         char luaCode[256];
         snprintf(luaCode, sizeof(luaCode),
-                "local itemLink = GetContainerItemLink(%d, %d); "
-                "if itemLink then DEFAULT_CHAT_FRAME:AddMessage(\"Disenchanting \" .. itemLink .. \" move during cast to cancel.\") end",
-                itemSearchResult.bagIndex, itemSearchResult.slot + 1);  // Lua slots are 1-indexed
+                 "local itemLink = GetContainerItemLink(%d, %d); "
+                 "if itemLink then DEFAULT_CHAT_FRAME:AddMessage(\"Disenchanting \" .. itemLink .. \" move during cast to cancel.\") end",
+                 itemSearchResult.bagIndex, itemSearchResult.slot + 1);  // Lua slots are 1-indexed
         LuaCall(luaCode);
 
         // Set timer for next disenchant attempt (5 seconds to allow time for inventory to update)
@@ -782,6 +782,62 @@ namespace Nampower {
         bool success = TryDisenchant();
 
         lua_pushnumber(luaState, success ? 1 : 0);
+        return 1;
+    }
+
+    uint32_t Script_GetItemTexture(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        if (!lua_isnumber(luaState, 1)) {
+            lua_error(luaState, "Usage: GetItemTexture(displayInfoId)");
+            return 0;
+        }
+
+        uint32_t displayInfoId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+
+        auto const getInventoryArt = reinterpret_cast<GetInventoryArtT>(Offsets::CGItem_C_GetInventoryArt);
+        char *texturePath = getInventoryArt(displayInfoId);
+
+        if (texturePath && texturePath[0] != '\0' && !strstr(texturePath, "QuestionMark")) {
+            lua_pushstring(luaState, texturePath);
+        } else {
+            lua_pushnil(luaState);
+        }
+
+        return 1;
+    }
+
+    uint32_t Script_GetSpellTexture(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        if (!lua_isnumber(luaState, 1)) {
+            lua_error(luaState, "Usage: GetSpellTexture(spellIconId)");
+            return 0;
+        }
+
+        int32_t iconId = static_cast<int32_t>(lua_tonumber(luaState, 1));
+
+        int32_t maxIconId = *reinterpret_cast<int32_t *>(Offsets::SpellIconDBMaxId);
+        uintptr_t *iconArray = *reinterpret_cast<uintptr_t **>(Offsets::SpellIconDBArray);
+
+        if (iconId < 0 || iconId > maxIconId) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        uintptr_t iconEntry = reinterpret_cast<uintptr_t *>(iconArray)[iconId];
+        if (iconEntry == 0) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        char *texturePath = *reinterpret_cast<char **>(iconEntry + 4);
+        if (texturePath && texturePath[0] != '\0' && !strstr(texturePath, "QuestionMark")) {
+            lua_pushstring(luaState, texturePath);
+        } else {
+            lua_pushnil(luaState);
+        }
+
         return 1;
     }
 

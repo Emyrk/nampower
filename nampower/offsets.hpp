@@ -215,6 +215,9 @@ enum class Offsets : std::uint32_t {
     CGItem_C_GetInventoryArt = 0x005D88B0,
     CGItem_C_ItemIsQuestOrSoulbound = 0x005DA2C0,
 
+    SpellIconDBMaxId = 0x00c0d7f0,
+    SpellIconDBArray = 0x00c0d7ec,
+
     DBCache_ItemCacheDBGetRow = 0x0055BA30,
 
     InvalidFunctionPtrCheck = 0x0042A320,
