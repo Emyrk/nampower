@@ -785,11 +785,11 @@ namespace Nampower {
         return 1;
     }
 
-    uint32_t Script_GetItemTexture(uintptr_t *luaState) {
+    uint32_t Script_GetItemIconTexture(uintptr_t *luaState) {
         luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
 
         if (!lua_isnumber(luaState, 1)) {
-            lua_error(luaState, "Usage: GetItemTexture(displayInfoId)");
+            lua_error(luaState, "Usage: GetItemIconTexture(displayInfoId)");
             return 0;
         }
 
@@ -807,11 +807,11 @@ namespace Nampower {
         return 1;
     }
 
-    uint32_t Script_GetSpellTexture(uintptr_t *luaState) {
+    uint32_t Script_GetSpellIconTexture(uintptr_t *luaState) {
         luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
 
         if (!lua_isnumber(luaState, 1)) {
-            lua_error(luaState, "Usage: GetSpellTexture(spellIconId)");
+            lua_error(luaState, "Usage: GetSpellIconTexture(spellIconId)");
             return 0;
         }
 

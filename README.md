@@ -120,14 +120,14 @@ Name and spellId lookups are cached internally and validated against current spe
 
 See examples below for differences in how BOOKTYPE works.
 
-Functions: `GetSpellTexture`, `GetSpellName`, `GetSpellCooldown`, `GetSpellAutocast`, `ToggleSpellAutocast`, `PickupSpell`, `CastSpell`, `IsCurrentCast`, `IsSpellPassive`.
+Functions: `GetSpellIconTexture`, `GetSpellName`, `GetSpellCooldown`, `GetSpellAutocast`, `ToggleSpellAutocast`, `PickupSpell`, `CastSpell`, `IsCurrentCast`, `IsSpellPassive`.
 
 Examples:
 ```
-/run print(GetSpellTexture(1, "spell")) -- booktype required
-/run print(GetSpellTexture("spellId:25978")) -- defaults to BOOKTYPE_SPELL
-/run print(GetSpellTexture("spellId:6268", "pet")) -- "pet" needed for pet spells
-/run print(GetSpellTexture("Fireball")) -- name search
+/run print(GetSpellIconTexture(1, "spell")) -- booktype required
+/run print(GetSpellIconTexture("spellId:25978")) -- defaults to BOOKTYPE_SPELL
+/run print(GetSpellIconTexture("spellId:6268", "pet")) -- "pet" needed for pet spells
+/run print(GetSpellIconTexture("Fireball")) -- name search
 ```
 
 

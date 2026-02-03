@@ -26,8 +26,8 @@ For installation, configuration, and general usage information, see the main [RE
     - [GetSpellSlotTypeIdForName](#getspellslottypeidfornamenspellname)
     - [GetNampowerVersion](#getnampowerversion)
     - [GetItemLevel](#getitemlevelitemid)
-    - [GetItemTexture](#getitemtexturedisplayinfoid)
-    - [GetSpellTexture](#getspelltexturespelliconid)
+    - [GetItemIconTexture](#getitemicontexturedisplayinfoid)
+    - [GetSpellIconTexture](#getspellicontexturespelliconid)
   - [Spell Casting and Queuing](#spell-casting-and-queuing)
     - [QueueSpellByName](#queuespellbynamespellname)
     - [CastSpellByNameNoQueue](#castspellbynamenoqueuespellname)
@@ -931,7 +931,7 @@ Examples:
 should print 90 for atiesh
 ```
 
-#### GetItemTexture(displayInfoId)
+#### GetItemIconTexture(displayInfoId)
 Returns the texture path for an item given its display info ID. Returns nil if the texture is not found or is the question mark placeholder texture.
 
 **Parameters:**
@@ -944,7 +944,7 @@ Returns the texture path for an item given its display info ID. Returns nil if t
 ```lua
 -- Get texture for an item
 local displayInfoId = GetItemStatsField(19019, "displayInfoID")
-local texture = GetItemTexture(displayInfoId)
+local texture = GetItemIconTexture(displayInfoId)
 if texture then
     print("Texture: " .. texture)
 else
@@ -952,7 +952,7 @@ else
 end
 ```
 
-#### GetSpellTexture(spellIconId)
+#### GetSpellIconTexture(spellIconId)
 Returns the texture path for a spell given its spell icon ID. Returns nil if the texture is not found or is the question mark placeholder texture.
 
 **Parameters:**
@@ -965,7 +965,7 @@ Returns the texture path for a spell given its spell icon ID. Returns nil if the
 ```lua
 -- Get texture for Frostbolt
 local spellIconId = GetSpellRecField(116, "spellIconID")
-local texture = GetSpellTexture(spellIconId)
+local texture = GetSpellIconTexture(spellIconId)
 if texture then
     print("Texture: " .. texture)
 else

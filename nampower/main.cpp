@@ -1647,11 +1647,11 @@ namespace Nampower {
         char disenchantAll[] = "DisenchantAll";
         RegisterLuaFunction(disenchantAll, reinterpret_cast<uintptr_t *>(Script_DisenchantAll));
 
-        char getItemTexture[] = "GetItemTexture";
-        RegisterLuaFunction(getItemTexture, reinterpret_cast<uintptr_t *>(Script_GetItemTexture));
+        char getItemIconTexture[] = "GetItemIconTexture";
+        RegisterLuaFunction(getItemIconTexture, reinterpret_cast<uintptr_t *>(Script_GetItemIconTexture));
 
-        char getSpellTexture[] = "GetSpellTexture";
-        RegisterLuaFunction(getSpellTexture, reinterpret_cast<uintptr_t *>(Script_GetSpellTexture));
+        char getSpellIconTexture[] = "GetSpellIconTexture";
+        RegisterLuaFunction(getSpellIconTexture, reinterpret_cast<uintptr_t *>(Script_GetSpellIconTexture));
     }
 
     void load() {
