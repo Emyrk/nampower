@@ -580,8 +580,8 @@ namespace Nampower {
         return castResultHandler(opCode, packet);
     }
 
-    int SpellFailedHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet) {
-        auto const spellFailedHandler = detour->GetTrampolineT<PacketHandlerT>();
+    int SpellFailedOtherHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet) {
+        auto const spellFailedOtherHandler = detour->GetTrampolineT<PacketHandlerT>();
 
         auto const rpos = packet->m_read;
 
@@ -593,11 +593,9 @@ namespace Nampower {
 
         packet->m_read = rpos;
 
-        DEBUG_LOG("Spell failed opcode:" << opCode << " for " << game::GetSpellName(spellId) << " guid " << guid);
-
         TriggerSpellFailedOtherEvent(guid, spellId);
 
-        return spellFailedHandler(opCode, packet);
+        return spellFailedOtherHandler(opCode, packet);
     }
 
     bool doesSpellApplyAura(const game::SpellRec *spell) {

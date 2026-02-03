@@ -18,7 +18,7 @@ namespace Nampower {
 
     int CastResultHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet);
 
-    int SpellFailedHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet);
+    int SpellFailedOtherHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet);
 
     int SpellStartHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t unk, uint32_t opCode, uint32_t unk2,
                               CDataStore *packet);

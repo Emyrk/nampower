@@ -4,18 +4,8 @@
 
 #pragma once
 
-#include <hadesmem/process.hpp>
 #include <hadesmem/patcher.hpp>
 
-#include <Windows.h>
-
-#include <cstdint>
-#include <memory>
-#include <atomic>
-
-#include <chrono>
-#include <thread>
-#include <iostream>
 #include <fstream>
 
 #include "game.hpp"
@@ -36,7 +26,7 @@ namespace Nampower {
 
     constexpr uint32_t MAJOR_VERSION = 2;
     constexpr uint32_t MINOR_VERSION = 27;
-    constexpr uint32_t PATCH_VERSION = 1;
+    constexpr uint32_t PATCH_VERSION = 2;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;

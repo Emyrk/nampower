@@ -127,7 +127,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellCooldownDetour;
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellDelayedDetour;
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gCastResultHandlerDetour;
-    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellFailedHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellFailedOtherHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellChannelStartHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellChannelUpdateHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gPlaySpellVisualHandlerDetour;
@@ -1349,6 +1349,8 @@ namespace Nampower {
                                                                    &SpellHealingLogHandlerHook);
         gSpellEnergizeLogHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellEnergizeLogHandler,
                                                                     &SpellEnergizeLogHandlerHook);
+        gSpellFailedOtherHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellFailedOtherHandler,
+                                                                    &SpellFailedOtherHandlerHook);
         gSpellFailedDetour = createHook<Spell_C_SpellFailedT>(process, Offsets::Spell_C_SpellFailed,
                                                               &Spell_C_SpellFailedHook);
         gSpellGoDetour = createHook<SpellGoT>(process, Offsets::SpellGo, &SpellGoHook);
