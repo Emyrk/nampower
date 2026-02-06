@@ -29,6 +29,7 @@ namespace Nampower {
     lua_newtableT lua_newtable = reinterpret_cast<lua_newtableT>(Offsets::lua_newtable);
     lua_settableT lua_settable = reinterpret_cast<lua_settableT>(Offsets::lua_settable);
     luaL_refT luaL_ref = reinterpret_cast<luaL_refT>(Offsets::luaL_ref);
+    lua_touserdataT lua_touserdata = reinterpret_cast<lua_touserdataT>(Offsets::lua_touserdata);
     lua_rawgetiT lua_rawgeti = reinterpret_cast<lua_rawgetiT>(Offsets::lua_rawgeti);
     luaL_unrefT luaL_unref = reinterpret_cast<luaL_unrefT>(Offsets::luaL_unref);
 

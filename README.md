@@ -131,6 +131,17 @@ Examples:
 ```
 
 
+### CSimpleFrame:GetName() Enhancement
+The built-in `CSimpleFrame:GetName()` method is hooked to support an optional argument for retrieving the GUID of the unit associated with a nameplate frame.
+
+- `frame:GetName()` - Returns the frame name (original behavior).
+- `frame:GetName(1)` - Returns the GUID string (e.g., `"0x0000000000000001"`) of the unit associated with the nameplate frame.
+
+Example:
+```
+/run local f = GetMouseFocus(); if f then DEFAULT_CHAT_FRAME:AddMessage(f:GetName(1) or "no guid") end
+```
+
 ## Custom Lua Functions
 
 For complete documentation of all custom Lua functions added by Nampower, see **[SCRIPTS.md](SCRIPTS.md)**.

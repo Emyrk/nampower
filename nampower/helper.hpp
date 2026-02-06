@@ -24,6 +24,7 @@ namespace Nampower {
     extern lua_newtableT lua_newtable;
     extern lua_settableT lua_settable;
     extern luaL_refT luaL_ref;
+    extern lua_touserdataT lua_touserdata;
     extern lua_rawgetiT lua_rawgeti;
     extern luaL_unrefT luaL_unref;
 

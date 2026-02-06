@@ -150,7 +150,7 @@ enum class Offsets : std::uint32_t {
 
     lua_state_ptr = 0x7040D0,
 
-    lua_type = 0x006F3460,
+    lua_type = 0X006F3400,
     lua_isstring = 0x006F3510,
     lua_isnumber = 0X006F34D0,
     lua_tostring = 0x006F3690,
@@ -168,6 +168,7 @@ enum class Offsets : std::uint32_t {
     lua_pushboolean = 0x006F39F0,
     lua_rawseti = 0x006f3f60,
     lua_rawgeti = 0x006f3bc0,
+    lua_touserdata = 0x006F3740,
     lua_gettop = 0x006F3070,
     luaL_ref = 0x006F5310,
     luaL_unref = 0x006F5400,
@@ -226,4 +227,6 @@ enum class Offsets : std::uint32_t {
     CursorSetCursorMode = 0x00523d20,
     CursorModelSetSequence = 0x00523c20,
     CGGameUI_DisplayError = 0x00496720,
+
+    CSimpleFrame_GetName = 0x007a1390,
 };

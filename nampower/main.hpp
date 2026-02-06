@@ -25,8 +25,8 @@ namespace Nampower {
     constexpr uint32_t DISENCHANT_QUALITY_PURPLE = 0x04;  // Epic
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 27;
-    constexpr uint32_t PATCH_VERSION = 2;
+    constexpr uint32_t MINOR_VERSION = 28;
+    constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
@@ -141,6 +141,7 @@ namespace Nampower {
     using lua_newtableT = void (__fastcall *)(uintptr_t *);
     using lua_settableT = void (__fastcall *)(uintptr_t *, int);
     using luaL_refT = int (__fastcall *)(uintptr_t *, int);
+    using lua_touserdataT = void *(__fastcall *)(uintptr_t *, int);
     using lua_rawgetiT = void (__fastcall *)(uintptr_t *, int, int);
     using luaL_unrefT = void (__fastcall *)(uintptr_t *, int, int);
 

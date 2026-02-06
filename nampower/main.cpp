@@ -150,6 +150,8 @@ namespace Nampower {
 
     std::unique_ptr<hadesmem::PatchDetour<GetSpellSlotFromLuaT> > gGetSpellSlotFromLuaDetour;
 
+    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT> > gCSimpleFrame_GetNameDetour;
+
     // Flags for one-time initialization
     std::once_flag loadFlag;
     std::once_flag initHooksFlag;
@@ -1385,6 +1387,8 @@ namespace Nampower {
                                                                           &UnitCombatLogUnitDeadHook);
         gAttackRoundInfo_ReadPacketDetour = createHook<AttackRoundInfo_ReadPacketT>(process, Offsets::AttackRoundInfo_ReadPacket,
                                                                                      &AttackRoundInfo_ReadPacketHook);
+        gCSimpleFrame_GetNameDetour = createHook<LuaScriptT>(process, Offsets::CSimpleFrame_GetName,
+                                                                &CSimpleFrame_GetNameHook);
         gLoadScriptFunctionsDetour = createHook<LoadScriptFunctionsT>(process, Offsets::LoadScriptFunctions,
                                                                       &LoadScriptFunctionsHook);
         gCreateEventsDetour = createHook<FrameScript_CreateEventsT>(process, Offsets::FrameScript_CreateEvents,

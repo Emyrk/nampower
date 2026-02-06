@@ -841,4 +841,70 @@ namespace Nampower {
         return 1;
     }
 
+    uint32_t CSimpleFrame_GetNameHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        // Type ID lazy initialization (mirrors original at 0x00CF0C3C / 0x00CEEF6C)
+        static auto typeIdCounter = reinterpret_cast<uint32_t *>(0x00CEEF6C);
+        static auto nameplateTypeId = reinterpret_cast<uint32_t *>(0x00CF0C3C);
+
+        if (*nameplateTypeId == 0) {
+            *typeIdCounter = *typeIdCounter + 1;
+            *nameplateTypeId = *typeIdCounter;
+        }
+        uint32_t typeId = *nameplateTypeId;
+
+        uintptr_t *frameObj = nullptr;
+
+        int luaArgType = lua_type(luaState, 1);
+        if (luaArgType == LUA_TTABLE) {
+            lua_rawgeti(luaState, 1, 0);
+
+            frameObj = reinterpret_cast<uintptr_t *>(lua_touserdata(luaState, -1));
+            lua_settop(luaState, -2);
+
+            if (frameObj == nullptr) {
+                lua_error(luaState, "Attempt to find 'this' in non-frame table");
+            } else {
+                // Type check via vtable[4] (offset 0x10)
+                using IsTypeT = char (__thiscall *)(uintptr_t *thisPtr, uint32_t typeId);
+                auto vtable = reinterpret_cast<uintptr_t *>(*frameObj);
+                auto isType = reinterpret_cast<IsTypeT>(vtable[4]);
+                if (isType(frameObj, typeId) == 0) {
+                    lua_error(luaState, "Wrong object type for member function");
+                }
+            }
+        } else {
+            lua_error(luaState, "Attempt to find 'this' in non-table value");
+        }
+
+        // Check if second arg is passed (e.g. nameplate:GetName(1) to get GUID)
+        if (lua_isnumber(luaState, 2) && static_cast<int>(lua_tonumber(luaState, 2)) != 0) {
+            // Return GUID string from frame object at offset 0x4E8/0x4EC
+            uint32_t guidLow = frameObj[0x13a];
+            uint32_t guidHigh = frameObj[0x13b];
+            uint64_t guid = (static_cast<uint64_t>(guidHigh) << 32) | guidLow;
+
+            DEBUG_LOG(guid);
+
+            char guidStr[21] = {0};
+            std::snprintf(guidStr, sizeof(guidStr), "0x%016llX", static_cast<unsigned long long>(guid));
+            lua_pushstring(luaState, guidStr);
+        } else {
+            // GetName via vtable[1] (offset 0x4)
+            using GetNameT = char *(__thiscall *)(uintptr_t *thisPtr);
+            auto vtable = reinterpret_cast<uintptr_t *>(*frameObj);
+            auto getName = reinterpret_cast<GetNameT>(vtable[1]);
+            char *name = getName(frameObj);
+
+            if (name != nullptr && name[0] != '\0') {
+                lua_pushstring(luaState, name);
+            } else {
+                lua_pushnil(luaState);
+            }
+        }
+
+        return 1;
+    }
+
 }

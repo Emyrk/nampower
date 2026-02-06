@@ -39,4 +39,6 @@ namespace Nampower {
     uint32_t Script_GetSpellIconTexture(uintptr_t *luaState);
 
     bool RunQueuedScript(int priority);
+
+    uint32_t CSimpleFrame_GetNameHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState);
 }
