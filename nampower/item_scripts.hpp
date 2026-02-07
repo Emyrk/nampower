@@ -15,4 +15,5 @@ namespace Nampower {
     uint32_t Script_GetEquippedItem(uintptr_t *luaState);
     uint32_t Script_GetBagItem(uintptr_t *luaState);
     uint32_t Script_GetBagItems(uintptr_t *luaState);
+    uint32_t Script_GetAmmo(uintptr_t *luaState);
 }

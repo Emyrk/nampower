@@ -151,7 +151,7 @@ This includes functions for:
 - Spell casting and queuing (QueueSpellByName, QueueScript, etc.)
 - Cast information (GetCastInfo, GetCurrentCastingInfo)
 - Cooldown tracking (GetSpellIdCooldown, GetItemIdCooldown), including item metadata on cooldown detail tables
-- Inventory helpers (GetTrinketCooldown, GetTrinkets)
+- Inventory helpers (GetTrinketCooldown, GetTrinkets, GetAmmo)
 - Spell lookups and utilities
 
 Cooldown detail tables now also expose `itemId`, `itemHasActiveSpell`, and `itemActiveSpellId` alongside the existing per-category timing data.

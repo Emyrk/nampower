@@ -1084,5 +1084,70 @@ namespace Nampower {
         return GetAllBagItems(luaState);
     }
 
+    uint32_t Script_GetAmmo(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto playerUnit = game::GetObjectPtr(playerGuid);
+
+        if (!playerUnit) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // Get player fields pointer at byte offset 0xe68
+        auto playerFields = *reinterpret_cast<uint8_t **>(reinterpret_cast<uint8_t *>(playerUnit) + 0xe68);
+        if (!playerFields) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // Get PLAYER_AMMO_ID at byte offset 0x102c from player fields
+        auto ammoId = *reinterpret_cast<uint32_t *>(playerFields + 0x102c);
+        if (ammoId == 0) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // Search player bags for the ammo item and sum stack counts
+        auto const getBagItem = reinterpret_cast<CGBag_C_GetItemAtSlotT>(Offsets::CGBag_C_GetItemAtSlot);
+        auto const getContainerGuid = reinterpret_cast<GetContainerGuidT>(Offsets::GetContainerGuid);
+        auto inventory = game::GetPlayerInventoryPtr(playerUnit);
+
+        uint32_t totalCount = 0;
+
+        // Search backpack (absolute slots 23-38)
+        for (uint32_t slot = 23; slot <= 38; slot++) {
+            auto item = getBagItem(inventory, slot);
+            if (item && game::GetItemId(item) == ammoId && item->itemFields) {
+                totalCount += item->itemFields->stackCount;
+            }
+        }
+
+        // Search bags 1-4
+        for (int32_t bagIndex = 1; bagIndex <= 4; bagIndex++) {
+            uint64_t containerGuid = getContainerGuid(bagIndex - 1);
+            if (containerGuid == 0) continue;
+
+            auto containerPtr = game::ClntObjMgrObjectPtr(game::TYPEMASK_CONTAINER, containerGuid);
+            if (!containerPtr) continue;
+
+            auto bagPtr = GetBagPtrFromContainer(containerPtr);
+            if (!bagPtr) continue;
+
+            auto bagSize = *bagPtr;
+            for (uint32_t slot = 0; slot < bagSize; slot++) {
+                auto item = getBagItem(bagPtr, slot);
+                if (item && game::GetItemId(item) == ammoId && item->itemFields) {
+                    totalCount += item->itemFields->stackCount;
+                }
+            }
+        }
+
+        lua_pushnumber(luaState, static_cast<double>(ammoId));
+        lua_pushnumber(luaState, static_cast<double>(totalCount));
+        return 2;
+    }
+
 
 }

@@ -16,6 +16,7 @@ For installation, configuration, and general usage information, see the main [RE
     - [GetEquippedItem](#getequippeditemunittoken-slot)
     - [GetBagItems](#getbagitemsbagindex)
     - [GetBagItem](#getbagitembagindex-slot)
+    - [GetAmmo](#getammo)
     - [GetSpellRec](#getspellrecspellid-copy)
     - [GetSpellRecField](#getspellrecfieldspellid-fieldname-copy)
     - [GetSpellModifiers](#getspellmodifiersspellid-modifiertype)
@@ -430,6 +431,35 @@ end
 local bankItem = GetBagItem(-1, 1)
 if bankItem then
     print("Bank slot 1 contains: " .. bankItem.itemId)
+end
+```
+
+#### GetAmmo()
+Returns the player's currently equipped ammo item ID and the total quantity remaining across all bags.
+
+**Parameters:**
+- None
+
+**Returns:**
+- If no ammo is equipped: returns `nil`
+- Otherwise returns two values:
+  - 1st param (number): The ammo item ID
+  - 2nd param (number): Total ammo count across backpack and bags 1-4
+
+**Examples:**
+```lua
+-- Check current ammo
+local ammoId, count = GetAmmo()
+if ammoId then
+    print("Ammo ID: " .. ammoId .. " Count: " .. count)
+else
+    print("No ammo equipped")
+end
+
+-- Low ammo warning
+local ammoId, count = GetAmmo()
+if ammoId and count < 200 then
+    print("Low ammo! Only " .. count .. " remaining")
 end
 ```
 

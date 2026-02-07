@@ -1658,6 +1658,9 @@ namespace Nampower {
 
         char getSpellIconTexture[] = "GetSpellIconTexture";
         RegisterLuaFunction(getSpellIconTexture, reinterpret_cast<uintptr_t *>(Script_GetSpellIconTexture));
+
+        char getAmmo[] = "GetAmmo";
+        RegisterLuaFunction(getAmmo, reinterpret_cast<uintptr_t *>(Script_GetAmmo));
     }
 
     void load() {
