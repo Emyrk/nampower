@@ -133,35 +133,26 @@ namespace Nampower {
     void CGBuffBar_UpdateDurationHook(hadesmem::PatchDetourBase *detour, uint8_t auraSlot, int durationMs) {
         auto const updateDuration = detour->GetTrampolineT<CGBuffBar_UpdateDurationT>();
 
+        // Call the original function
+        updateDuration(auraSlot, durationMs);
+
         // Store expiration time indexed by aura slot
         if (auraSlot < MAX_AURA_SLOTS) {
             auto now = static_cast<uint32_t>(GetWowTimeMs() & 0xFFFFFFFF);
             uint32_t expirationTime = durationMs > 0 ? now + durationMs : 0;
             gAuraExpirationTime[auraSlot] = expirationTime;
 
-            // Get player unit to read spellId from aura fields
-            auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
-            auto *playerUnit = game::GetObjectPtr(playerGuid);
-            if (playerUnit) {
-                auto *unitFields = *reinterpret_cast<game::UnitFields **>(playerUnit + 68);
-                uint32_t spellId = unitFields->aura[auraSlot];
+            bool isBuff = auraSlot < 32;
+            game::Events eventToTrigger = isBuff ? game::BUFF_UPDATE_DURATION_SELF : game::DEBUFF_UPDATE_DURATION_SELF;
 
-                bool isBuff = auraSlot < 32;
-                game::Events eventToTrigger = isBuff ? game::BUFF_UPDATE_DURATION_SELF : game::DEBUFF_UPDATE_DURATION_SELF;
-
-                static char format[] = "%d%d%d%d";
-                ((int (__cdecl *)(int, char *, uint32_t, uint32_t, int, uint32_t)) Offsets::SignalEventParam)(
-                    eventToTrigger,
-                    format,
-                    auraSlot,
-                    spellId,
-                    durationMs,
-                    expirationTime);
-            }
+            static char format[] = "%d%d%d";
+            ((int (__cdecl *)(int, char *, uint32_t, int, uint32_t)) Offsets::SignalEventParam)(
+                eventToTrigger,
+                format,
+                auraSlot,
+                durationMs,
+                expirationTime);
         }
-
-        // Call the original function
-        updateDuration(auraSlot, durationMs);
     }
 
     void UnitCombatLogUnitDeadHook(hadesmem::PatchDetourBase *detour, uint64_t guid) {
