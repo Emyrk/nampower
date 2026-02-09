@@ -14,6 +14,7 @@ For custom Lua functions, see [SCRIPTS.md](SCRIPTS.md). For general usage inform
 - [SPELL_CHANNEL_START and SPELL_CHANNEL_UPDATE](#spell_channel_start-and-spell_channel_update)
 - [SPELL_DAMAGE_EVENT_SELF and SPELL_DAMAGE_EVENT_OTHER](#spell_damage_event_self-and-spell_damage_event_other)
 - [Buff/Debuff Events](#buffdebuff-events)
+- [BUFF_UPDATE_DURATION_SELF and DEBUFF_UPDATE_DURATION_SELF](#buff_update_duration_self-and-debuff_update_duration_self)
 - [AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER](#aura_cast_on_self-and-aura_cast_on_other)
 - [AUTO_ATTACK_SELF and AUTO_ATTACK_OTHER](#auto_attack_self-and-auto_attack_other)
 - [SPELL_HEAL_BY_SELF, SPELL_HEAL_BY_OTHER, and SPELL_HEAL_ON_SELF](#spell_heal_by_self-spell_heal_by_other-and-spell_heal_on_self)
@@ -228,22 +229,53 @@ DEBUFF_REMOVED_OTHER
 
 All eight events pass the same parameters:
 1.  string guid - unit guid like "0xF5300000000000A5"
-2.  int slot - 1-based Lua slot index for the buff/debuff (skips empty slots to match UnitBuff/UnitDebuff ordering)
+2.  int luaSlot - 1-based Lua slot index for the buff/debuff (skips empty slots to match UnitBuff/UnitDebuff ordering). This is the slot you would pass to UnitBuff/UnitDebuff.
 3.  int spellId
 4.  int stackCount - current stack count for the aura (1 for a new aura; 0 when fully removed)
 5.  int auraLevel - caster level for the aura from UnitFields.auraLevels (uint8 per slot, 48 entries)
+6.  int auraSlot - the raw 0-based aura slot index (0-31 for buffs, 32-47 for debuffs). This is the raw internal slot, not the Lua slot. Consistent with unit data fields, GetPlayerAuraDuration, and BUFF/DEBUFF_UPDATE_DURATION_SELF events.
 
 Buff stack gains also fire the appropriate *_ADDED_* events.
 
 Example:
 ```
-local function onAuraEvent(eventName, guid, slot, spellId, stacks, auraLevel)
-    DEFAULT_CHAT_FRAME:AddMessage(string.format("[%s] %s slot=%d spell=%d stacks=%d level=%d", eventName, guid, slot, spellId, stacks, auraLevel))
+local function onAuraEvent(eventName, guid, luaSlot, spellId, stacks, auraLevel, auraSlot)
+    DEFAULT_CHAT_FRAME:AddMessage(string.format("[%s] %s luaSlot=%d spell=%d stacks=%d level=%d auraSlot=%d", eventName, guid, luaSlot, spellId, stacks, auraLevel, auraSlot))
 end
 
 for _, eventName in ipairs({"BUFF_ADDED_SELF", "BUFF_REMOVED_SELF", "DEBUFF_ADDED_OTHER", "DEBUFF_REMOVED_OTHER"}) do
     frame:RegisterEvent(eventName, function(...) onAuraEvent(eventName, ...) end)
 end
+```
+
+### BUFF_UPDATE_DURATION_SELF and DEBUFF_UPDATE_DURATION_SELF
+Fire when the client updates the duration of a buff or debuff on the active player. This happens when the server refreshes an aura's duration (e.g., reapplying a buff that already exists). Only fires for the active player's own auras.
+
+Events:
+```
+BUFF_UPDATE_DURATION_SELF    -- aura slot 0-31
+DEBUFF_UPDATE_DURATION_SELF  -- aura slot 32-47
+```
+
+Parameters:
+1.  int auraSlot - the raw 0-based aura slot index (0-31 for buffs, 32-47 for debuffs). This is not the slot used by GetPlayerBuff that has its own sorting, this is the raw aura slot index which is consistent with the unit data fields and the internal aura storage.
+2.  int spellId - the spell ID occupying this aura slot
+3.  int durationMs - the updated duration in milliseconds
+4.  int expirationTimeMs - the calculated expiration time (GetWowTimeMs() + durationMs), or 0 if no duration
+
+Example:
+```lua
+local function onDurationUpdate(auraSlot, spellId, durationMs, expirationTimeMs)
+    local isBuff = auraSlot < 32
+    local type = isBuff and "Buff" or "Debuff"
+    DEFAULT_CHAT_FRAME:AddMessage(string.format(
+        "[%s] slot=%d spell=%d duration=%dms expires=%d",
+        type, auraSlot, spellId, durationMs, expirationTimeMs
+    ))
+end
+
+frame:RegisterEvent("BUFF_UPDATE_DURATION_SELF", onDurationUpdate)
+frame:RegisterEvent("DEBUFF_UPDATE_DURATION_SELF", onDurationUpdate)
 ```
 
 ### AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER

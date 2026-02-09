@@ -1556,6 +1556,9 @@ namespace game {
         SPELL_ENERGIZE_BY_SELF = 577,
         SPELL_ENERGIZE_BY_OTHER = 578,
         SPELL_ENERGIZE_ON_SELF = 579,
+
+        BUFF_UPDATE_DURATION_SELF = 580,
+        DEBUFF_UPDATE_DURATION_SELF = 581,
     };
 
     enum TypeMask {

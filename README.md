@@ -152,6 +152,7 @@ This includes functions for:
 - Cast information (GetCastInfo, GetCurrentCastingInfo)
 - Cooldown tracking (GetSpellIdCooldown, GetItemIdCooldown), including item metadata on cooldown detail tables
 - Inventory helpers (GetTrinketCooldown, GetTrinkets, GetAmmo)
+- Aura duration tracking (GetPlayerAuraDuration)
 - Spell lookups and utilities
 
 Cooldown detail tables now also expose `itemId`, `itemHasActiveSpell`, and `itemActiveSpellId` alongside the existing per-category timing data.
@@ -168,7 +169,7 @@ Available events:
 - SPELL_START_SELF and SPELL_START_OTHER - Triggered by the server to notify that a spell with a cast time has begun.
 - SPELL_GO_SELF and SPELL_GO_OTHER - Triggered by the server to indicate a spell completed casting.
 - SPELL_DAMAGE_EVENT_SELF and SPELL_DAMAGE_EVENT_OTHER - Combat damage events
-- Buff/Debuff Events (BUFF_ADDED_SELF, BUFF_REMOVED_SELF, etc.)
+- Buff/Debuff Events (BUFF_ADDED_SELF, BUFF_REMOVED_SELF, BUFF_UPDATE_DURATION_SELF, etc.)
 - AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER - Aura application events (fires once per aura effect per target; "Self" fires when the aura lands on the active player, including self-cast with no explicit target; includes aura metadata + amplitude/misc + aura cap bitfield for buff/debuff slots). Handles single-target and multi-target (AOE) spells. Some auras don't have spell effects and won't trigger this; use BUFF/DEBUFF gains for those. Set `NP_EnableAuraCastEvents=1` to enable. See EVENTS.md for details on multi-target behavior and known limitations.
 - AUTO_ATTACK_SELF and AUTO_ATTACK_OTHER - Auto attack round events (fires when auto attack hits are processed; includes damage, hit info, victim state, absorb/resist/block amounts). Set `NP_EnableAutoAttackEvents=1` to enable. See EVENTS.md for details.
 - SPELL_HEAL_BY_SELF, SPELL_HEAL_BY_OTHER, and SPELL_HEAL_ON_SELF - Spell healing events (fires when spell heals are processed; includes target, caster, spell ID, amount, critical flag, and periodic flag). Set `NP_EnableSpellHealEvents=1` to enable. See EVENTS.md for details.

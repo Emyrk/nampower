@@ -191,6 +191,7 @@ enum class Offsets : std::uint32_t {
     CastEventStringPtr = 0X00BE1A08, // unused event 540 0x21C
 
     CGBuffBar__m_buffs = 0X00BC6040,
+    CGBuffBar_UpdateDuration = 0x004E4390,
     GetBuffByIndex = 0X004E4430,
 
     CGUnit_C_ClearCastingSpell = 0x0060d040,

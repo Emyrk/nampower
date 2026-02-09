@@ -145,6 +145,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraAddedT> > gCGUnit_C_OnAuraAddedDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraAddedStackT> > gCGUnit_C_OnAuraAddedStackDetour;
     std::unique_ptr<hadesmem::PatchDetour<UnitCombatLogUnitDeadT> > gUnitCombatLogUnitDeadDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGBuffBar_UpdateDurationT> > gCGBuffBar_UpdateDurationDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<InvalidFunctionPtrCheckT> > gInvalidFunctionPtrCheckDetour;
 
@@ -1385,6 +1386,8 @@ namespace Nampower {
             &CGUnit_C_OnAuraAddedStackHook);
         gUnitCombatLogUnitDeadDetour = createHook<UnitCombatLogUnitDeadT>(process, Offsets::UnitCombatLogUnitDead,
                                                                           &UnitCombatLogUnitDeadHook);
+        gCGBuffBar_UpdateDurationDetour = createHook<CGBuffBar_UpdateDurationT>(process, Offsets::CGBuffBar_UpdateDuration,
+                                                                                &CGBuffBar_UpdateDurationHook);
         gAttackRoundInfo_ReadPacketDetour = createHook<AttackRoundInfo_ReadPacketT>(process, Offsets::AttackRoundInfo_ReadPacket,
                                                                                      &AttackRoundInfo_ReadPacketHook);
         gCSimpleFrame_GetNameDetour = createHook<LuaScriptT>(process, Offsets::CSimpleFrame_GetName,
@@ -1517,6 +1520,12 @@ namespace Nampower {
 
         char SPELL_ENERGIZE_ON_SELF[] = "SPELL_ENERGIZE_ON_SELF";
         addCustomEvent(game::SPELL_ENERGIZE_ON_SELF, SPELL_ENERGIZE_ON_SELF);
+
+        char BUFF_UPDATE_DURATION_SELF[] = "BUFF_UPDATE_DURATION_SELF";
+        addCustomEvent(game::BUFF_UPDATE_DURATION_SELF, BUFF_UPDATE_DURATION_SELF);
+
+        char DEBUFF_UPDATE_DURATION_SELF[] = "DEBUFF_UPDATE_DURATION_SELF";
+        addCustomEvent(game::DEBUFF_UPDATE_DURATION_SELF, DEBUFF_UPDATE_DURATION_SELF);
     }
 
     void FrameScript_CreateEventsHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t maxEventId) {
@@ -1661,6 +1670,9 @@ namespace Nampower {
 
         char getAmmo[] = "GetAmmo";
         RegisterLuaFunction(getAmmo, reinterpret_cast<uintptr_t *>(Script_GetAmmo));
+
+        char getPlayerAuraDuration[] = "GetPlayerAuraDuration";
+        RegisterLuaFunction(getPlayerAuraDuration, reinterpret_cast<uintptr_t *>(Script_GetPlayerAuraDuration));
     }
 
     void load() {

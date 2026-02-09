@@ -29,6 +29,7 @@ For installation, configuration, and general usage information, see the main [RE
     - [GetItemLevel](#getitemlevelitemid)
     - [GetItemIconTexture](#getitemicontexturedisplayinfoid)
     - [GetSpellIconTexture](#getspellicontexturespelliconid)
+    - [GetPlayerAuraDuration](#getplayerauradurationauraslot)
   - [Spell Casting and Queuing](#spell-casting-and-queuing)
     - [QueueSpellByName](#queuespellbynamespellname)
     - [CastSpellByNameNoQueue](#castspellbynamenoqueuespellname)
@@ -460,6 +461,36 @@ end
 local ammoId, count = GetAmmo()
 if ammoId and count < 200 then
     print("Low ammo! Only " .. count .. " remaining")
+end
+```
+
+#### GetPlayerAuraDuration(auraSlot)
+Returns the spell ID, remaining duration, and expiration time for a given aura slot on the active player.
+
+**Parameters:**
+- `auraSlot` (number): The 0-based aura slot index (0-31 for buffs, 32-47 for debuffs).  This is not the slot used by GetPlayerBuff which has its own sorting, this is the raw aura slot index which is consistent with the unit data fields and the internal aura storage.
+
+**Returns:**
+- If the slot is out of range or the player unit is unavailable: returns `nil`
+- Otherwise returns three values:
+  - `spellId` (number): The spell ID occupying the aura slot
+  - `remainingDurationMs` (number): Remaining duration in milliseconds (0 if expired or no duration)
+  - `expirationTimeMs` (number): The expiration timestamp from GetWowTimeMs() (0 if no duration)
+
+**Examples:**
+```lua
+-- Check remaining duration on buff slot 0
+local spellId, remainingDurationMs, expirationTimeMs = GetPlayerAuraDuration(0)
+if spellId and spellId > 0 then
+    print("Spell: " .. spellId .. " remaining: " .. remainingDurationMs .. "ms")
+end
+
+-- Check all debuff slots (32-47)
+for slot = 32, 47 do
+    local spellId, remainingDurationMs, expirationTimeMs = GetPlayerAuraDuration(slot)
+    if spellId and spellId > 0 then
+        print("Debuff slot " .. slot .. ": spell=" .. spellId .. " duration=" .. remainingDurationMs .. "ms")
+    end
 end
 ```
 

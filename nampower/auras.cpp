@@ -8,6 +8,8 @@
 #include "game.hpp"
 
 namespace Nampower {
+    uint32_t gAuraExpirationTime[MAX_AURA_SLOTS] = {};
+
     // Helper function to trigger buff/debuff events
     void TriggerAuraEvent(uintptr_t *unit, uint32_t slot, uint32_t spellId, bool wasAdded) {
         // Determine if the unit is the active player (self) or another unit (other)
@@ -71,7 +73,7 @@ namespace Nampower {
             }
         }
 
-        static char format[] = "%s%d%d%d%d";
+        static char format[] = "%s%d%d%d%d%d";
         char *guidStr = new char[21]; // 2 for 0x prefix, 18 for the number, and 1 for '\0'
         if (isSelf) {
             std::snprintf(guidStr, 21, "0x%016llX", static_cast<unsigned long long>(playerGuid));
@@ -80,14 +82,15 @@ namespace Nampower {
         }
 
         // Trigger the event with spellId as parameter
-            ((int (__cdecl *)(int, char *, char *, uint32_t, uint32_t, uint32_t, uint32_t)) Offsets::SignalEventParam)(
+            ((int (__cdecl *)(int, char *, char *, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t)) Offsets::SignalEventParam)(
                 eventToTrigger,
                 format,
                 guidStr,
                 luaUnitSlot,
                 spellId,
                 luaStacks,
-                auraLevels[slot]);
+                auraLevels[slot],
+                slot);
 
         delete[] guidStr;
     }
@@ -125,6 +128,40 @@ namespace Nampower {
 
         // Trigger the aura event for stack added
         TriggerAuraEvent(unit, slot, spellId, true);
+    }
+
+    void CGBuffBar_UpdateDurationHook(hadesmem::PatchDetourBase *detour, uint8_t auraSlot, int durationMs) {
+        auto const updateDuration = detour->GetTrampolineT<CGBuffBar_UpdateDurationT>();
+
+        // Store expiration time indexed by aura slot
+        if (auraSlot < MAX_AURA_SLOTS) {
+            auto now = static_cast<uint32_t>(GetWowTimeMs() & 0xFFFFFFFF);
+            uint32_t expirationTime = durationMs > 0 ? now + durationMs : 0;
+            gAuraExpirationTime[auraSlot] = expirationTime;
+
+            // Get player unit to read spellId from aura fields
+            auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+            auto *playerUnit = game::GetObjectPtr(playerGuid);
+            if (playerUnit) {
+                auto *unitFields = *reinterpret_cast<game::UnitFields **>(playerUnit + 68);
+                uint32_t spellId = unitFields->aura[auraSlot];
+
+                bool isBuff = auraSlot < 32;
+                game::Events eventToTrigger = isBuff ? game::BUFF_UPDATE_DURATION_SELF : game::DEBUFF_UPDATE_DURATION_SELF;
+
+                static char format[] = "%d%d%d%d";
+                ((int (__cdecl *)(int, char *, uint32_t, uint32_t, int, uint32_t)) Offsets::SignalEventParam)(
+                    eventToTrigger,
+                    format,
+                    auraSlot,
+                    spellId,
+                    durationMs,
+                    expirationTime);
+            }
+        }
+
+        // Call the original function
+        updateDuration(auraSlot, durationMs);
     }
 
     void UnitCombatLogUnitDeadHook(hadesmem::PatchDetourBase *detour, uint64_t guid) {

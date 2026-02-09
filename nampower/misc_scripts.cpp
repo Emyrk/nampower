@@ -9,6 +9,7 @@
 #include "unit_fields.hpp"
 #include "helper.hpp"
 #include "lua_refs.hpp"
+#include "auras.hpp"
 #include <cstring>
 
 namespace Nampower {
@@ -841,6 +842,41 @@ namespace Nampower {
         return 1;
     }
 
+    uint32_t Script_GetPlayerAuraDuration(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isnumber(luaState, 1)) {
+            lua_error(luaState, "Usage: GetPlayerAuraDuration(auraSlot)");
+            return 0;
+        }
+
+        auto auraSlot = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+        if (auraSlot >= MAX_AURA_SLOTS) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // Get spellId from player unit fields
+        auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto *playerUnit = game::GetObjectPtr(playerGuid);
+        if (!playerUnit) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        auto *unitFields = *reinterpret_cast<game::UnitFields **>(playerUnit + 68);
+        uint32_t spellId = unitFields->aura[auraSlot];
+
+        uint32_t expirationTime = gAuraExpirationTime[auraSlot];
+        auto now = static_cast<uint32_t>(GetWowTimeMs() & 0xFFFFFFFF);
+        int remainingDurationMs = expirationTime > now ? static_cast<int>(expirationTime - now) : 0;
+
+        lua_pushnumber(luaState, spellId);
+        lua_pushnumber(luaState, remainingDurationMs);
+        lua_pushnumber(luaState, expirationTime);
+        return 3;
+    }
+
     uint32_t CSimpleFrame_GetNameHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState) {
         luaState = GetLuaStatePtr();
 
@@ -884,8 +920,6 @@ namespace Nampower {
             uint32_t guidLow = frameObj[0x13a];
             uint32_t guidHigh = frameObj[0x13b];
             uint64_t guid = (static_cast<uint64_t>(guidHigh) << 32) | guidLow;
-
-            DEBUG_LOG(guid);
 
             char guidStr[21] = {0};
             std::snprintf(guidStr, sizeof(guidStr), "0x%016llX", static_cast<unsigned long long>(guid));
