@@ -105,6 +105,9 @@ enum class Offsets : std::uint32_t {
     SpellNonMeleeDmgLogHandler = 0X005E85E0,
     SpellHealingLogHandler = 0x005E89C0,
     SpellEnergizeLogHandler = 0x005E8A90,
+    ProcResistHandler = 0x006289A0,
+    SpellLogMissHandler = 0x005E7E00,
+    SpellOrDamageImmuneHandler = 0x005E8CA0,
 
     Spell_C_GetCastTime = 0X006E3340,
     Spell_C_CastSpell = 0x6E4B60,

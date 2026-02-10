@@ -572,5 +572,50 @@ namespace Nampower {
         return 0;
     }
 
+    uint32_t Script_GetSpellPower(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto playerUnit = game::GetObjectPtr(playerGuid);
+
+        if (!playerUnit) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // Get player fields pointer at byte offset 0xe68
+        auto playerFields = *reinterpret_cast<uint8_t **>(reinterpret_cast<uint8_t *>(playerUnit) + 0xe68);
+        if (!playerFields) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // PLAYER_FIELD_MOD_DAMAGE_DONE_POS at offset 0x0FD4, NEG at 0x0FF0 (7 uint32 fields each)
+        auto modDmgDonePos = reinterpret_cast<uint32_t *>(playerFields + 0x0FD4);
+        auto modDmgDoneNeg = reinterpret_cast<uint32_t *>(playerFields + 0x0FF0);
+
+        // Optional first arg: "net" (default), "positive", or "negative"
+        const char *mode = "net";
+        if (lua_isstring(luaState, 1)) {
+            mode = lua_tostring(luaState, 1);
+        }
+
+        // Return all 7 spell schools: Physical, Holy, Fire, Nature, Frost, Shadow, Arcane
+        if (_stricmp(mode, "positive") == 0) {
+            for (int i = 0; i < 7; i++) {
+                lua_pushnumber(luaState, modDmgDonePos[i]);
+            }
+        } else if (_stricmp(mode, "negative") == 0) {
+            for (int i = 0; i < 7; i++) {
+                lua_pushnumber(luaState, modDmgDoneNeg[i]);
+            }
+        } else {
+            for (int i = 0; i < 7; i++) {
+                lua_pushnumber(luaState, static_cast<int32_t>(modDmgDonePos[i]) - static_cast<int32_t>(modDmgDoneNeg[i]));
+            }
+        }
+
+        return 7;
+    }
 
 }

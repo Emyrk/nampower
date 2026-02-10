@@ -133,6 +133,9 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gPlaySpellVisualHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellHealingLogHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellEnergizeLogHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gProcResistHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellLogMissHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellOrDamageImmuneHandlerDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT> > gSpellStartHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT> > gPeriodicAuraLogHandlerDetour;
@@ -1352,6 +1355,12 @@ namespace Nampower {
                                                                    &SpellHealingLogHandlerHook);
         gSpellEnergizeLogHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellEnergizeLogHandler,
                                                                     &SpellEnergizeLogHandlerHook);
+        gProcResistHandlerDetour = createHook<PacketHandlerT>(process, Offsets::ProcResistHandler,
+                                                               &ProcResistHandlerHook);
+        gSpellLogMissHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellLogMissHandler,
+                                                                 &SpellLogMissHandlerHook);
+        gSpellOrDamageImmuneHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellOrDamageImmuneHandler,
+                                                                        &SpellOrDamageImmuneHandlerHook);
         gSpellFailedOtherHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellFailedOtherHandler,
                                                                     &SpellFailedOtherHandlerHook);
         gSpellFailedDetour = createHook<Spell_C_SpellFailedT>(process, Offsets::Spell_C_SpellFailed,
@@ -1526,6 +1535,12 @@ namespace Nampower {
 
         char DEBUFF_UPDATE_DURATION_SELF[] = "DEBUFF_UPDATE_DURATION_SELF";
         addCustomEvent(game::DEBUFF_UPDATE_DURATION_SELF, DEBUFF_UPDATE_DURATION_SELF);
+
+        char SPELL_MISS_SELF[] = "SPELL_MISS_SELF";
+        addCustomEvent(game::SPELL_MISS_SELF, SPELL_MISS_SELF);
+
+        char SPELL_MISS_OTHER[] = "SPELL_MISS_OTHER";
+        addCustomEvent(game::SPELL_MISS_OTHER, SPELL_MISS_OTHER);
     }
 
     void FrameScript_CreateEventsHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t maxEventId) {
@@ -1673,6 +1688,10 @@ namespace Nampower {
 
         char getPlayerAuraDuration[] = "GetPlayerAuraDuration";
         RegisterLuaFunction(getPlayerAuraDuration, reinterpret_cast<uintptr_t *>(Script_GetPlayerAuraDuration));
+
+        char getSpellPower[] = "GetSpellPower";
+        RegisterLuaFunction(getSpellPower, reinterpret_cast<uintptr_t *>(Script_GetSpellPower));
+
     }
 
     void load() {

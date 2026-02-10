@@ -844,6 +844,37 @@ namespace Nampower {
         delete[] targetGuidStr;
     }
 
+    void TriggerSpellMissEvent(uint64_t casterGuid,
+                               uint64_t targetGuid,
+                               uint32_t spellId,
+                               uint32_t missInfo) {
+        static char format[] = "%s%s%d%d";
+
+        char *casterGuidStr = ConvertGuidToString(casterGuid);
+        char *targetGuidStr = ConvertGuidToString(targetGuid);
+
+        auto event = game::SPELL_MISS_OTHER;
+        if (casterGuid == game::ClntObjMgrGetActivePlayerGuid()) {
+            event = game::SPELL_MISS_SELF;
+        }
+
+        ((int (__cdecl *)(int eventCode,
+                          char *fmt,
+                          char *casterGuidParam,
+                          char *targetGuidParam,
+                          uint32_t spellIdParam,
+                          uint32_t missInfoParam)) Offsets::SignalEventParam)(
+            event,
+            format,
+            casterGuidStr,
+            targetGuidStr,
+            spellId,
+            missInfo);
+
+        delete[] casterGuidStr;
+        delete[] targetGuidStr;
+    }
+
     void SpellGoHook(hadesmem::PatchDetourBase *detour, uint64_t *itemGUID, uint64_t *casterGUID,
                      uint32_t spellId, CDataStore *packet) {
         auto const rpos = packet->m_read;
@@ -861,11 +892,13 @@ namespace Nampower {
             packet->Get(targetHitGuids[i]);
         }
 
+        uint64_t casterGuidValue = casterGUID ? *casterGUID : 0;
+
         uint8_t numTargetsMissed;
         packet->Get(numTargetsMissed);
         for (int i = 0; i < numTargetsMissed; ++i) {
             uint64_t missedTargetGuid;
-            packet->Get(missedTargetGuid); // not worth storing missed targets
+            packet->Get(missedTargetGuid);
 
             uint8_t missCondition;
             packet->Get(missCondition);
@@ -874,6 +907,8 @@ namespace Nampower {
                 uint8_t reflectResult;
                 packet->Get(reflectResult);
             }
+
+            TriggerSpellMissEvent(casterGuidValue, missedTargetGuid, spellId, missCondition);
         }
 
         int16_t spellCastTargetMask;
@@ -884,7 +919,6 @@ namespace Nampower {
             packet->GetPackedGuid(unitTargetGUID);
 
         uint32_t itemId = 0;
-        uint64_t casterGuidValue = casterGUID ? *casterGUID : 0;
         if (itemGUID && *itemGUID != 0 && *itemGUID != casterGuidValue) {
             auto *item = reinterpret_cast<game::CGItem_C *>(game::ClntObjMgrObjectPtr(
                 game::TYPEMASK_ITEM, *itemGUID));
@@ -1345,5 +1379,85 @@ namespace Nampower {
         }
 
         return spellEnergizeLogHandler(opCode, packet);
+    }
+
+    int ProcResistHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet) {
+        auto const procResistHandler = detour->GetTrampolineT<PacketHandlerT>();
+
+        auto const rpos = packet->m_read;
+
+        uint64_t casterGuid;
+        packet->Get(casterGuid);
+
+        uint64_t targetGuid;
+        packet->Get(targetGuid);
+
+        uint32_t spellId;
+        packet->Get(spellId);
+
+        uint8_t isDebug;
+        packet->Get(isDebug);
+
+        packet->m_read = rpos;
+
+        // ProcResist is always SPELL_MISS_RESIST (2)
+        TriggerSpellMissEvent(casterGuid, targetGuid, spellId, 2);
+
+        return procResistHandler(opCode, packet);
+    }
+
+    int SpellLogMissHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet) {
+        auto const spellLogMissHandler = detour->GetTrampolineT<PacketHandlerT>();
+
+        auto const rpos = packet->m_read;
+
+        uint32_t spellId;
+        packet->Get(spellId);
+
+        uint64_t casterGuid;
+        packet->Get(casterGuid);
+
+        uint8_t unk;
+        packet->Get(unk);
+
+        uint32_t targetCount;
+        packet->Get(targetCount);
+
+        uint64_t targetGuid;
+        packet->Get(targetGuid);
+
+        uint8_t missCondition;
+        packet->Get(missCondition);
+
+        TriggerSpellMissEvent(casterGuid, targetGuid, spellId, missCondition);
+
+        packet->m_read = rpos;
+
+        return spellLogMissHandler(opCode, packet);
+    }
+
+    int SpellOrDamageImmuneHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet) {
+        auto const spellOrDamageImmuneHandler = detour->GetTrampolineT<PacketHandlerT>();
+
+        auto const rpos = packet->m_read;
+
+        uint64_t casterGuid;
+        packet->Get(casterGuid);
+
+        uint64_t targetGuid;
+        packet->Get(targetGuid);
+
+        uint32_t spellId;
+        packet->Get(spellId);
+
+        uint8_t unk;
+        packet->Get(unk);
+
+        packet->m_read = rpos;
+
+        // SPELL_MISS_IMMUNE = 7
+        TriggerSpellMissEvent(casterGuid, targetGuid, spellId, 7);
+
+        return spellOrDamageImmuneHandler(opCode, packet);
     }
 }

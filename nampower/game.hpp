@@ -1559,6 +1559,9 @@ namespace game {
 
         BUFF_UPDATE_DURATION_SELF = 580,
         DEBUFF_UPDATE_DURATION_SELF = 581,
+
+        SPELL_MISS_SELF = 582,
+        SPELL_MISS_OTHER = 583,
     };
 
     enum TypeMask {

@@ -1,8 +1,8 @@
 # Nampower Custom Lua Functions
 
-This document describes all custom Lua functions and events added by Nampower.
+This document describes all custom Lua functions added by Nampower.
 
-For installation, configuration, and general usage information, see the main [README.md](README.md).
+For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, and general usage information, see the main [README.md](README.md).
 
 ## Table of Contents
 - [Performance Optimization - Table References](#performance-optimization---table-references)
@@ -20,6 +20,7 @@ For installation, configuration, and general usage information, see the main [RE
     - [GetSpellRec](#getspellrecspellid-copy)
     - [GetSpellRecField](#getspellrecfieldspellid-fieldname-copy)
     - [GetSpellModifiers](#getspellmodifiersspellid-modifiertype)
+    - [GetSpellPower](#getspellpowermode)
     - [GetUnitData](#getunitdataunittoken-copy)
     - [GetUnitField](#getunitfieldunittoken-fieldname-copy)
     - [GetSpellIdForName](#getspellidfornamenspellname)
@@ -585,6 +586,34 @@ Returns the current spell modifiers applied to a spell for the player. This incl
 local flatMod, percentMod, ret = GetSpellModifiers(116, 0)
 print("Flat damage bonus: " .. flatMod)
 print("Percent damage bonus: " .. percentMod .. "%")
+```
+
+#### GetSpellPower([mode])
+Returns the player's mod damage done values for all 7 spell schools from the player unit fields (`PLAYER_FIELD_MOD_DAMAGE_DONE_POS` / `PLAYER_FIELD_MOD_DAMAGE_DONE_NEG`).
+
+**Parameters:**
+- `mode` (string, optional): Which values to return. Defaults to `"net"`.
+  - `"net"` (default) - Returns positive minus negative for each school
+  - `"positive"` - Returns only the positive mod damage done values
+  - `"negative"` - Returns only the negative mod damage done values
+
+**Returns:**
+7 values in order: Physical, Holy, Fire, Nature, Frost, Shadow, Arcane
+
+Returns `nil` if the player unit or player fields cannot be accessed.
+
+**Examples:**
+```lua
+-- Get net spell power (default)
+local physical, holy, fire, nature, frost, shadow, arcane = GetSpellPower()
+print("Shadow spell power: " .. shadow)
+print("Fire spell power: " .. fire)
+
+-- Get only positive values
+local physical, holy, fire, nature, frost, shadow, arcane = GetSpellPower("positive")
+
+-- Get only negative values
+local physical, holy, fire, nature, frost, shadow, arcane = GetSpellPower("negative")
 ```
 
 #### GetUnitData(unitToken, [copy])

@@ -4,6 +4,28 @@ This document describes all custom events added by Nampower that you can registe
 
 For custom Lua functions, see [SCRIPTS.md](SCRIPTS.md). For general usage information, see [README.md](README.md).
 
+> **Note on examples:** The examples in this document use the **Ace2/Ace3 event format** where event parameters are passed directly as function arguments. In vanilla WoW's native event system, parameters are instead available as global variables `arg1`, `arg2`, `arg3`, etc.
+>
+> **Ace format (used in examples):**
+> ```lua
+> frame:RegisterEvent("SPELL_MISS_SELF", function(casterGuid, targetGuid, spellId, missInfo)
+>     -- args passed directly
+> end)
+> ```
+>
+> **Vanilla native format:**
+> ```lua
+> local frame = CreateFrame("Frame")
+> frame:RegisterEvent("SPELL_MISS_SELF")
+> frame:SetScript("OnEvent", function()
+>     -- use arg1, arg2, arg3, arg4 instead
+>     local casterGuid = arg1
+>     local targetGuid = arg2
+>     local spellId = arg3
+>     local missInfo = arg4
+> end)
+> ```
+
 ## Table of Contents
 - [SPELL_QUEUE_EVENT](#spell_queue_event)
 - [SPELL_CAST_EVENT](#spell_cast_event)
@@ -19,6 +41,7 @@ For custom Lua functions, see [SCRIPTS.md](SCRIPTS.md). For general usage inform
 - [AUTO_ATTACK_SELF and AUTO_ATTACK_OTHER](#auto_attack_self-and-auto_attack_other)
 - [SPELL_HEAL_BY_SELF, SPELL_HEAL_BY_OTHER, and SPELL_HEAL_ON_SELF](#spell_heal_by_self-spell_heal_by_other-and-spell_heal_on_self)
 - [SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_OTHER, and SPELL_ENERGIZE_ON_SELF](#spell_energize_by_self-spell_energize_by_other-and-spell_energize_on_self)
+- [SPELL_MISS_SELF and SPELL_MISS_OTHER](#spell_miss_self-and-spell_miss_other)
 - [UNIT_DIED](#unit_died)
 
 ---
@@ -480,6 +503,52 @@ end
 frame:RegisterEvent("SPELL_ENERGIZE_BY_SELF", onEnergize)    -- Power you restore
 frame:RegisterEvent("SPELL_ENERGIZE_BY_OTHER", onEnergize)  -- Power others restore
 frame:RegisterEvent("SPELL_ENERGIZE_ON_SELF", onEnergize)   -- Power you receive
+```
+
+### SPELL_MISS_SELF and SPELL_MISS_OTHER
+Fire when a spell miss or resist occurs. `SPELL_MISS_SELF` fires when the active player is the caster, `SPELL_MISS_OTHER` fires when someone else is the caster.
+
+These events are triggered by `SMSG_SPELL_GO` (missed targets in spell go), `SMSG_SPELLLOGMISS` (miss, dodge, parry, etc.), `SMSG_PROCRESIST` (resist on proc effects), and `SMSG_SPELLORDAMAGE_IMMUNE` (immune).
+
+Parameters:
+1.  string casterGuid - guid of the caster like "0xF5300000000000A5"
+2.  string targetGuid - guid of the target like "0xF5300000000000A5"
+3.  int spellId - the spell ID that missed
+4.  int missInfo - the type of miss (see SpellMissInfo below)
+
+#### SpellMissInfo
+```
+SPELL_MISS_NONE    = 0   -- No miss (shouldn't normally appear)
+SPELL_MISS_MISS    = 1   -- Miss
+SPELL_MISS_RESIST  = 2   -- Resist (also used for SMSG_PROCRESIST)
+SPELL_MISS_DODGE   = 3   -- Dodge
+SPELL_MISS_PARRY   = 4   -- Parry
+SPELL_MISS_BLOCK   = 5   -- Block
+SPELL_MISS_EVADE   = 6   -- Evade
+SPELL_MISS_IMMUNE  = 7   -- Immune
+SPELL_MISS_IMMUNE2 = 8   -- Immune (variant)
+SPELL_MISS_DEFLECT = 9   -- Deflect
+SPELL_MISS_ABSORB  = 10  -- Absorb
+SPELL_MISS_REFLECT = 11  -- Reflect
+```
+
+Example:
+```lua
+local MISS_NAMES = {
+    [0] = "None", [1] = "Miss", [2] = "Resist", [3] = "Dodge",
+    [4] = "Parry", [5] = "Block", [6] = "Evade", [7] = "Immune",
+    [8] = "Immune", [9] = "Deflect", [10] = "Absorb", [11] = "Reflect",
+}
+
+local function onSpellMiss(casterGuid, targetGuid, spellId, missInfo)
+    local missName = MISS_NAMES[missInfo] or "Unknown"
+    DEFAULT_CHAT_FRAME:AddMessage(string.format(
+        "Spell %d on %s: %s", spellId, targetGuid, missName
+    ))
+end
+
+frame:RegisterEvent("SPELL_MISS_SELF", onSpellMiss)    -- Your spells that missed
+frame:RegisterEvent("SPELL_MISS_OTHER", onSpellMiss)  -- Others' spells that missed
 ```
 
 ### UNIT_DIED
