@@ -236,7 +236,7 @@ Cursive:RegisterEvent("SPELL_DAMAGE_EVENT_SELF",
 ```
 
 ### Buff/Debuff Events
-New events fire whenever a buff or debuff is added or removed on you or any other unit that the client tracks.
+New events fire whenever a buff/buff stack or debuff/debuff stack is added or removed on you or any other unit that the client tracks.
 
 Events:
 ```
@@ -254,12 +254,10 @@ All eight events pass the same parameters:
 1.  string guid - unit guid like "0xF5300000000000A5"
 2.  int luaSlot - 1-based Lua slot index for the buff/debuff (skips empty slots to match UnitBuff/UnitDebuff ordering). This is the slot you would pass to UnitBuff/UnitDebuff.
 3.  int spellId
-4.  int stackCount - current stack count for the aura (1 for a new aura; 0 when fully removed)
+4.  int stackCount - current stack count for the aura 
 5.  int auraLevel - caster level for the aura from UnitFields.auraLevels (uint8 per slot, 48 entries)
 6.  int auraSlot - the raw 0-based aura slot index (0-31 for buffs, 32-47 for debuffs). This is the raw internal slot, not the Lua slot. Consistent with unit data fields, GetPlayerAuraDuration, and BUFF/DEBUFF_UPDATE_DURATION_SELF events.
 7.  int state - indicates why the event fired: `0` = newly added, `1` = newly removed, `2` = modified (stack change). When state is `2`, the event type (*_ADDED_* or *_REMOVED_*) reflects whether stacks increased or decreased.
-
-Stack changes also fire the appropriate *_ADDED_* or *_REMOVED_* events (not just new applications). When stacks increase, the corresponding *_ADDED_* event fires; when stacks decrease, the corresponding *_REMOVED_* event fires.
 
 Example:
 ```
