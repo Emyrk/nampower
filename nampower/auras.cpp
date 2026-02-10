@@ -11,7 +11,8 @@ namespace Nampower {
     uint32_t gAuraExpirationTime[MAX_AURA_SLOTS] = {};
 
     // Helper function to trigger buff/debuff events
-    void TriggerAuraEvent(uintptr_t *unit, uint32_t slot, uint32_t spellId, bool wasAdded) {
+    // state: 0 = newly added, 1 = newly removed, 2 = modified (stack change)
+    void TriggerAuraEvent(uintptr_t *unit, uint32_t slot, uint32_t spellId, bool wasAdded, uint32_t state) {
         // Determine if the unit is the active player (self) or another unit (other)
         auto unitGuid = game::UnitGetGuid(unit);
         auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
@@ -29,7 +30,7 @@ namespace Nampower {
         auto auraLevels = unitFields->auraLevels;
         auto auraStacks = unitFields->auraApplications;
 
-        auto luaStacks = auraStacks[slot];
+        auto luaStacks = (state == 1) ? auraStacks[slot] : auraStacks[slot] + 1; // for some crazy reason the stack count is 0 indexed but also 0 instead of -1 when removed
 
         if (isBuff) {
             // count empty buff slots before slot to adjust luaSlot for actual buff/debuff index
@@ -42,8 +43,6 @@ namespace Nampower {
             luaUnitSlot = luaUnitSlot - emptyCount;
 
             if (wasAdded) {
-                luaStacks += 1; // count offset by 1
-
                 // Buff added
                 eventToTrigger = isSelf ? game::BUFF_ADDED_SELF : game::BUFF_ADDED_OTHER;
             } else {
@@ -63,8 +62,6 @@ namespace Nampower {
             luaUnitSlot = luaUnitSlot - emptyCount;
 
             if (wasAdded) {
-                luaStacks += 1; // count offset by 1
-
                 // Debuff added
                 eventToTrigger = isSelf ? game::DEBUFF_ADDED_SELF : game::DEBUFF_ADDED_OTHER;
             } else {
@@ -73,7 +70,7 @@ namespace Nampower {
             }
         }
 
-        static char format[] = "%s%d%d%d%d%d";
+        static char format[] = "%s%d%d%d%d%d%d";
         char *guidStr = new char[21]; // 2 for 0x prefix, 18 for the number, and 1 for '\0'
         if (isSelf) {
             std::snprintf(guidStr, 21, "0x%016llX", static_cast<unsigned long long>(playerGuid));
@@ -82,7 +79,7 @@ namespace Nampower {
         }
 
         // Trigger the event with spellId as parameter
-            ((int (__cdecl *)(int, char *, char *, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t)) Offsets::SignalEventParam)(
+            ((int (__cdecl *)(int, char *, char *, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t)) Offsets::SignalEventParam)(
                 eventToTrigger,
                 format,
                 guidStr,
@@ -90,7 +87,8 @@ namespace Nampower {
                 spellId,
                 luaStacks,
                 auraLevels[slot],
-                slot);
+                slot,
+                state);
 
         delete[] guidStr;
     }
@@ -102,7 +100,7 @@ namespace Nampower {
         // Call the original function
         onAuraRemoved(unit, dummy_edx, slot, spellId);
 
-        TriggerAuraEvent(unit, slot, spellId, false);
+        TriggerAuraEvent(unit, slot, spellId, false, 1);
     }
 
     void CGUnit_C_OnAuraAddedHook(hadesmem::PatchDetourBase *detour, uintptr_t *unit, void *dummy_edx, uint32_t slot,
@@ -112,22 +110,26 @@ namespace Nampower {
         // Call the original function
         onAuraAdded(unit, dummy_edx, slot, spellId);
 
-        TriggerAuraEvent(unit, slot, spellId, true);
+        TriggerAuraEvent(unit, slot, spellId, true, 0);
     }
 
-    void CGUnit_C_OnAuraAddedStackHook(hadesmem::PatchDetourBase *detour, uintptr_t *unit, int slot) {
-        auto const unitAuraAddedStack = detour->GetTrampolineT<CGUnit_C_OnAuraAddedStackT>();
-
-        // Call the original function
-        unitAuraAddedStack(unit, slot);
+    void CGUnit_C_OnAuraStacksChangedHook(hadesmem::PatchDetourBase *detour, uintptr_t *unit, void *dummy_edx, int slot, uint8_t stackCount) {
+        auto const onAuraStacksChanged = detour->GetTrampolineT<CGUnit_C_OnAuraStacksChangedT>();
 
         // Get spell ID from the aura slot
         auto *unitFields = *reinterpret_cast<game::UnitFields **>(unit + 68);
         auto auras = unitFields->aura;
         uint32_t spellId = auras[slot];
 
-        // Trigger the aura event for stack added
-        TriggerAuraEvent(unit, slot, spellId, true);
+        // Check if stacks increased or decreased (auraApplications is 0-indexed, convert to 1-indexed)
+        uint8_t currentStacks = unitFields->auraApplications[slot];
+
+        // Call the original function
+        onAuraStacksChanged(unit, dummy_edx, slot, stackCount);
+
+        bool wasAdded = stackCount < currentStacks;
+
+        TriggerAuraEvent(unit, slot, spellId, wasAdded, 2);
     }
 
     void CGBuffBar_UpdateDurationHook(hadesmem::PatchDetourBase *detour, uint8_t auraSlot, int durationMs) {

@@ -146,7 +146,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<CGActionBar_UseActionT> > gCGActionBar_UseActionDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraRemovedT> > gCGUnit_C_OnAuraRemovedDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraAddedT> > gCGUnit_C_OnAuraAddedDetour;
-    std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraAddedStackT> > gCGUnit_C_OnAuraAddedStackDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_OnAuraStacksChangedT> > gCGUnit_C_OnAuraStacksChangedDetour;
     std::unique_ptr<hadesmem::PatchDetour<UnitCombatLogUnitDeadT> > gUnitCombatLogUnitDeadDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGBuffBar_UpdateDurationT> > gCGBuffBar_UpdateDurationDetour;
 
@@ -1390,9 +1390,9 @@ namespace Nampower {
                                                                             &CGUnit_C_OnAuraRemovedHook);
         gCGUnit_C_OnAuraAddedDetour = createHook<CGUnit_C_OnAuraAddedT>(process, Offsets::CGUnit_C_OnAuraAdded,
                                                                         &CGUnit_C_OnAuraAddedHook);
-        gCGUnit_C_OnAuraAddedStackDetour = createHook<CGUnit_C_OnAuraAddedStackT>(
-            process, Offsets::CGUnit_C_OnAuraAddedStack,
-            &CGUnit_C_OnAuraAddedStackHook);
+        gCGUnit_C_OnAuraStacksChangedDetour = createHook<CGUnit_C_OnAuraStacksChangedT>(
+            process, Offsets::CGUnit_C_OnAuraStacksChanged,
+            &CGUnit_C_OnAuraStacksChangedHook);
         gUnitCombatLogUnitDeadDetour = createHook<UnitCombatLogUnitDeadT>(process, Offsets::UnitCombatLogUnitDead,
                                                                           &UnitCombatLogUnitDeadHook);
         gCGBuffBar_UpdateDurationDetour = createHook<CGBuffBar_UpdateDurationT>(process, Offsets::CGBuffBar_UpdateDuration,

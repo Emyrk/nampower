@@ -205,7 +205,7 @@ enum class Offsets : std::uint32_t {
     CanInspectUnit = 0x004944a0,
     CGUnit_C_OnAuraRemoved = 0x00612320,
     CGUnit_C_OnAuraAdded = 0x006123f0,
-    CGUnit_C_OnAuraAddedStack = 0x0062b800,
+    CGUnit_C_OnAuraStacksChanged = 0x00612450,
     UnitCombatLogUnitDead = 0x0062c160,
     CGUnitGetUnitName = 0x00609210,
     CGUnitCanAttack = 0x00606980,

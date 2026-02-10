@@ -257,13 +257,19 @@ All eight events pass the same parameters:
 4.  int stackCount - current stack count for the aura (1 for a new aura; 0 when fully removed)
 5.  int auraLevel - caster level for the aura from UnitFields.auraLevels (uint8 per slot, 48 entries)
 6.  int auraSlot - the raw 0-based aura slot index (0-31 for buffs, 32-47 for debuffs). This is the raw internal slot, not the Lua slot. Consistent with unit data fields, GetPlayerAuraDuration, and BUFF/DEBUFF_UPDATE_DURATION_SELF events.
+7.  int state - indicates why the event fired: `0` = newly added, `1` = newly removed, `2` = modified (stack change). When state is `2`, the event type (*_ADDED_* or *_REMOVED_*) reflects whether stacks increased or decreased.
 
-Buff stack gains also fire the appropriate *_ADDED_* events.
+Stack changes also fire the appropriate *_ADDED_* or *_REMOVED_* events (not just new applications). When stacks increase, the corresponding *_ADDED_* event fires; when stacks decrease, the corresponding *_REMOVED_* event fires.
 
 Example:
 ```
-local function onAuraEvent(eventName, guid, luaSlot, spellId, stacks, auraLevel, auraSlot)
-    DEFAULT_CHAT_FRAME:AddMessage(string.format("[%s] %s luaSlot=%d spell=%d stacks=%d level=%d auraSlot=%d", eventName, guid, luaSlot, spellId, stacks, auraLevel, auraSlot))
+local AURA_STATE_ADDED = 0
+local AURA_STATE_REMOVED = 1
+local AURA_STATE_MODIFIED = 2
+
+local function onAuraEvent(eventName, guid, luaSlot, spellId, stacks, auraLevel, auraSlot, state)
+    local stateNames = { [0] = "added", [1] = "removed", [2] = "modified" }
+    DEFAULT_CHAT_FRAME:AddMessage(string.format("[%s] %s luaSlot=%d spell=%d stacks=%d level=%d auraSlot=%d state=%s", eventName, guid, luaSlot, spellId, stacks, auraLevel, auraSlot, stateNames[state] or "unknown"))
 end
 
 for _, eventName in ipairs({"BUFF_ADDED_SELF", "BUFF_REMOVED_SELF", "DEBUFF_ADDED_OTHER", "DEBUFF_REMOVED_OTHER"}) do
