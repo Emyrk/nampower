@@ -278,7 +278,7 @@ end
 ### BUFF_UPDATE_DURATION_SELF and DEBUFF_UPDATE_DURATION_SELF
 Fire when the client updates the duration of a buff or debuff on the active player. This happens when the server refreshes an aura's duration (e.g., reapplying a buff that already exists). Only fires for the active player's own auras.
 
-**Note:** This event fires before the aura is actually added to the unit fields, so for newly added auras the spellId will not yet be present in the unit data at the time of the event. Use the BUFF/DEBUFF_ADDED_SELF events or `GetPlayerAuraDuration(auraSlot)` after the aura is applied to look up the spellId.
+**Note:** This event fires before the aura is actually added to the unit fields, so for newly added auras the spellId will be 0. It will only have a value for auras that are being refreshed (i.e., the aura already exists in the slot). Use the BUFF/DEBUFF_ADDED_SELF events for tracking newly applied auras.
 
 Events:
 ```
@@ -290,15 +290,17 @@ Parameters:
 1.  int auraSlot - the raw 0-based aura slot index (0-31 for buffs, 32-47 for debuffs). This is not the slot used by GetPlayerBuff that has its own sorting, this is the raw aura slot index which is consistent with the unit data fields and the internal aura storage.
 2.  int durationMs - the updated duration in milliseconds
 3.  int expirationTimeMs - the calculated expiration time (GetWowTimeMs() + durationMs), or 0 if no duration
+4.  int spellId - the spell ID of the aura in this slot. Will be 0 for newly added buffs/debuffs (the slot hasn't been populated yet). Will only have a value for refreshed auras that already exist in the slot.
 
 Example:
 ```lua
-local function onDurationUpdate(auraSlot, durationMs, expirationTimeMs)
+local function onDurationUpdate(auraSlot, durationMs, expirationTimeMs, spellId)
     local isBuff = auraSlot < 32
     local type = isBuff and "Buff" or "Debuff"
+    local refreshed = spellId > 0
     DEFAULT_CHAT_FRAME:AddMessage(string.format(
-        "[%s] slot=%d duration=%dms expires=%d",
-        type, auraSlot, durationMs, expirationTimeMs
+        "[%s] slot=%d duration=%dms expires=%d spellId=%d refreshed=%s",
+        type, auraSlot, durationMs, expirationTimeMs, spellId, tostring(refreshed)
     ))
 end
 

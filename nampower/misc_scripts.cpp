@@ -140,7 +140,7 @@ namespace Nampower {
         // Add fields to table
         PushTableValue(luaState, LuaFields::castId, castParams->castId);
         PushTableValue(luaState, LuaFields::spellId, castParams->spellId);
-        PushTableValue(luaState, LuaFields::guid, castParams->guid);
+        PushTableValue(luaState, LuaFields::guid, ConvertGuidToString(castParams->guid));
         PushTableValue(luaState, LuaFields::castType, static_cast<uint32_t>(castParams->castType));
         PushTableValue(luaState, LuaFields::castStartS, castStartTimeWow);
         PushTableValue(luaState, LuaFields::castEndS, castEndTimeWow);

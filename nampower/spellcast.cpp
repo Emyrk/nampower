@@ -496,6 +496,7 @@ namespace Nampower {
         }
 
         auto const currentTargetGuid = game::GetCurrentTargetGuid();
+        auto const guidForHistory = (guid != 0) ? guid : currentTargetGuid;
 
         if (spellIsChanneling) {
             auto casterGuid = game::UnitGetGuid(casterUnit);
@@ -554,7 +555,7 @@ namespace Nampower {
                            currentTime, ON_SWING, 0);
 
             gCastHistory.pushFront({
-                gNextCastId, casterUnit, spellId, item, guid,
+                gNextCastId, casterUnit, spellId, item, guidForHistory,
                 spell->StartRecoveryCategory,
                 castTime,
                 currentTime,
@@ -824,7 +825,7 @@ namespace Nampower {
         }
 
         gCastHistory.pushFront({
-            gNextCastId, casterUnit, spellId, item, guid,
+            gNextCastId, casterUnit, spellId, item, guidForHistory,
             spell->StartRecoveryCategory,
             castTime,
             currentTime,

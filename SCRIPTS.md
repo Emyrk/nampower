@@ -760,7 +760,7 @@ A Lua table reference with the following fields, or nil if no cast is active:
 
 - `castId` (number): Unique identifier for this cast
 - `spellId` (number): The spell ID being cast
-- `guid` (number): Target GUID (0 if no explicit target)
+- `guid` (string): Target GUID as a hex string e.g. "0x0000000000000000" ("0x0000000000000000" if no explicit target)
 - `castType` (number): Type of cast - 0=NORMAL, 3=CHANNEL, 4=TARGETING
 - `castStartS` (number): When the cast started in WoW time (seconds with decimals, e.g., 1234567.890)
 - `castEndS` (number): When the cast will end in WoW time (seconds with decimals)
