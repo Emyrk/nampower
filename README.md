@@ -152,8 +152,10 @@ This includes functions for:
 - Cast information (GetCastInfo, GetCurrentCastingInfo)
 - Cooldown tracking (GetSpellIdCooldown, GetItemIdCooldown), including item metadata on cooldown detail tables
 - Inventory helpers (GetTrinketCooldown, GetTrinkets, GetAmmo)
-- Aura duration tracking (GetPlayerAuraDuration)
+- Aura duration tracking and cancel helpers (GetPlayerAuraDuration, CancelPlayerAuraSlot, CancelPlayerAuraSpellId)
 - Spell lookups and utilities
+
+`CancelPlayerAuraSpellId(spellId, [ignoreMissing])` supports an optional second parameter where `1` skips the aura-slot presence check (useful for buff-capped cases) and `0`/omitted keeps the default check.
 
 Cooldown detail tables now also expose `itemId`, `itemHasActiveSpell`, and `itemActiveSpellId` alongside the existing per-category timing data.
 

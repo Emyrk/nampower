@@ -134,6 +134,16 @@ namespace game {
         return getActivePlayer();
     }
 
+    UnitFields *GetActivePlayerUnitFields() {
+        auto const playerGuid = ClntObjMgrGetActivePlayerGuid();
+        auto *playerUnit = GetObjectPtr(playerGuid);
+        if (!playerUnit) {
+            return nullptr;
+        }
+
+        return *reinterpret_cast<UnitFields **>(playerUnit + 68);
+    }
+
     std::uint64_t GetCurrentTargetGuid() {
         return *reinterpret_cast<uint64_t *>(Offsets::LockedTargetGuid);
     }

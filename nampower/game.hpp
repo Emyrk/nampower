@@ -1786,6 +1786,7 @@ namespace game {
     const char *GetSpellName(uint32_t spellId);
 
     std::uint64_t ClntObjMgrGetActivePlayerGuid();
+    UnitFields *GetActivePlayerUnitFields();
 
     std::uint64_t GetCurrentTargetGuid();
 

@@ -147,10 +147,9 @@ namespace Nampower {
             bool isBuff = auraSlot < 32;
             game::Events eventToTrigger = isBuff ? game::BUFF_UPDATE_DURATION_SELF : game::DEBUFF_UPDATE_DURATION_SELF;
 
-            auto playerUnit = game::GetObjectPtr(game::ClntObjMgrGetActivePlayerGuid());
             uint32_t spellId = 0;
-            if (playerUnit) {
-                auto *unitFields = *reinterpret_cast<game::UnitFields **>(playerUnit + 68);
+            auto *unitFields = game::GetActivePlayerUnitFields();
+            if (unitFields) {
                 spellId = unitFields->aura[auraSlot];
             }
 

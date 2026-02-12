@@ -857,14 +857,11 @@ namespace Nampower {
         }
 
         // Get spellId from player unit fields
-        auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
-        auto *playerUnit = game::GetObjectPtr(playerGuid);
-        if (!playerUnit) {
+        auto *unitFields = game::GetActivePlayerUnitFields();
+        if (!unitFields) {
             lua_pushnil(luaState);
             return 1;
         }
-
-        auto *unitFields = *reinterpret_cast<game::UnitFields **>(playerUnit + 68);
         uint32_t spellId = unitFields->aura[auraSlot];
 
         uint32_t expirationTime = gAuraExpirationTime[auraSlot];
@@ -875,6 +872,89 @@ namespace Nampower {
         lua_pushnumber(luaState, remainingDurationMs);
         lua_pushnumber(luaState, expirationTime);
         return 3;
+    }
+
+    uint32_t Script_CancelPlayerAuraSlot(uintptr_t *luaState) {
+        constexpr uint32_t kMaxCancelAuraSlots = 32;
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isnumber(luaState, 1)) {
+            lua_error(luaState, "Usage: CancelPlayerAuraSlot(auraSlot)");
+            return 0;
+        }
+
+        auto auraSlot = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+        if (auraSlot >= kMaxCancelAuraSlots) {
+            lua_pushnumber(luaState, 0);
+            return 1;
+        }
+
+        auto *unitFields = game::GetActivePlayerUnitFields();
+        if (!unitFields) {
+            lua_pushnumber(luaState, 0);
+            return 1;
+        }
+
+        auto spellId = static_cast<int>(unitFields->aura[auraSlot]);
+        if (spellId == 0) {
+            lua_pushnumber(luaState, 0);
+            return 1;
+        }
+
+        auto const cancelAura = reinterpret_cast<void(__fastcall *)(int)>(Offsets::Spell_C_CancelAura);
+        cancelAura(spellId);
+
+        lua_pushnumber(luaState, 1);
+        return 1;
+    }
+
+    uint32_t Script_CancelPlayerAuraSpellId(uintptr_t *luaState) {
+        constexpr uint32_t kMaxCancelAuraSlots = 32;
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isnumber(luaState, 1)) {
+            lua_error(luaState, "Usage: CancelPlayerAuraSpellId(spellId, [ignoreMissing])");
+            return 0;
+        }
+
+        auto spellId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+        if (spellId == 0) {
+            lua_pushnumber(luaState, 0);
+            return 1;
+        }
+
+        // Optional arg2: 1 skips aura-presence check, 0/missing keeps default behavior.
+        bool ignoreMissing = false;
+        if (lua_isnumber(luaState, 2)) {
+            ignoreMissing = (static_cast<int>(lua_tonumber(luaState, 2)) == 1);
+        }
+
+        if (!ignoreMissing) {
+            auto *unitFields = game::GetActivePlayerUnitFields();
+            if (!unitFields) {
+                lua_pushnumber(luaState, 0);
+                return 1;
+            }
+
+            bool foundSpell = false;
+            for (uint32_t auraSlot = 0; auraSlot < kMaxCancelAuraSlots; ++auraSlot) {
+                if (unitFields->aura[auraSlot] == spellId) {
+                    foundSpell = true;
+                    break;
+                }
+            }
+
+            if (!foundSpell) {
+                lua_pushnumber(luaState, 0);
+                return 1;
+            }
+        }
+
+        auto const cancelAura = reinterpret_cast<void(__fastcall *)(uint32_t)>(Offsets::Spell_C_CancelAura);
+        cancelAura(spellId);
+
+        lua_pushnumber(luaState, 1);
+        return 1;
     }
 
     uint32_t CSimpleFrame_GetNameHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState) {

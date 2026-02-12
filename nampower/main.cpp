@@ -1689,6 +1689,12 @@ namespace Nampower {
         char getPlayerAuraDuration[] = "GetPlayerAuraDuration";
         RegisterLuaFunction(getPlayerAuraDuration, reinterpret_cast<uintptr_t *>(Script_GetPlayerAuraDuration));
 
+        char cancelPlayerAuraSlot[] = "CancelPlayerAuraSlot";
+        RegisterLuaFunction(cancelPlayerAuraSlot, reinterpret_cast<uintptr_t *>(Script_CancelPlayerAuraSlot));
+
+        char cancelPlayerAuraSpellId[] = "CancelPlayerAuraSpellId";
+        RegisterLuaFunction(cancelPlayerAuraSpellId, reinterpret_cast<uintptr_t *>(Script_CancelPlayerAuraSpellId));
+
         char getSpellPower[] = "GetSpellPower";
         RegisterLuaFunction(getSpellPower, reinterpret_cast<uintptr_t *>(Script_GetSpellPower));
 

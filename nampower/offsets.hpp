@@ -117,6 +117,7 @@ enum class Offsets : std::uint32_t {
     Spell_C_GetAutoRepeatingSpell = 0x006E9FD0,
     Spell_C_HandleSpriteClick = 0x006E5B10,
     Spell_C_HandleTerrainClick = 0x006E60F0,
+    Spell_C_CancelAura = 0x006E7040,
     CGWorldFrame_OnLayerTrackTerrain = 0x004820F0,
     Spell_C_TargetSpell = 0x006E5250,
     Spell_C_GetSpellCooldown = 0X006E2EA0,
