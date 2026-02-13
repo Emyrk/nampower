@@ -37,6 +37,7 @@ namespace Nampower {
     uint32_t Script_GetItemIconTexture(uintptr_t *luaState);
 
     uint32_t Script_GetSpellIconTexture(uintptr_t *luaState);
+    uint32_t Script_LearnTalentRank(uintptr_t *luaState);
 
     bool RunQueuedScript(int priority);
 

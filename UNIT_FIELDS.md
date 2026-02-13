@@ -23,7 +23,7 @@ local health = GetUnitField("target", "health")
 
 These fields return a single value (number).
 
-### Object References (UINT64)
+### Object References (UINT64 – 0x... string in lua)
 These fields contain GUIDs (globally unique identifiers) for game objects:
 
 - **charm** - GUID of the unit that has charmed this unit

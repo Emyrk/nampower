@@ -71,6 +71,14 @@ namespace Nampower {
     bool IsSpellOnCooldown(uint32_t spellId);
 
     char *ConvertGuidToString(uint64_t guid);
+    void PushGuidString(uintptr_t *luaState, uint64_t guid);
+    bool IsReadableMemory(const void *ptr, size_t size);
+    bool SafeReadMemory(const void *address, void *out, size_t size);
+
+    template <typename T>
+    inline bool SafeRead(const void *address, T &out) {
+        return SafeReadMemory(address, &out, sizeof(T));
+    }
 
     uint64_t GetUnitGuidFromLuaParam(uintptr_t *luaState, int paramIndex);
 

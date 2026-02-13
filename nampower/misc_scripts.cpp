@@ -259,6 +259,121 @@ namespace Nampower {
         return 0;
     }
 
+    uint32_t Script_LearnTalentRank(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isnumber(luaState, 1) || !lua_isnumber(luaState, 2) || !lua_isnumber(luaState, 3)) {
+            lua_error(luaState, "Usage: LearnTalentRank(talentPage, talentIndex, rank)");
+            return 0;
+        }
+
+        constexpr uintptr_t CGTalentInfo_m_talentTabs = 0x00BDCD24;
+        constexpr uintptr_t CGTalentInfo_m_talents = 0x00BDCD28;
+        constexpr uint32_t CMSG_LEARN_TALENT = 0x0251;
+
+        auto talentPage = static_cast<int32_t>(lua_tonumber(luaState, 1));
+        auto talentIndex = static_cast<int32_t>(lua_tonumber(luaState, 2));
+        auto requestedRank = static_cast<int32_t>(lua_tonumber(luaState, 3));
+
+        if (talentPage < 1 || talentPage > 3) {
+            lua_error(luaState, "LearnTalentRank: talentPage must be in range 1-3");
+            return 0;
+        }
+        if (talentIndex < 1 || talentIndex > 32) {
+            lua_error(luaState, "LearnTalentRank: talentIndex must be in range 1-32");
+            return 0;
+        }
+        if (requestedRank < 1 || requestedRank > 5) {
+            lua_error(luaState, "LearnTalentRank: rank must be in range 1-5");
+            return 0;
+        }
+
+        auto const playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto *playerUnit = game::ClntObjMgrObjectPtr(game::TYPEMASK_PLAYER, playerGuid);
+        if (!playerUnit) {
+            lua_error(luaState, "LearnTalentRank: active player not available");
+            return 0;
+        }
+
+        auto talentPage0Index = talentPage - 1;
+        auto talentIndex0 = talentIndex - 1;
+        int32_t talentTabCount = 0;
+        if (!SafeRead(reinterpret_cast<void *>(CGTalentInfo_m_talentTabs), talentTabCount)) {
+            lua_error(luaState, "LearnTalentRank: unable to read talent tab count");
+            return 0;
+        }
+
+        if (talentPage0Index < 0 || talentPage0Index >= talentTabCount || talentIndex0 < 0) {
+            lua_error(luaState, "LearnTalentRank: talent page/index out of bounds");
+            return 0;
+        }
+
+        uintptr_t talentsBase = 0;
+        if (!SafeRead(reinterpret_cast<void *>(CGTalentInfo_m_talents), talentsBase)) {
+            lua_error(luaState, "LearnTalentRank: unable to read talents base pointer");
+            return 0;
+        }
+
+        if (talentsBase == 0) {
+            lua_error(luaState, "LearnTalentRank: talents base pointer is null");
+            return 0;
+        }
+
+        auto talentTabSlotAddr = talentsBase + static_cast<uintptr_t>(talentPage0Index) * sizeof(uint32_t);
+        uintptr_t talentTabPtr = 0;
+        if (!SafeRead(reinterpret_cast<void *>(talentTabSlotAddr), talentTabPtr)) {
+            lua_error(luaState, "LearnTalentRank: unable to read talent tab pointer");
+            return 0;
+        }
+
+        if (talentTabPtr == 0) {
+            lua_error(luaState, "LearnTalentRank: talent tab pointer is null");
+            return 0;
+        }
+
+        uint32_t talentCountInTab = 0;
+        uintptr_t talentListBase = 0;
+        if (!SafeRead(reinterpret_cast<void *>(talentTabPtr + 0x8), talentCountInTab) ||
+            !SafeRead(reinterpret_cast<void *>(talentTabPtr + 0xC), talentListBase)) {
+            lua_error(luaState, "LearnTalentRank: unable to read talent tab metadata");
+            return 0;
+        }
+
+        if (talentCountInTab == 0 || talentCountInTab >= 512 || talentListBase == 0) {
+            lua_error(luaState, "LearnTalentRank: invalid talent tab metadata");
+            return 0;
+        }
+
+        if (talentIndex0 >= static_cast<int32_t>(talentCountInTab)) {
+            lua_error(luaState, "LearnTalentRank: talent index not present in selected tab");
+            return 0;
+        }
+
+        auto talentEntryPtr = talentListBase + static_cast<uintptr_t>(talentIndex0) * 0x54;
+        int32_t talentId = 0;
+        if (!SafeRead(reinterpret_cast<void *>(talentEntryPtr), talentId)) {
+            lua_error(luaState, "LearnTalentRank: unable to read talent entry");
+            return 0;
+        }
+        if (talentId <= 0 || talentId >= 200000) {
+            lua_error(luaState, "LearnTalentRank: resolved invalid talentId");
+            return 0;
+        }
+
+        auto requestedRank0Index = requestedRank - 1;
+        auto dataStore = CDataStore();
+        dataStore.Put<uint32_t>(CMSG_LEARN_TALENT);
+        dataStore.Put<uint32_t>(static_cast<uint32_t>(talentId));
+        dataStore.Put<uint32_t>(static_cast<uint32_t>(requestedRank0Index));
+        dataStore.Finalize();
+
+        auto const clientServicesSend = reinterpret_cast<ClientServices_SendT>(Offsets::ClientServices_Send);
+        clientServicesSend(&dataStore);
+
+        lua_pushnumber(luaState, 1);
+        return 1;
+    }
+
     bool RunQueuedScript(int priority) {
         if (gScriptQueued && gScriptPriority == priority) {
             auto currentTime = GetTime();
@@ -492,8 +607,33 @@ namespace Nampower {
             GetTableRef(luaState, unitDataTableRef);
         }
 
-        // Push all simple fields using descriptors
-        PushFieldsToLua(luaState, unitFields, unitFieldsFields, unitFieldsFieldsCount);
+        // Push all simple fields using descriptors.
+        // UnitFields UINT64 members are GUID/object references and must be Lua strings.
+        for (size_t i = 0; i < unitFieldsFieldsCount; ++i) {
+            const auto &field = unitFieldsFields[i];
+            lua_pushstring(luaState, const_cast<char *>(field.name));
+
+            const char *fieldPtr = reinterpret_cast<const char *>(unitFields) + field.offset;
+            switch (field.type) {
+                case FieldType::UINT32:
+                    lua_pushnumber(luaState, *reinterpret_cast<const uint32_t *>(fieldPtr));
+                    break;
+                case FieldType::UINT8:
+                    lua_pushnumber(luaState, *reinterpret_cast<const uint8_t *>(fieldPtr));
+                    break;
+                case FieldType::FLOAT:
+                    lua_pushnumber(luaState, *reinterpret_cast<const float *>(fieldPtr));
+                    break;
+                case FieldType::UINT64:
+                    PushGuidString(luaState, *reinterpret_cast<const uint64_t *>(fieldPtr));
+                    break;
+                default:
+                    lua_pushnil(luaState);
+                    break;
+            }
+
+            lua_settable(luaState, -3);
+        }
 
         // Push all array fields using descriptors with or without references based on copy parameter
         if (useCopy) {
@@ -559,7 +699,7 @@ namespace Nampower {
                     lua_pushnumber(luaState, *reinterpret_cast<const uint8_t *>(fieldPtr));
                     return 1;
                 case FieldType::UINT64:
-                    lua_pushnumber(luaState, static_cast<double>(*reinterpret_cast<const uint64_t *>(fieldPtr)));
+                    PushGuidString(luaState, *reinterpret_cast<const uint64_t *>(fieldPtr));
                     return 1;
                 case FieldType::FLOAT:
                     lua_pushnumber(luaState, *reinterpret_cast<const float *>(fieldPtr));

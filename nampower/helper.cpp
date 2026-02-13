@@ -292,6 +292,63 @@ namespace Nampower {
         return guidStr;
     }
 
+    void PushGuidString(uintptr_t *luaState, uint64_t guid) {
+        char guidStr[21] = {0};
+        std::snprintf(guidStr, sizeof(guidStr), "0x%016llX", static_cast<unsigned long long>(guid));
+        lua_pushstring(luaState, guidStr);
+    }
+
+    bool IsReadableMemory(const void *ptr, size_t size) {
+        if (!ptr || size == 0) {
+            return false;
+        }
+
+        auto current = reinterpret_cast<uintptr_t>(ptr);
+        auto remaining = size;
+        while (remaining > 0) {
+            MEMORY_BASIC_INFORMATION mbi = {};
+            if (VirtualQuery(reinterpret_cast<LPCVOID>(current), &mbi, sizeof(mbi)) == 0) {
+                return false;
+            }
+
+            if (mbi.State != MEM_COMMIT) {
+                return false;
+            }
+
+            if ((mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD)) != 0) {
+                return false;
+            }
+
+            auto regionEnd = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + mbi.RegionSize;
+            if (regionEnd <= current) {
+                return false;
+            }
+
+            auto chunk = static_cast<size_t>(regionEnd - current);
+            if (chunk > remaining) {
+                chunk = remaining;
+            }
+
+            remaining -= chunk;
+            current += chunk;
+        }
+
+        return true;
+    }
+
+    bool SafeReadMemory(const void *address, void *out, size_t size) {
+        if (!out || size == 0) {
+            return false;
+        }
+
+        if (!IsReadableMemory(address, size)) {
+            return false;
+        }
+
+        std::memcpy(out, address, size);
+        return true;
+    }
+
     uint64_t GetUnitGuidFromString(const char *unitToken) {
         if (!unitToken) {
             return 0;

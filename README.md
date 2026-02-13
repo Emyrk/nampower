@@ -153,7 +153,14 @@ This includes functions for:
 - Cooldown tracking (GetSpellIdCooldown, GetItemIdCooldown), including item metadata on cooldown detail tables
 - Inventory helpers (GetTrinketCooldown, GetTrinkets, GetAmmo)
 - Aura duration tracking and cancel helpers (GetPlayerAuraDuration, CancelPlayerAuraSlot, CancelPlayerAuraSpellId)
+- Talent helpers (LearnTalentRank)
 - Spell lookups and utilities
+
+`LearnTalentRank(talentPage, talentIndex, rank)` learns a specific talent rank directly by tab/index.
+Valid ranges are: `talentPage` = `1-3`, `talentIndex` = `1-32`, `rank` = `1-5`.
+
+For unit data APIs, object-reference GUID fields are returned as strings (hex format) rather than numbers to avoid Lua 64-bit precision issues.
+This applies to both `GetUnitData` and `GetUnitField` for fields such as: `charm`, `summon`, `charmedBy`, `summonedBy`, `createdBy`, `target`, `persuaded`, and `channelObject`.
 
 `CancelPlayerAuraSpellId(spellId, [ignoreMissing])` supports an optional second parameter where `1` skips the aura-slot presence check (useful for buff-capped cases) and `0`/omitted keeps the default check.
 
