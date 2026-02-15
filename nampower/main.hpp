@@ -25,7 +25,7 @@ namespace Nampower {
     constexpr uint32_t DISENCHANT_QUALITY_PURPLE = 0x04;  // Epic
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 35;
+    constexpr uint32_t MINOR_VERSION = 36;
     constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;

@@ -35,6 +35,7 @@
 #include "spellcast.hpp"
 #include "misc_scripts.hpp"
 #include "spell_scripts.hpp"
+#include "player_scripts.hpp"
 #include "spellchannel.hpp"
 #include "helper.hpp"
 #include "items.hpp"
@@ -1700,6 +1701,15 @@ namespace Nampower {
 
         char learnTalentRank[] = "LearnTalentRank";
         RegisterLuaFunction(learnTalentRank, reinterpret_cast<uintptr_t *>(Script_LearnTalentRank));
+
+        char playerIsMoving[] = "PlayerIsMoving";
+        RegisterLuaFunction(playerIsMoving, reinterpret_cast<uintptr_t *>(Script_PlayerIsMoving));
+
+        char playerIsRooted[] = "PlayerIsRooted";
+        RegisterLuaFunction(playerIsRooted, reinterpret_cast<uintptr_t *>(Script_PlayerIsRooted));
+
+        char playerIsSwimming[] = "PlayerIsSwimming";
+        RegisterLuaFunction(playerIsSwimming, reinterpret_cast<uintptr_t *>(Script_PlayerIsSwimming));
 
     }
 

@@ -153,6 +153,7 @@ This includes functions for:
 - Cooldown tracking (GetSpellIdCooldown, GetItemIdCooldown), including item metadata on cooldown detail tables
 - Inventory helpers (GetTrinketCooldown, GetTrinkets, GetAmmo)
 - Aura duration tracking and cancel helpers (GetPlayerAuraDuration, CancelPlayerAuraSlot, CancelPlayerAuraSpellId)
+- Player movement state queries (PlayerIsMoving, PlayerIsRooted, PlayerIsSwimming)
 - Talent helpers (LearnTalentRank)
 - Spell lookups and utilities
 

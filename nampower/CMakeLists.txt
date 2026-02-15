@@ -43,6 +43,8 @@ set(SOURCE_FILES
         lua_refs.cpp
         autoattack.hpp
         autoattack.cpp
+        player_scripts.hpp
+        player_scripts.cpp
 )
 
 add_library(${DLL_NAME} SHARED ${SOURCE_FILES})

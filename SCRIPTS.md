@@ -47,6 +47,10 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
     - [GetTrinkets](#gettrinketscopy)
     - [GetTrinketCooldown](#gettrinketcooldownslotitemidorname)
     - [UseTrinket](#usetrinketslotitemidorname-target)
+  - [Player State](#player-state)
+    - [PlayerIsMoving](#playerismoving)
+    - [PlayerIsRooted](#playerisrooted)
+    - [PlayerIsSwimming](#playerisswimming)
   - [Utility Functions](#utility-functions)
     - [DisenchantAll](#disenchantallitemidorname-includesoulbound-or-disenchantallquality-includesoulbound)
 ---
@@ -1065,6 +1069,57 @@ end
 
 #### ChannelStopCastingNextTick()
 Will stop channeling early on the next tick if you have queue channeling spells enabled and try to cast a spell before the next tick (didn't know how to cancel channels without casting another spell).  Uses your ChannelLatencyReductionPercentage to determine when to stop the channel.
+
+---
+
+### Player State
+
+#### PlayerIsMoving()
+Returns whether the active player is currently moving.
+
+**Returns:**
+- `1` if the player is moving (forward, backward, strafing, jumping, falling, pitching, or on spline elevation)
+- `nil` if the player is stationary
+
+**Examples:**
+```lua
+-- Check if player is moving
+if PlayerIsMoving() == 1 then
+    print("Player is moving")
+else
+    print("Player is stationary")
+end
+```
+
+#### PlayerIsRooted()
+Returns whether the active player is currently rooted (unable to move).
+
+**Returns:**
+- `1` if the player is rooted
+- `nil` if the player is not rooted
+
+**Examples:**
+```lua
+-- Check if player is rooted
+if PlayerIsRooted() == 1 then
+    print("Player is rooted!")
+end
+```
+
+#### PlayerIsSwimming()
+Returns whether the active player is currently swimming.
+
+**Returns:**
+- `1` if the player is swimming
+- `nil` if the player is not swimming
+
+**Examples:**
+```lua
+-- Check if player is swimming
+if PlayerIsSwimming() == 1 then
+    print("Player is swimming")
+end
+```
 
 ---
 
