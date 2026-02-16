@@ -42,7 +42,7 @@ namespace Nampower {
         return lua_type(luaState, idx) == LUA_TTABLE;
     }
 
-    uint32_t GetSpellSlotAndTypeForName(const char *spellName, uint32_t *spellType);
+    int32_t GetSpellSlotAndTypeForName(const char *spellName, uint32_t *spellType);
 
     uint32_t GetSpellIdFromSpellName(const char *spellName);
 

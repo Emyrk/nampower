@@ -34,9 +34,9 @@ namespace Nampower {
     luaL_unrefT luaL_unref = reinterpret_cast<luaL_unrefT>(Offsets::luaL_unref);
 
 
-    uint32_t GetSpellSlotAndTypeForName(const char *spellName, uint32_t *spellType) {
+    int32_t GetSpellSlotAndTypeForName(const char *spellName, uint32_t *spellType) {
         struct CachedEntry {
-            uint32_t slot;
+            int32_t slot;
             uint32_t type;
             std::string cachedNameLower;
         };
@@ -109,10 +109,10 @@ namespace Nampower {
 
     uint32_t GetSpellIdFromSpellName(const char *spellName) {
         uint32_t bookType;
-        uint32_t spellSlot = GetSpellSlotAndTypeForName(spellName, &bookType);
+        int32_t spellSlot = GetSpellSlotAndTypeForName(spellName, &bookType);
 
         uint32_t spellId = 0;
-        if (spellSlot < 1024) {
+        if (spellSlot >= 0 && spellSlot < 1024) {
             if (bookType == 0) {
                 spellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownSpells) +
                                                         spellSlot * 4);

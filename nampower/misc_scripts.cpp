@@ -1097,6 +1097,32 @@ namespace Nampower {
         return 1;
     }
 
+    uint32_t Script_SetMouseoverUnit(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        uint64_t guid = 0;
+        if (lua_isstring(luaState, 1)) {
+            const char *unitToken = lua_tostring(luaState, 1);
+            auto const getGUIDFromName = reinterpret_cast<GetGUIDFromNameT>(Offsets::GetGUIDFromName);
+            guid = getGUIDFromName(unitToken);
+        }
+
+        auto const handleObjectTrackChange = reinterpret_cast<CGGameUI_HandleObjectTrackChangeT>(
+            Offsets::CGGameUI_HandleObjectTrackChange);
+        handleObjectTrackChange(guid, 0, 0);
+
+        auto const mouseoverLow = *reinterpret_cast<uint32_t *>(Offsets::MouseoverGuidLow);
+        auto const mouseoverHigh = *reinterpret_cast<uint32_t *>(Offsets::MouseoverGuidHigh);
+
+        if (mouseoverLow != 0 || mouseoverHigh != 0) {
+            lua_pushnumber(luaState, 1);
+        } else {
+            lua_pushnil(luaState);
+        }
+
+        return 1;
+    }
+
     uint32_t CSimpleFrame_GetNameHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState) {
         luaState = GetLuaStatePtr();
 

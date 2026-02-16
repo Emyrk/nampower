@@ -156,6 +156,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<GetSpellSlotFromLuaT> > gGetSpellSlotFromLuaDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<LuaScriptT> > gCSimpleFrame_GetNameDetour;
+    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT> > gCastSpellByNameDetour;
 
     // Flags for one-time initialization
     std::once_flag loadFlag;
@@ -561,7 +562,7 @@ namespace Nampower {
         gQueuesProcessed = true;
 
         // Process item export if active (low priority, runs when nothing else is queued)
-        // ProcessItemExport()
+        // ProcessItemExport();
 
         return false;
     }
@@ -1368,6 +1369,8 @@ namespace Nampower {
                                                               &Spell_C_SpellFailedHook);
         gSpellGoDetour = createHook<SpellGoT>(process, Offsets::SpellGo, &SpellGoHook);
         gSpellDelayedDetour = createHook<PacketHandlerT>(process, Offsets::SpellDelayed, &SpellDelayedHook);
+        gCastSpellByNameDetour = createHook<LuaScriptT>(process, Offsets::Script_CastSpellByName,
+                                                        &Script_CastSpellByNameHook);
         gSpellTargetUnitDetour = createHook<LuaScriptT>(process, Offsets::Script_SpellTargetUnit,
                                                         &Script_SpellTargetUnitHook);
         gSpellStopCastingDetour = createHook<LuaScriptT>(process, Offsets::Script_SpellStopCasting,
@@ -1710,6 +1713,9 @@ namespace Nampower {
 
         char playerIsSwimming[] = "PlayerIsSwimming";
         RegisterLuaFunction(playerIsSwimming, reinterpret_cast<uintptr_t *>(Script_PlayerIsSwimming));
+
+        char setMouseoverUnit[] = "SetMouseoverUnit";
+        RegisterLuaFunction(setMouseoverUnit, reinterpret_cast<uintptr_t *>(Script_SetMouseoverUnit));
 
     }
 

@@ -689,8 +689,11 @@ For example can make a macro with
 ```
 to cast 2 frostbolts in a row.  Currently, can only queue 1 GCD spell at a time and 5 non gcd spells.  This means you can't do 3 frostbolts in a row with one macro.
 
-#### CastSpellByNameNoQueue(spellName)
-Will force a spell cast to never queue even if your settings would normally queue.  Can be used to fix addons that don't work with queued spells.
+#### CastSpellByName(spellName, [onSelfOrUnit])
+The vanilla `CastSpellByName` is enhanced to accept a unit token string (e.g. "mouseover", "party1", "focus", etc.) or a GUID string as the second parameter to cast on that unit.  The original behavior of passing `1` to cast on self is preserved.
+
+#### CastSpellByNameNoQueue(spellName, [onSelfOrUnit])
+Will force a spell cast to never queue even if your settings would normally queue.  Can be used to fix addons that don't work with queued spells.  Supports the same unit string parameter as `CastSpellByName`.
 
 #### QueueScript(script, [priority])
 Queues any arbitrary script using the same logic as a regular spell using NP_SpellQueueWindowMs as the window.  If no spell is being cast and you are not on the gcd the script will be run immediately.

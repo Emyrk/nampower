@@ -87,8 +87,12 @@ enum class Offsets : std::uint32_t {
 
     LockedTargetGuid = 0x00B4E2D8,
     OnSpriteRightClick = 0x00492820,
+    CGGameUI_HandleObjectTrackChange = 0x00492890,
     CGGameUI_Target = 0X00493540,
     ScriptTargetUnit = 0X00489A40,
+
+    MouseoverGuidLow = 0x00B4E2C8,
+    MouseoverGuidHigh = 0x00B4E2CC,
 
     SpellVisualsHandleCastStart = 0X006EC220,
     PlaySpellVisualHandler = 0X006E98D0,

@@ -25,7 +25,7 @@ namespace Nampower {
     constexpr uint32_t DISENCHANT_QUALITY_PURPLE = 0x04;  // Epic
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 36;
+    constexpr uint32_t MINOR_VERSION = 37;
     constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
@@ -82,6 +82,7 @@ namespace Nampower {
     using EndSceneT = int (__fastcall *)(uintptr_t *unk);
     using OnSpriteRightClickT = int (__fastcall *)(uint64_t objectGUID);
     using CGGameUI_TargetT = void (__stdcall *)(uint64_t objectGUID);
+    using CGGameUI_HandleObjectTrackChangeT = void (__stdcall *)(uint64_t guid, uint32_t param3, uint32_t param4);
     using Spell_C_SpellFailedT = void (__fastcall *)(uint32_t, game::SpellCastResult, int, int, bool);
     using Spell_C_GetAutoRepeatingSpellT = int (__cdecl *)();
     using SpellGoT = void (__fastcall *)(uint64_t *, uint64_t *, uint32_t, CDataStore *);
@@ -105,7 +106,7 @@ namespace Nampower {
     using CGActionBar_UseActionT = void (__fastcall *)(uint32_t param_1, int param_2, int param_3);
     using CGCharacterInfo_UseItemT = void (__fastcall *)(uintptr_t *this_ptr, void *dummy_edx, uint32_t itemSlot, uint64_t *targetGuid);
 
-    using GetSpellSlotAndTypeT = uint32_t (__fastcall *)(const char *, uint32_t *);
+    using GetSpellSlotAndTypeT = int32_t (__fastcall *)(const char *, uint32_t *);
     using GetSpellSlotFromLuaT = uint32_t (__fastcall *)(int param_1, uint32_t *slot, uint32_t *type);
     using GetTimeMsT = uint64_t (__stdcall *)();
 

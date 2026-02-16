@@ -32,6 +32,38 @@ namespace Nampower {
         return result;
     }
 
+    uint32_t Script_CastSpellByNameHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isstring(luaState, 1)) {
+            lua_error(luaState, "Usage: CastSpellByName(name [, onSelfOrUnit])");
+            return 0;
+        }
+
+        // Check if 2nd param is strictly a string (type 4), not a number that lua_isstring would also match
+        if (lua_type(luaState, 2) == 4) {
+            auto const unitToken = lua_tostring(luaState, 2);
+            auto const unitGuid = GetUnitGuidFromString(unitToken);
+
+            if (unitGuid != 0) {
+                auto const spellName = lua_tostring(luaState, 1);
+                uint32_t bookType = 0;
+                auto spellSlot = GetSpellSlotAndTypeForName(spellName, &bookType);
+
+                if (spellSlot >= 0 && spellSlot < 100000) {
+                    auto const castSpell = reinterpret_cast<CGSpellBook_CastSpellT>(Offsets::CGSpellBook_CastSpell);
+                    castSpell(spellSlot, bookType, unitGuid);
+                }
+
+                return 0;
+            }
+        }
+
+        // Fall through to original for normal calls (no 2nd param, or number "on self" flag)
+        auto const castSpellByName = detour->GetTrampolineT<LuaScriptT>();
+        return castSpellByName(luaState);
+    }
+
     uint32_t Script_QueueSpellByName(uintptr_t *luaState) {
         luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
 
@@ -226,8 +258,8 @@ namespace Nampower {
             uint32_t bookType;
             auto spellSlot = GetSpellSlotAndTypeForName(spellName, &bookType);
 
-            // returns large number if spell not found
-            if (spellSlot > 100000) {
+            // returns -1 or large number if spell not found
+            if (spellSlot < 0 || spellSlot > 100000) {
                 lua_pushnumber(luaState, 0);
                 spellSlot = 0;
                 bookType = 999;
@@ -548,8 +580,8 @@ namespace Nampower {
             } else {
                 uint32_t bookType;
                 auto spellSlot =  GetSpellSlotAndTypeForName(spellStr, &bookType);
-                // returns large number if spell not found
-                if (spellSlot == 0 || spellSlot > 100000) {
+                // returns -1 or large number if spell not found
+                if (spellSlot < 0 || spellSlot > 100000) {
                     lua_error(luaState, "Unable to find spell slot for spell name.");
                     return 0;
                 } else {
