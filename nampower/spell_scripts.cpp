@@ -650,4 +650,35 @@ namespace Nampower {
         return 7;
     }
 
+    uint32_t Script_GetSpellDuration(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isnumber(luaState, 1)) {
+            lua_error(luaState, "Usage: GetSpellDuration(spellId [, ignoreModifiers])");
+            return 0;
+        }
+
+        auto const spellId = uint32_t(lua_tonumber(luaState, 1));
+        auto const spellRec = game::GetSpellInfo(spellId);
+
+        if (!spellRec) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        bool ignoreModifiers = false;
+        if (lua_isnumber(luaState, 2)) {
+            ignoreModifiers = lua_tonumber(luaState, 2) != 0;
+        }
+
+        auto dur = game::GetSpellDuration(spellRec, ignoreModifiers);
+        if (dur > 0) {
+            lua_pushnumber(luaState, static_cast<uint32_t>(dur));
+        } else {
+            lua_pushnumber(luaState, 0);
+        }
+
+        return 1;
+    }
+
 }

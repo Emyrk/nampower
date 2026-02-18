@@ -1702,6 +1702,9 @@ namespace Nampower {
         char getSpellPower[] = "GetSpellPower";
         RegisterLuaFunction(getSpellPower, reinterpret_cast<uintptr_t *>(Script_GetSpellPower));
 
+        char getSpellDuration[] = "GetSpellDuration";
+        RegisterLuaFunction(getSpellDuration, reinterpret_cast<uintptr_t *>(Script_GetSpellDuration));
+
         char learnTalentRank[] = "LearnTalentRank";
         RegisterLuaFunction(learnTalentRank, reinterpret_cast<uintptr_t *>(Script_LearnTalentRank));
 

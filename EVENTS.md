@@ -123,7 +123,7 @@ end);
 ```
 
 ### SPELL_START_SELF and SPELL_START_OTHER
-Fire when a spell start packet is received. "Self" fires when the active player is the caster, "Other" fires for any other caster. Triggered by the server to notify that a spell with a cast time has begun.
+Fire when a spell start packet is received. "Self" fires when the active player is the caster, "Other" fires for any other caster. Triggered by the server to notify that a spell with a cast time has begun. Note: SPELL_START_OTHER also fires for channeling spells cast by other players, as there is no separate SPELL_CHANNEL_START packet for other players — channeling and cast time spells are both bundled into SPELL_START. Use the `spellType` parameter to distinguish channeling spells.
 
 These events are gated behind the `NP_EnableSpellStartEvents` CVar (default 0). Set it to `1` to enable.
 
@@ -134,6 +134,8 @@ Parameters:
 4.  string targetGuid - target guid like "0xF5300000000000A5" or "0x0000000000000000" if none
 5.  int castFlags
 6.  int castTime - cast time in milliseconds
+7.  int duration - channel duration in milliseconds (only set for channeling spells, 0 otherwise.  See GetSpellDuration if you want it for other spell types)
+8.  int spellType - 0 = Normal, 1 = Channeling, 2 = Autorepeating 
 
 ### SPELL_GO_SELF and SPELL_GO_OTHER
 Fire when a spell go packet is received. "Self" fires when the active player is the caster, "Other" fires for any other caster. Triggered by the server to indicate a spell completed casting.

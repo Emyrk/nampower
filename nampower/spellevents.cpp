@@ -13,6 +13,12 @@ namespace Nampower {
     uint32_t lastCastResultTimeMs;
     constexpr int MAX_ALLOWED_SPELL_TARGETS = 100;
 
+    enum SpellType : uint32_t {
+        SPELL_TYPE_NORMAL = 0,
+        SPELL_TYPE_CHANNELING = 1,
+        SPELL_TYPE_AUTOREPEATING = 2,
+    };
+
 
     void SignalEventHook(hadesmem::PatchDetourBase *detour, game::Events eventId) {
         auto const signalEvent = detour->GetTrampolineT<SignalEventT>();
@@ -772,10 +778,25 @@ namespace Nampower {
                                 uint64_t targetGuid,
                                 uint16_t castFlags,
                                 uint32_t castTime) {
-        static char format[] = "%d%d%s%s%d%d";
+        static char format[] = "%d%d%s%s%d%d%d%d";
 
         char *casterGuidStr = ConvertGuidToString(casterGuid);
         char *targetGuidStr = ConvertGuidToString(targetGuid);
+
+        uint32_t duration = 0;
+        SpellType spellType = SPELL_TYPE_NORMAL;
+        auto spellRec = game::GetSpellInfo(spellId);
+        if (spellRec) {
+            if (spellRec->AttributesEx2 & game::SpellAttributesEx2::SPELL_ATTR_EX2_AUTO_REPEAT) {
+                spellType = SPELL_TYPE_AUTOREPEATING;
+            } else if (spellRec->AttributesEx & (game::SpellAttributesEx::SPELL_ATTR_EX_IS_CHANNELED | game::SpellAttributesEx::SPELL_ATTR_EX_IS_SELF_CHANNELED)) {
+                spellType = SPELL_TYPE_CHANNELING;
+                auto dur = game::GetSpellDuration(spellRec, casterGuid != game::ClntObjMgrGetActivePlayerGuid());
+                if (dur > 0) {
+                    duration = static_cast<uint32_t>(dur);
+                }
+            }
+        }
 
         auto event = game::SPELL_START_OTHER;
         if (casterGuid == game::ClntObjMgrGetActivePlayerGuid()) {
@@ -789,7 +810,9 @@ namespace Nampower {
                           char *casterGuidParam,
                           char *targetGuidParam,
                           uint32_t castFlagsParam,
-                          uint32_t castTimeParam)) Offsets::SignalEventParam)(
+                          uint32_t castTimeParam,
+                          uint32_t durationParam,
+                          uint32_t spellTypeParam)) Offsets::SignalEventParam)(
             event,
             format,
             itemId,
@@ -797,7 +820,9 @@ namespace Nampower {
             casterGuidStr,
             targetGuidStr,
             castFlags,
-            castTime);
+            castTime,
+            duration,
+            spellType);
 
         delete[] casterGuidStr;
         delete[] targetGuidStr;

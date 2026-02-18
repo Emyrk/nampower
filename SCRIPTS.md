@@ -21,6 +21,7 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
     - [GetSpellRecField](#getspellrecfieldspellid-fieldname-copy)
     - [GetSpellModifiers](#getspellmodifiersspellid-modifiertype)
     - [GetSpellPower](#getspellpowermode)
+    - [GetSpellDuration](#getspelldurationspellid-ignoremodifiers)
     - [GetUnitData](#getunitdataunittoken-copy)
     - [GetUnitField](#getunitfieldunittoken-fieldname-copy)
     - [GetSpellIdForName](#getspellidfornamenspellname)
@@ -618,6 +619,26 @@ local physical, holy, fire, nature, frost, shadow, arcane = GetSpellPower("posit
 
 -- Get only negative values
 local physical, holy, fire, nature, frost, shadow, arcane = GetSpellPower("negative")
+```
+
+#### GetSpellDuration(spellId, [ignoreModifiers])
+Returns the duration of a spell in milliseconds. For channeling spells this is the channel duration, and for non-channeling spells I think this is always the duration of the first aura effect. By default, the active player's spell modifiers (e.g. talents that extend duration) are applied.
+
+**Parameters:**
+- `spellId` (number): The spell ID to look up.
+- `ignoreModifiers` (number, optional): Pass `1` to ignore your spell modifiers (talents, etc.) and return the base duration. Defaults to `0` (apply modifiers).
+
+**Returns:**
+- `number` - Duration in milliseconds, or `0` if the spell has no duration.
+- `nil` - If the spell ID is invalid.
+
+**Examples:**
+```lua
+-- Get modified duration of a spell
+local duration = GetSpellDuration(spellId)
+
+-- Get base duration ignoring talent modifiers
+local baseDuration = GetSpellDuration(spellId, 1)
 ```
 
 #### GetUnitData(unitToken, [copy])
