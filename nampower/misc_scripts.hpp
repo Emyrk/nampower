@@ -16,19 +16,11 @@ namespace Nampower {
 
     uint32_t Script_GetNampowerVersion(uintptr_t *luaState);
 
-    uint32_t Script_GetItemLevel(uintptr_t *luaState);
-
     uint32_t Script_QueueScript(uintptr_t *luaState);
-
-    uint32_t Script_GetItemStats(uintptr_t *luaState);
-
-    uint32_t Script_GetItemStatsField(uintptr_t *luaState);
 
     uint32_t Script_GetUnitData(uintptr_t *luaState);
 
     uint32_t Script_GetUnitField(uintptr_t *luaState);
-
-    uint32_t Script_StartItemExport(uintptr_t *luaState);
 
     bool TryDisenchant();
 

@@ -33,15 +33,12 @@ namespace Nampower {
 
     // Reusable table references to reduce memory allocations
     static int castInfoTableRef = LUA_REFNIL;
-    static int itemStatsTableRef = LUA_REFNIL;
     static int unitDataTableRef = LUA_REFNIL;
 
     // Maps to store separate references for each array field name (for Field functions)
-    static std::unordered_map<std::string, int> itemStatsArrayFieldRefs;
     static std::unordered_map<std::string, int> unitFieldsArrayFieldRefs;
 
     // Maps to store separate references for nested array fields (for main table functions)
-    static std::unordered_map<std::string, int> itemStatsNestedArrayRefs;
     static std::unordered_map<std::string, int> unitFieldsNestedArrayRefs;
 
     uint32_t Script_GetCurrentCastingInfo(uintptr_t *luaState) {
@@ -179,41 +176,6 @@ namespace Nampower {
         lua_pushnumber(luaState, PATCH_VERSION);
 
         return 3;
-    }
-
-    uint32_t Script_GetItemLevel(uintptr_t *luaState) {
-        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
-
-        if (lua_isnumber(luaState, 1)) {
-            auto const itemId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
-
-            // Pointer to ItemDBCache
-            void *itemDbCache = reinterpret_cast<void *>(Offsets::ItemDBCache);
-
-            // Parameters for the DBCache<>::GetRecord function
-            int **param2 = nullptr;
-            int *param3 = nullptr;
-            int *param4 = nullptr;
-            char param5 = 0;
-
-            // Call the DBCache<>::GetRecord function
-            auto getRecord = reinterpret_cast<uintptr_t *(__thiscall *)(void *, uint32_t, int **, int *, int *, char)>(
-                    Offsets::DBCacheGetRecord
-            );
-            uintptr_t *itemObject = getRecord(itemDbCache, itemId, param2, param3, param4, param5);
-            if (itemObject == nullptr) {
-                lua_error(luaState, "Item not found in DBCache");
-                return 0;
-            }
-
-            uint32_t itemLevel = *reinterpret_cast<uint32_t *>(itemObject + 14);
-            lua_pushnumber(luaState, itemLevel);
-            return 1;
-        } else {
-            lua_error(luaState, "Usage: GetItemLevel(itemId)");
-        }
-
-        return 0;
     }
 
     uint32_t Script_QueueScript(uintptr_t *luaState) {
@@ -392,175 +354,6 @@ namespace Nampower {
         }
 
         return false;
-    }
-
-    uint32_t Script_GetItemStats(uintptr_t *luaState) {
-        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
-
-        if (!lua_isnumber(luaState, 1)) {
-            lua_error(luaState, "Usage: GetItemStats(itemId, [copy])");
-            return 0;
-        }
-
-        uint32_t itemId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
-
-        // Check for optional copy parameter
-        bool useCopy = false;
-        if (lua_isnumber(luaState, 2)) {
-            useCopy = static_cast<int>(lua_tonumber(luaState, 2)) != 0;
-        }
-
-        // Get from cache
-        game::ItemStats_C *item = GetItemStats(itemId);
-        if (!item) {
-            lua_pushnil(luaState);
-            return 1;
-        }
-
-        // Create new table or get reusable table based on copy parameter
-        if (useCopy) {
-            lua_newtable(luaState);
-        } else {
-            GetTableRef(luaState, itemStatsTableRef);
-        }
-
-        // Push all simple fields using descriptors
-        PushFieldsToLua(luaState, item, itemStatsFields, itemStatsFieldsCount);
-
-        // Push string fields manually (require language)
-        auto const language = *reinterpret_cast<uint32_t *>(Offsets::Language);
-        PushTableValue(luaState, const_cast<char *>("displayName"),
-                       item->m_displayName[language] ? item->m_displayName[language] : const_cast<char *>(""));
-        PushTableValue(luaState, const_cast<char *>("description"),
-                       item->m_description ? item->m_description : const_cast<char *>(""));
-
-        // Push all array fields using descriptors with or without references based on copy parameter
-        if (useCopy) {
-            PushArrayFieldsToLua(luaState, item, itemStatsArrayFields, itemStatsArrayFieldsCount);
-        } else {
-            PushArrayFieldsToLuaWithRefs(luaState, item, itemStatsArrayFields, itemStatsArrayFieldsCount, itemStatsNestedArrayRefs);
-        }
-
-        return 1; // Return the table
-    }
-
-    uint32_t Script_GetItemStatsField(uintptr_t *luaState) {
-        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
-
-        if (!lua_isnumber(luaState, 1) || !lua_isstring(luaState, 2)) {
-            lua_error(luaState, "Usage: GetItemStatsField(itemId, fieldName, [copy])");
-            return 0;
-        }
-
-        InitializeFieldMaps();
-
-        uint32_t itemId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
-        const char *fieldName = lua_tostring(luaState, 2);
-
-        // Check for optional copy parameter
-        bool useCopy = false;
-        if (lua_isnumber(luaState, 3)) {
-            useCopy = static_cast<int>(lua_tonumber(luaState, 3)) != 0;
-        }
-
-        // Get from cache
-        game::ItemStats_C *item = GetItemStats(itemId);
-        if (!item) {
-            lua_pushnil(luaState);
-            return 1;
-        }
-
-        // O(1) hash table lookup for simple fields
-        auto simpleIt = itemStatsFieldMap.find(fieldName);
-        if (simpleIt != itemStatsFieldMap.end()) {
-            size_t i = simpleIt->second;
-            const char *fieldPtr = reinterpret_cast<const char *>(item) + itemStatsFields[i].offset;
-
-            switch (itemStatsFields[i].type) {
-                case FieldType::INT32:
-                    lua_pushnumber(luaState, *reinterpret_cast<const int32_t *>(fieldPtr));
-                    return 1;
-                case FieldType::UINT32:
-                    lua_pushnumber(luaState, *reinterpret_cast<const uint32_t *>(fieldPtr));
-                    return 1;
-                case FieldType::UINT8:
-                    lua_pushnumber(luaState, *reinterpret_cast<const uint8_t *>(fieldPtr));
-                    return 1;
-                case FieldType::FLOAT:
-                    lua_pushnumber(luaState, *reinterpret_cast<const float *>(fieldPtr));
-                    return 1;
-                case FieldType::STRING: {
-                    const char *str = *reinterpret_cast<const char *const *>(fieldPtr);
-                    lua_pushstring(luaState, str ? const_cast<char *>(str) : const_cast<char *>(""));
-                    return 1;
-                }
-                default:
-                    break;
-            }
-        }
-
-        // O(1) hash table lookup for array fields
-        auto arrayIt = itemStatsArrayFieldMap.find(fieldName);
-        if (arrayIt != itemStatsArrayFieldMap.end()) {
-            size_t i = arrayIt->second;
-            const auto &field = itemStatsArrayFields[i];
-
-            // Create new table or get reusable table based on copy parameter
-            if (useCopy) {
-                lua_newtable(luaState);
-            } else {
-                // Get or create reusable table for this specific field name
-                GetTableRef(luaState, itemStatsArrayFieldRefs[fieldName]);
-            }
-
-            const char *fieldPtr = reinterpret_cast<const char *>(item) + field.offset;
-
-            for (size_t j = 0; j < field.count; ++j) {
-                lua_pushnumber(luaState, j + 1);
-
-                switch (field.type) {
-                    case FieldType::INT32:
-                        lua_pushnumber(luaState, reinterpret_cast<const int32_t *>(fieldPtr)[j]);
-                        break;
-                    case FieldType::UINT32:
-                        lua_pushnumber(luaState, reinterpret_cast<const uint32_t *>(fieldPtr)[j]);
-                        break;
-                    case FieldType::UINT8:
-                        lua_pushnumber(luaState, reinterpret_cast<const uint8_t *>(fieldPtr)[j]);
-                        break;
-                    case FieldType::FLOAT:
-                        lua_pushnumber(luaState, reinterpret_cast<const float *>(fieldPtr)[j]);
-                        break;
-                    default:
-                        lua_pushnumber(luaState, 0);
-                        break;
-                }
-                lua_settable(luaState, -3);
-            }
-            return 1;
-        }
-
-        // Check for special string fields
-        if (strcmp(fieldName, "displayName") == 0) {
-            auto const language = *reinterpret_cast<uint32_t *>(Offsets::Language);
-            lua_pushstring(luaState,
-                           item->m_displayName[language] ? item->m_displayName[language] : const_cast<char *>(""));
-            return 1;
-        }
-        if (strcmp(fieldName, "description") == 0) {
-            lua_pushstring(luaState, item->m_description ? item->m_description : const_cast<char *>(""));
-            return 1;
-        }
-
-        // Field not found
-        lua_error(luaState, "Unknown field name");
-        return 0;
-    }
-
-    // won't do anything unless you uncomment line in process queues
-    uint32_t Script_StartItemExport(uintptr_t *luaState) {
-        StartItemExport();
-        return 0;
     }
 
     uint32_t Script_GetUnitData(uintptr_t *luaState) {

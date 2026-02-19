@@ -460,7 +460,7 @@ namespace Nampower {
                 json << "    \"id\": " << itemId << ",\n";
                 json << "    \"class\": " << item->m_class << ",\n";
                 json << "    \"subclass\": " << item->m_subclass << ",\n";
-                json << "    \"displayName\": " << escapeJsonString(item->m_displayName[0]) << ",\n";
+                json << "    \"displayName\": " << escapeJsonString(item->m_displayName[0] ? item->m_displayName[0] : const_cast<char *>("")) << ",\n";
                 json << "    \"displayInfoID\": " << item->m_displayInfoID << ",\n";
                 json << "    \"quality\": " << item->m_quality << ",\n";
                 json << "    \"flags\": " << static_cast<int>(item->m_flags) << ",\n";

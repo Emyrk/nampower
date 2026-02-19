@@ -452,7 +452,7 @@ namespace game {
     struct __declspec(align(4)) ItemStats_C {
         ItemClass m_class;
         int m_subclass;
-        char *m_displayName[4];
+        char *m_displayName[4]; // only index 0 is used and is already localized.  Other indexes are all null strings.
         int m_displayInfoID;
         int m_quality;
         ItemStatsFlags m_flags;
