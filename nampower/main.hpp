@@ -32,7 +32,7 @@ namespace Nampower {
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
 
     extern uint32_t gLastErrorTimeMs;
-    extern uint32_t gLastBufferIncreaseTimeMs;git
+    extern uint32_t gLastBufferIncreaseTimeMs;
     extern uint32_t gLastBufferDecreaseTimeMs;
 
     extern uint32_t gBufferTimeMs;   // adjusts dynamically depending on errors
