@@ -107,6 +107,18 @@ SET NP_TargetingQueueWindowMs "1000"
 
 - `NP_EnableSpellEnergizeEvents` - Whether to enable SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_OTHER, and SPELL_ENERGIZE_ON_SELF events. 0 to disable, 1 to enable. Default is 0.
 
+- `NP_EnableUnitEventsPet` - Whether to fire unit state events for the `pet` and `partypet1`–`partypet4` unit tokens. 0 to disable, 1 to enable. Default is 1.
+
+- `NP_EnableUnitEventsParty` - Whether to fire unit state events for the `party1`–`party4` unit tokens. 0 to disable, 1 to enable. Default is 1.
+
+- `NP_EnableUnitEventsRaid` - Whether to fire unit state events for the `raid1`–`raid40` unit tokens. 0 to disable, 1 to enable. Default is 1.
+
+- `NP_EnableUnitEventsMouseover` - Whether to fire unit state events for the `mouseover` unit token. 0 to disable, 1 to enable. Default is 1.
+
+- `NP_EnableUnitEventsGuid` - Whether to fire unit state events (UNIT_HEALTH, UNIT_MANA, UNIT_AURA, etc.) using the raw GUID string as the unit token, in addition to the standard named tokens. This mimics the SuperWoW behaviour that passes GUIDs directly into unit events so addons can track any unit by GUID. Because these events fire for every unit the client tracks — not just player, target, party, and raid members — they can generate significant event spam in busy environments (raids, battlegrounds, crowded zones). Many older addons such as PFUI were written expecting UNIT_HEALTH, UNIT_MANA, and UNIT_AURA to only fire for the standard named tokens like 'player', 'target', 'party1', 'raid1', etc and can cause performance issues when they act on events for every GUID around you. The ideal long-term solution is to update the small amount of addons that rely on GUID-based unit events — such as Automarker and Cursive — to use the new dedicated `UNIT_HEALTH_GUID`, `UNIT_MANA_GUID`, `UNIT_AURA_GUID`, etc. events (see [EVENTS.md](EVENTS.md#unit-guid-events)) so that `NP_EnableUnitEventsGuid` can be safely set to `0`. 0 to disable, 1 to enable. Default is 1.
+
+- `NP_EnableUnitEventsGuidFiltering` - When enabled, suppresses high-frequency raw GUID unit events that would otherwise cause spam: events below `UNIT_COMBAT` (182) such as `UNIT_HEALTH`, `UNIT_MANA`, and `UNIT_AURA`, as well as `UNIT_NAME_UPDATE` (183), `UNIT_PORTRAIT_UPDATE` (184), `UNIT_INVENTORY_CHANGED` (186), and `PLAYER_GUILD_UPDATE` (345). These events all have dedicated `_GUID` variants (e.g. `UNIT_HEALTH_GUID`) that fire once per unit instead of once per token. Only relevant when `NP_EnableUnitEventsGuid` is also enabled. 0 to disable, 1 to enable. Default is 1.
+
 - `NP_ChannelLatencyReductionPercentage` - The percentage of your latency to subtract from the end of a channel duration to optimize cast time while hopefully not losing any ticks (more explanation below). Default is 75.
 
 - `NP_NameplateDistance` - The distance in yards to display nameplates.  Defaults to whatever was set by the game or vanilla tweaks.

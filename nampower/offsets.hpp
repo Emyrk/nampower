@@ -38,6 +38,8 @@ enum class Offsets : std::uint32_t {
     GetObjectPtr = 0x464870,
     GetActivePlayer = 0x468550,
     GetUnitFromName = 0x00515940,
+    GetNamesFromGUID = 0x00000000, // TODO: set correct offset
+    SendUnitSignal = 0x00515e50,
     GetDurationObject = 0x00C0D828,
     GetCastingTimeIndex = 0x2D,
     Language = 0xC0E080,
@@ -89,10 +91,18 @@ enum class Offsets : std::uint32_t {
     OnSpriteRightClick = 0x00492820,
     CGGameUI_HandleObjectTrackChange = 0x00492890,
     CGGameUI_Target = 0X00493540,
+    CGGameUI_ShowCombatFeedback = 0x00494600,
     ScriptTargetUnit = 0X00489A40,
 
     MouseoverGuidLow = 0x00B4E2C8,
     MouseoverGuidHigh = 0x00B4E2CC,
+    NpcGuidLow = 0x00B4E2D0,
+    NpcGuidHigh = 0x00B4E2D4,
+
+    CGGameUI_GetPartyMember = 0X004E81A0,
+    CGGameUI_GetPartyMemberPet = 0X004E81D0,
+    CGGameUI_GetRaidMember = 0X00491940,
+    CGGameUI_GetRaidMemberPet = 0X00491960,
 
     SpellVisualsHandleCastStart = 0X006EC220,
     PlaySpellVisualHandler = 0X006E98D0,
@@ -191,6 +201,7 @@ enum class Offsets : std::uint32_t {
     SpellVisualsInitialize = 0x006ec0e0,
     SysMsgInitialize = 0x0044cd10,
 
+    UnitCombatParamFormat = 0x0084333c,
     IntIntParamFormat = 0X00843342,
     StringIntParamFormat = 0X00847FBC,
     StringParamFormat = 0X0082E280,

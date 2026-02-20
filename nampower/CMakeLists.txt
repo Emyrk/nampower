@@ -45,6 +45,8 @@ set(SOURCE_FILES
         autoattack.cpp
         player_scripts.hpp
         player_scripts.cpp
+        unit.hpp
+        unit.cpp
 )
 
 add_library(${DLL_NAME} SHARED ${SOURCE_FILES})

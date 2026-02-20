@@ -45,6 +45,7 @@
 #include "auras.hpp"
 #include "lua_refs.hpp"
 #include "autoattack.hpp"
+#include "unit.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -157,6 +158,8 @@ namespace Nampower {
 
     std::unique_ptr<hadesmem::PatchDetour<LuaScriptT> > gCSimpleFrame_GetNameDetour;
     std::unique_ptr<hadesmem::PatchDetour<LuaScriptT> > gCastSpellByNameDetour;
+    std::unique_ptr<hadesmem::PatchDetour<SendUnitSignalT> > gSendUnitSignalDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGGameUI_ShowCombatFeedbackT> > gCGGameUI_ShowCombatFeedbackDetour;
 
     // Flags for one-time initialization
     std::once_flag loadFlag;
@@ -681,6 +684,24 @@ namespace Nampower {
         } else if (strcmp(cvar, "NP_SpamProtectionEnabled") == 0) {
             gUserSettings.spamProtectionEnabled = atoi(value) != 0;
             DEBUG_LOG("Set NP_SpamProtectionEnabled to " << gUserSettings.spamProtectionEnabled);
+        } else if (strcmp(cvar, "NP_EnableUnitEventsPet") == 0) {
+            gUserSettings.enableUnitEventsPet = atoi(value) != 0;
+            DEBUG_LOG("Set NP_EnableUnitEventsPet to " << gUserSettings.enableUnitEventsPet);
+        } else if (strcmp(cvar, "NP_EnableUnitEventsParty") == 0) {
+            gUserSettings.enableUnitEventsParty = atoi(value) != 0;
+            DEBUG_LOG("Set NP_EnableUnitEventsParty to " << gUserSettings.enableUnitEventsParty);
+        } else if (strcmp(cvar, "NP_EnableUnitEventsRaid") == 0) {
+            gUserSettings.enableUnitEventsRaid = atoi(value) != 0;
+            DEBUG_LOG("Set NP_EnableUnitEventsRaid to " << gUserSettings.enableUnitEventsRaid);
+        } else if (strcmp(cvar, "NP_EnableUnitEventsMouseover") == 0) {
+            gUserSettings.enableUnitEventsMouseover = atoi(value) != 0;
+            DEBUG_LOG("Set NP_EnableUnitEventsMouseover to " << gUserSettings.enableUnitEventsMouseover);
+        } else if (strcmp(cvar, "NP_EnableUnitEventsGuid") == 0) {
+            gUserSettings.enableUnitEventsGuid = atoi(value) != 0;
+            DEBUG_LOG("Set NP_EnableUnitEventsGuid to " << gUserSettings.enableUnitEventsGuid);
+        } else if (strcmp(cvar, "NP_EnableUnitEventsGuidFiltering") == 0) {
+            gUserSettings.enableUnitEventsGuidFiltering = atoi(value) != 0;
+            DEBUG_LOG("Set NP_EnableUnitEventsGuidFiltering to " << gUserSettings.enableUnitEventsGuidFiltering);
         } else if (strcmp(cvar, "NP_EnableAuraCastEvents") == 0) {
             gUserSettings.enableAuraCastEvents = atoi(value) != 0;
             DEBUG_LOG("Set NP_EnableAuraCastEvents to " << gUserSettings.enableAuraCastEvents);
@@ -1016,6 +1037,30 @@ namespace Nampower {
                      0, // unk2
                      0); // unk3
 
+        char NP_EnableUnitEventsPet[] = "NP_EnableUnitEventsPet";
+        CVarRegister(NP_EnableUnitEventsPet, nullptr, 0,
+                     gUserSettings.enableUnitEventsPet ? defaultTrue : defaultFalse, nullptr, 1, 0, 0);
+
+        char NP_EnableUnitEventsParty[] = "NP_EnableUnitEventsParty";
+        CVarRegister(NP_EnableUnitEventsParty, nullptr, 0,
+                     gUserSettings.enableUnitEventsParty ? defaultTrue : defaultFalse, nullptr, 1, 0, 0);
+
+        char NP_EnableUnitEventsRaid[] = "NP_EnableUnitEventsRaid";
+        CVarRegister(NP_EnableUnitEventsRaid, nullptr, 0,
+                     gUserSettings.enableUnitEventsRaid ? defaultTrue : defaultFalse, nullptr, 1, 0, 0);
+
+        char NP_EnableUnitEventsMouseover[] = "NP_EnableUnitEventsMouseover";
+        CVarRegister(NP_EnableUnitEventsMouseover, nullptr, 0,
+                     gUserSettings.enableUnitEventsMouseover ? defaultTrue : defaultFalse, nullptr, 1, 0, 0);
+
+        char NP_EnableUnitEventsGuid[] = "NP_EnableUnitEventsGuid";
+        CVarRegister(NP_EnableUnitEventsGuid, nullptr, 0,
+                     gUserSettings.enableUnitEventsGuid ? defaultTrue : defaultFalse, nullptr, 1, 0, 0);
+
+        char NP_EnableUnitEventsGuidFiltering[] = "NP_EnableUnitEventsGuidFiltering";
+        CVarRegister(NP_EnableUnitEventsGuidFiltering, nullptr, 0,
+                     gUserSettings.enableUnitEventsGuidFiltering ? defaultTrue : defaultFalse, nullptr, 1, 0, 0);
+
         char NP_EnableAuraCastEvents[] = "NP_EnableAuraCastEvents";
         CVarRegister(NP_EnableAuraCastEvents, // name
                      nullptr, // help
@@ -1211,6 +1256,14 @@ namespace Nampower {
         loadUserVar("NP_DoubleCastToEndChannelEarly");
 
         loadUserVar("NP_SpamProtectionEnabled");
+
+        loadUserVar("NP_EnableUnitEventsPet");
+        loadUserVar("NP_EnableUnitEventsParty");
+        loadUserVar("NP_EnableUnitEventsRaid");
+        loadUserVar("NP_EnableUnitEventsMouseover");
+        loadUserVar("NP_EnableUnitEventsGuid");
+        loadUserVar("NP_EnableUnitEventsGuidFiltering");
+
         loadUserVar("NP_EnableAuraCastEvents");
         loadUserVar("NP_EnableAutoAttackEvents");
         loadUserVar("NP_EnableSpellStartEvents");
@@ -1405,6 +1458,10 @@ namespace Nampower {
                                                                                      &AttackRoundInfo_ReadPacketHook);
         gCSimpleFrame_GetNameDetour = createHook<LuaScriptT>(process, Offsets::CSimpleFrame_GetName,
                                                                 &CSimpleFrame_GetNameHook);
+        gSendUnitSignalDetour = createHook<SendUnitSignalT>(process, Offsets::SendUnitSignal,
+                                                            &SendUnitSignalHook);
+        gCGGameUI_ShowCombatFeedbackDetour = createHook<CGGameUI_ShowCombatFeedbackT>(
+            process, Offsets::CGGameUI_ShowCombatFeedback, &CGGameUI_ShowCombatFeedbackHook);
         gLoadScriptFunctionsDetour = createHook<LoadScriptFunctionsT>(process, Offsets::LoadScriptFunctions,
                                                                       &LoadScriptFunctionsHook);
         gCreateEventsDetour = createHook<FrameScript_CreateEventsT>(process, Offsets::FrameScript_CreateEvents,
@@ -1545,6 +1602,48 @@ namespace Nampower {
 
         char SPELL_MISS_OTHER[] = "SPELL_MISS_OTHER";
         addCustomEvent(game::SPELL_MISS_OTHER, SPELL_MISS_OTHER);
+
+        char UNIT_COMBAT_GUID[] = "UNIT_COMBAT_GUID";
+        addCustomEvent(game::UNIT_COMBAT_GUID, UNIT_COMBAT_GUID);
+
+        char UNIT_NAME_UPDATE_GUID[] = "UNIT_NAME_UPDATE_GUID";
+        addCustomEvent(game::UNIT_NAME_UPDATE_GUID, UNIT_NAME_UPDATE_GUID);
+
+        char UNIT_PORTRAIT_UPDATE_GUID[] = "UNIT_PORTRAIT_UPDATE_GUID";
+        addCustomEvent(game::UNIT_PORTRAIT_UPDATE_GUID, UNIT_PORTRAIT_UPDATE_GUID);
+
+        char UNIT_MODEL_CHANGED_GUID[] = "UNIT_MODEL_CHANGED_GUID";
+        addCustomEvent(game::UNIT_MODEL_CHANGED_GUID, UNIT_MODEL_CHANGED_GUID);
+
+        char UNIT_INVENTORY_CHANGED_GUID[] = "UNIT_INVENTORY_CHANGED_GUID";
+        addCustomEvent(game::UNIT_INVENTORY_CHANGED_GUID, UNIT_INVENTORY_CHANGED_GUID);
+
+        char UNIT_PET_GUID[] = "UNIT_PET_GUID";
+        addCustomEvent(game::UNIT_PET_GUID, UNIT_PET_GUID);
+
+        char UNIT_HEALTH_GUID[] = "UNIT_HEALTH_GUID";
+        addCustomEvent(game::UNIT_HEALTH_GUID, UNIT_HEALTH_GUID);
+
+        char UNIT_MANA_GUID[] = "UNIT_MANA_GUID";
+        addCustomEvent(game::UNIT_MANA_GUID, UNIT_MANA_GUID);
+
+        char UNIT_RAGE_GUID[] = "UNIT_RAGE_GUID";
+        addCustomEvent(game::UNIT_RAGE_GUID, UNIT_RAGE_GUID);
+
+        char UNIT_ENERGY_GUID[] = "UNIT_ENERGY_GUID";
+        addCustomEvent(game::UNIT_ENERGY_GUID, UNIT_ENERGY_GUID);
+
+        char UNIT_FLAGS_GUID[] = "UNIT_FLAGS_GUID";
+        addCustomEvent(game::UNIT_FLAGS_GUID, UNIT_FLAGS_GUID);
+
+        char UNIT_AURA_GUID[] = "UNIT_AURA_GUID";
+        addCustomEvent(game::UNIT_AURA_GUID, UNIT_AURA_GUID);
+
+        char UNIT_DYNAMIC_FLAGS_GUID[] = "UNIT_DYNAMIC_FLAGS_GUID";
+        addCustomEvent(game::UNIT_DYNAMIC_FLAGS_GUID, UNIT_DYNAMIC_FLAGS_GUID);
+
+        char PLAYER_GUILD_UPDATE_GUID[] = "PLAYER_GUILD_UPDATE_GUID";
+        addCustomEvent(game::PLAYER_GUILD_UPDATE_GUID, PLAYER_GUILD_UPDATE_GUID);
     }
 
     void FrameScript_CreateEventsHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t maxEventId) {

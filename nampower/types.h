@@ -29,6 +29,14 @@ struct UserSettings {
 
     bool spamProtectionEnabled = true;
     bool enableAuraCastEvents = false;
+
+    bool enableUnitEventsPet = true;
+    bool enableUnitEventsParty = true;
+    bool enableUnitEventsRaid = true;
+    bool enableUnitEventsMouseover = true;
+    bool enableUnitEventsGuid = true;
+    bool enableUnitEventsGuidFiltering = false;
+
     bool enableAutoAttackEvents = false;
     bool enableSpellStartEvents = false;
     bool enableSpellGoEvents = false;

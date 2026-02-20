@@ -43,6 +43,7 @@ For custom Lua functions, see [SCRIPTS.md](SCRIPTS.md). For general usage inform
 - [SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_OTHER, and SPELL_ENERGIZE_ON_SELF](#spell_energize_by_self-spell_energize_by_other-and-spell_energize_on_self)
 - [SPELL_MISS_SELF and SPELL_MISS_OTHER](#spell_miss_self-and-spell_miss_other)
 - [UNIT_DIED](#unit_died)
+- [Unit GUID Events](#unit-guid-events)
 
 ---
 
@@ -570,4 +571,109 @@ Example:
 frame:RegisterEvent("UNIT_DIED", function(guid)
     DEFAULT_CHAT_FRAME:AddMessage("Unit died: " .. guid)
 end)
+```
+
+---
+
+## Unit GUID Events
+
+These events fire once per unit state change, identified by GUID rather than unit token. Unlike the standard WoW unit events (e.g. `UNIT_HEALTH`) which fire per registered token (player, target, party1, etc.), each GUID event fires exactly once and carries flags indicating which tokens the unit currently matches.
+
+All GUID events share the same parameter format:
+1.  string guid - unit guid like `"0xF5300000000000A5"`
+2.  int isPlayer - 1 if the unit is the active player, 0 otherwise
+3.  int isTarget - 1 if the unit is the current locked target, 0 otherwise
+4.  int isMouseover - 1 if the unit is the current mouseover, 0 otherwise
+5.  int isPet - 1 if the unit is the active player's pet, 0 otherwise
+6.  int partyIndex - party slot (1–4) if the unit is a party member, 0 otherwise
+7.  int raidIndex - raid slot (1–40) if the unit is a raid member, 0 otherwise
+
+Events (8-parameter format):
+```
+UNIT_HEALTH_GUID         -- unit health changed
+UNIT_MANA_GUID           -- unit mana changed
+UNIT_RAGE_GUID           -- unit rage changed
+UNIT_ENERGY_GUID         -- unit energy changed
+UNIT_PET_GUID            -- unit pet assignment changed
+UNIT_FLAGS_GUID          -- unit flags changed
+UNIT_AURA_GUID           -- unit aura set changed
+UNIT_DYNAMIC_FLAGS_GUID  -- unit dynamic flags changed
+UNIT_NAME_UPDATE_GUID        -- unit name changed
+UNIT_PORTRAIT_UPDATE_GUID    -- unit portrait changed
+UNIT_MODEL_CHANGED_GUID      -- unit model changed
+UNIT_INVENTORY_CHANGED_GUID  -- unit inventory changed
+PLAYER_GUILD_UPDATE_GUID     -- unit guild changed
+```
+
+Example:
+```lua
+local function onUnitGuid(event, guid, isPlayer, isTarget, isMouseover, isPet, partyIndex, raidIndex)
+    local tokens = {}
+    if isPlayer    == 1 then table.insert(tokens, "player") end
+    if isTarget    == 1 then table.insert(tokens, "target") end
+    if isMouseover == 1 then table.insert(tokens, "mouseover") end
+    if isPet       == 1 then table.insert(tokens, "pet") end
+    if partyIndex  >  0 then table.insert(tokens, "party"..partyIndex) end
+    if raidIndex   >  0 then table.insert(tokens, "raid"..raidIndex) end
+    DEFAULT_CHAT_FRAME:AddMessage(string.format("[%s] %s (%s)", event, guid, table.concat(tokens, ", ")))
+end
+
+frame:RegisterEvent("UNIT_HEALTH_GUID", function(...) onUnitGuid("UNIT_HEALTH_GUID", ...) end)
+frame:RegisterEvent("UNIT_MANA_GUID",   function(...) onUnitGuid("UNIT_MANA_GUID", ...) end)
+```
+
+### UNIT_COMBAT_GUID
+Fires once per combat feedback event, identified by GUID. Unlike the other GUID events, this carries the full combat detail (action, damage, school, hitInfo).
+
+Parameters:
+1.  string guid - unit guid like `"0xF5300000000000A5"`
+2.  string action - action string (`"WOUND"`, `"MISS"`, `"DODGE"`, `"PARRY"`, `"BLOCK"`, `"EVADE"`, `"IMMUNE"`, `"REFLECT"`, `"ABSORB"`, `"INTERRUPT"`)
+3.  int damage - raw damage amount (0 for non-damaging outcomes like dodge/miss)
+4.  int school - damage school (0=Physical, 1=Holy, 2=Fire, 3=Nature, 4=Frost, 5=Shadow, 6=Arcane)
+5.  int hitInfo - bitfield (see below)
+6.  int isPet - 1 if the unit is the active player's pet, 0 otherwise
+7.  int partyIndex - party slot (1–4) if the unit is a party member, 0 otherwise
+8.  int raidIndex - raid slot (1–40) if the unit is a raid member, 0 otherwise
+
+#### HitInfo Flags (UNIT_COMBAT_GUID)
+The `hitInfo` field is a 16-bit value from `CGGameUI::ShowCombatFeedback`:
+```
+-- Low byte (hitInfo & 0xFF)
+COMBATHIT_MISS      = 0x10   -- Miss
+COMBATHIT_ABSORB    = 0x20   -- Absorbed (damage == 0)
+COMBATHIT_RESIST    = 0x40   -- Resisted (damage == 0)
+COMBATHIT_CRITICAL  = 0x80   -- Critical hit
+
+-- High byte ((hitInfo >> 8) & 0xFF)
+COMBATHIT_BLOCK     = 0x08   -- Blocked (damage == 0)
+COMBATHIT_GLANCING  = 0x40   -- Glancing blow
+COMBATHIT_CRUSHING  = 0x80   -- Crushing blow
+```
+
+Example:
+```lua
+local function onUnitCombatGuid(guid, action, damage, school, hitInfo, isPet, partyIndex, raidIndex)
+    local lo = bit.band(hitInfo, 0xFF)
+    local hi = bit.rshift(hitInfo, 8)
+
+    local hitType = "Normal"
+    if damage > 0 then
+        if   bit.band(lo, 0x80) ~= 0 then hitType = "Critical"
+        elseif bit.band(hi, 0x40) ~= 0 then hitType = "Glancing"
+        elseif bit.band(hi, 0x80) ~= 0 then hitType = "Crushing"
+        end
+    else
+        if   bit.band(lo, 0x20) ~= 0 then hitType = "Absorb"
+        elseif bit.band(hi, 0x08) ~= 0 then hitType = "Block"
+        elseif bit.band(lo, 0x40) ~= 0 then hitType = "Resist"
+        end
+    end
+
+    DEFAULT_CHAT_FRAME:AddMessage(string.format(
+        "[UNIT_COMBAT_GUID] %s %s %d (%s) school=%d",
+        guid, action, damage, hitType, school
+    ))
+end
+
+frame:RegisterEvent("UNIT_COMBAT_GUID", onUnitCombatGuid)
 ```

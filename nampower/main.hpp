@@ -25,8 +25,8 @@ namespace Nampower {
     constexpr uint32_t DISENCHANT_QUALITY_PURPLE = 0x04;  // Epic
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 38;
-    constexpr uint32_t PATCH_VERSION = 1;
+    constexpr uint32_t MINOR_VERSION = 39;
+    constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
@@ -125,6 +125,9 @@ namespace Nampower {
     using LuaScriptT = uint32_t (__fastcall *)(uintptr_t *luaState);
     using GetGUIDFromNameT = std::uint64_t (__fastcall *)(const char *);
     using GetUnitFromNameT = uintptr_t *(__fastcall *)(const char *);
+    using GetNamesFromGUIDT = char **(__fastcall *)(uint64_t *guid, int *numNamesReturn);
+    using SignalEventParamSingleStringT = int (__cdecl *)(uint32_t eventCode, const char *format, const char *str);
+    using SendUnitSignalT = void (__fastcall *)(uint64_t *guid, uint32_t eventCode);
     using lua_gettableT = void (__fastcall *)(uintptr_t *luaState, int globalsIndex);
     using lua_gettopT = int (__fastcall *)(uintptr_t *);
     using lua_typeT = int (__fastcall *)(uintptr_t *, int);
