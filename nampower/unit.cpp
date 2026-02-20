@@ -170,7 +170,6 @@ namespace Nampower {
                     guidEventCode = game::UNIT_PORTRAIT_UPDATE_GUID;
                     break;
                 case game::UNIT_MODEL_CHANGED:
-                    DEBUG_LOG("UNIT_MODEL_CHANGED hit in switch, guid=0x" << std::hex << names.guid << std::dec);
                     guidEventCode = game::UNIT_MODEL_CHANGED_GUID;
                     break;
                 case game::UNIT_INVENTORY_CHANGED:
@@ -183,9 +182,6 @@ namespace Nampower {
             }
 
             if (guidEventCode != 0) {
-                DEBUG_LOG(
-                    "FireUnitGuidEvent guidEventCode=" << guidEventCode << " guid=0x" << std::hex << names.guid << std::
-                    dec);
                 FireUnitGuidEvent(names, guidEventCode);
             }
         }
@@ -208,8 +204,6 @@ namespace Nampower {
 
     void SendUnitSignalHook(hadesmem::PatchDetourBase *detour, uint64_t *guid, uint32_t eventCode) {
         if (!guid || *guid == 0) return;
-
-        DEBUG_LOG("SendUnitSignal eventCode=" << eventCode << " guid=0x" << std::hex << *guid << std::dec);
 
         auto names = GetUnitNames(guid);
         TriggerUnitEvents(names, eventCode);

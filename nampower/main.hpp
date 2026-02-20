@@ -26,13 +26,13 @@ namespace Nampower {
 
     constexpr uint32_t MAJOR_VERSION = 2;
     constexpr uint32_t MINOR_VERSION = 39;
-    constexpr uint32_t PATCH_VERSION = 0;
+    constexpr uint32_t PATCH_VERSION = 1;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;
 
     extern uint32_t gLastErrorTimeMs;
-    extern uint32_t gLastBufferIncreaseTimeMs;
+    extern uint32_t gLastBufferIncreaseTimeMs;git
     extern uint32_t gLastBufferDecreaseTimeMs;
 
     extern uint32_t gBufferTimeMs;   // adjusts dynamically depending on errors
