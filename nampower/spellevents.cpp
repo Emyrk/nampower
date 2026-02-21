@@ -84,7 +84,7 @@ namespace Nampower {
             casterGuidStr,
             spellId);
 
-        delete[] casterGuidStr;
+        FreeGuidString(casterGuidStr);
     }
 
 
@@ -144,8 +144,8 @@ namespace Nampower {
                 periodic);
         }
 
-        delete[] targetGuidStr;
-        delete[] casterGuidStr;
+        FreeGuidString(targetGuidStr);
+        FreeGuidString(casterGuidStr);
     }
 
 
@@ -205,8 +205,8 @@ namespace Nampower {
                 periodic);
         }
 
-        delete[] targetGuidStr;
-        delete[] casterGuidStr;
+        FreeGuidString(targetGuidStr);
+        FreeGuidString(casterGuidStr);
     }
 
     void Spell_C_SpellFailedHook(hadesmem::PatchDetourBase *detour, uint32_t spellId,
@@ -442,7 +442,7 @@ namespace Nampower {
             casterGuidStr,
             delayMs);
 
-        delete[] casterGuidStr;
+        FreeGuidString(casterGuidStr);
     }
 
     void Spell_C_CooldownEventTriggeredHook(hadesmem::PatchDetourBase *detour,
@@ -686,7 +686,7 @@ namespace Nampower {
             auraCapStatus);
 
         if (createdGuidStr) {
-            delete [] targetGuidStr;
+            FreeGuidString(targetGuidStr);
         }
     }
 
@@ -769,19 +769,21 @@ namespace Nampower {
             }
         }
 
-        delete[] casterGuidStr;
+        FreeGuidString(casterGuidStr);
     }
 
     void TriggerSpellStartEvent(uint32_t itemId,
                                 uint32_t spellId,
                                 uint64_t casterGuid,
                                 uint64_t targetGuid,
+                                uint64_t corpseOwnerGuid,
                                 uint16_t castFlags,
                                 uint32_t castTime) {
-        static char format[] = "%d%d%s%s%d%d%d%d";
+        static char format[] = "%d%d%s%s%d%d%d%d%s";
 
         char *casterGuidStr = ConvertGuidToString(casterGuid);
         char *targetGuidStr = ConvertGuidToString(targetGuid);
+        char *corpseOwnerGuidStr = corpseOwnerGuid ? ConvertGuidToString(corpseOwnerGuid) : nullptr;
 
         uint32_t duration = 0;
         SpellType spellType = SPELL_TYPE_NORMAL;
@@ -812,7 +814,8 @@ namespace Nampower {
                           uint32_t castFlagsParam,
                           uint32_t castTimeParam,
                           uint32_t durationParam,
-                          uint32_t spellTypeParam)) Offsets::SignalEventParam)(
+                          uint32_t spellTypeParam,
+                          char *corpseTargetGuidParam)) Offsets::SignalEventParam)(
             event,
             format,
             itemId,
@@ -822,24 +825,28 @@ namespace Nampower {
             castFlags,
             castTime,
             duration,
-            spellType);
+            spellType,
+            corpseOwnerGuidStr);
 
-        delete[] casterGuidStr;
-        delete[] targetGuidStr;
+        FreeGuidString(casterGuidStr);
+        FreeGuidString(targetGuidStr);
+        FreeGuidString(corpseOwnerGuidStr);
     }
 
     void TriggerSpellGoEvent(uint32_t itemId,
                              uint32_t spellId,
                              const uint64_t *casterGuid,
                              uint64_t targetGuid,
+                             uint64_t corpseOwnerGuid,
                              uint16_t castFlags,
                              uint8_t numTargetsHit,
                              uint8_t numTargetsMissed) {
-        static char format[] = "%d%d%s%s%d%d%d";
+        static char format[] = "%d%d%s%s%d%d%d%s";
 
         uint64_t casterGuidValue = casterGuid ? *casterGuid : 0;
         char *casterGuidStr = ConvertGuidToString(casterGuidValue);
         char *targetGuidStr = ConvertGuidToString(targetGuid);
+        char *corpseOwnerGuidStr = corpseOwnerGuid ? ConvertGuidToString(corpseOwnerGuid) : nullptr;
 
         auto event = game::SPELL_GO_OTHER;
         if (casterGuidValue == game::ClntObjMgrGetActivePlayerGuid()) {
@@ -854,7 +861,8 @@ namespace Nampower {
                           char *targetGuidParam,
                           uint32_t castFlagsParam,
                           uint32_t numTargetsHitParam,
-                          uint32_t numTargetsMissedParam)) Offsets::SignalEventParam)(
+                          uint32_t numTargetsMissedParam,
+                          char *corpseTargetGuidParam)) Offsets::SignalEventParam)(
             event,
             format,
             itemId,
@@ -863,10 +871,12 @@ namespace Nampower {
             targetGuidStr,
             castFlags,
             numTargetsHit,
-            numTargetsMissed);
+            numTargetsMissed,
+            corpseOwnerGuidStr);
 
-        delete[] casterGuidStr;
-        delete[] targetGuidStr;
+        FreeGuidString(casterGuidStr);
+        FreeGuidString(targetGuidStr);
+        FreeGuidString(corpseOwnerGuidStr);
     }
 
     void TriggerSpellMissEvent(uint64_t casterGuid,
@@ -896,8 +906,8 @@ namespace Nampower {
             spellId,
             missInfo);
 
-        delete[] casterGuidStr;
-        delete[] targetGuidStr;
+        FreeGuidString(casterGuidStr);
+        FreeGuidString(targetGuidStr);
     }
 
     void SpellGoHook(hadesmem::PatchDetourBase *detour, uint64_t *itemGUID, uint64_t *casterGUID,
@@ -940,8 +950,22 @@ namespace Nampower {
         packet->Get(spellCastTargetMask);
 
         uint64_t unitTargetGUID = 0;
-        if (spellCastTargetMask & (game::TARGET_FLAG_UNIT | game::TARGET_FLAG_UNK2))
-            packet->GetPackedGuid(unitTargetGUID);
+        uint64_t corpseTargetGUID = 0;
+        if (spellCastTargetMask & (game::TARGET_FLAG_UNIT | game::TARGET_FLAG_PVP_CORPSE | game::TARGET_FLAG_OBJECT | game::TARGET_FLAG_CORPSE | game::TARGET_FLAG_UNK2)) {
+            if (spellCastTargetMask & game::TARGET_FLAG_UNIT) {
+                packet->GetPackedGuid(unitTargetGUID);
+            } else if (spellCastTargetMask & (game::TARGET_FLAG_OBJECT | game::TARGET_FLAG_OBJECT_UNK)) {
+                uint64_t goTargetGUID = 0;
+                packet->GetPackedGuid(goTargetGUID);
+            } else if (spellCastTargetMask & (game::TARGET_FLAG_CORPSE | game::TARGET_FLAG_PVP_CORPSE)) {
+                uint64_t corpseGUID = 0;
+                packet->GetPackedGuid(corpseGUID);
+                auto *corpse = game::ClntObjMgrObjectPtr(game::TYPEMASK_CORPSE, corpseGUID);
+                if (corpse) {
+                    corpseTargetGUID = game::GetCorpseOwner(corpse);
+                }
+            }
+        }
 
         uint32_t itemId = 0;
         if (itemGUID && *itemGUID != 0 && *itemGUID != casterGuidValue) {
@@ -953,7 +977,7 @@ namespace Nampower {
         }
 
         if (gUserSettings.enableSpellGoEvents) {
-            TriggerSpellGoEvent(itemId, spellId, casterGUID, unitTargetGUID, castFlags,
+            TriggerSpellGoEvent(itemId, spellId, casterGUID, unitTargetGUID, corpseTargetGUID, castFlags,
                                 numTargetsHit, numTargetsMissed);
         }
 
@@ -1033,8 +1057,28 @@ namespace Nampower {
             packet->Get(spellCastTargetMask);
 
             uint64_t unitTargetGUID = 0;
-            if (spellCastTargetMask & (game::TARGET_FLAG_UNIT | game::TARGET_FLAG_UNK2))
-                packet->GetPackedGuid(unitTargetGUID);
+            uint64_t goTargetGUID = 0;
+            uint64_t corpseTargetGUID = 0;
+            uint64_t itemTargetGUID = 0;
+
+            if (spellCastTargetMask & (game::TARGET_FLAG_UNIT | game::TARGET_FLAG_PVP_CORPSE | game::TARGET_FLAG_OBJECT | game::TARGET_FLAG_CORPSE | game::TARGET_FLAG_UNK2)) {
+                if (spellCastTargetMask & game::TARGET_FLAG_UNIT) {
+                    packet->GetPackedGuid(unitTargetGUID);
+                } else if (spellCastTargetMask & (game::TARGET_FLAG_OBJECT | game::TARGET_FLAG_OBJECT_UNK)) {
+                    packet->GetPackedGuid(goTargetGUID);
+                } else if (spellCastTargetMask & (game::TARGET_FLAG_CORPSE | game::TARGET_FLAG_PVP_CORPSE)) {
+                    uint64_t corpseGUID = 0;
+                    packet->GetPackedGuid(corpseGUID);
+                    auto *corpse = game::ClntObjMgrObjectPtr(game::TYPEMASK_CORPSE, corpseGUID);
+                    if (corpse) {
+                        corpseTargetGUID = game::GetCorpseOwner(corpse);
+                    }
+                }
+            }
+
+            if (spellCastTargetMask & (game::TARGET_FLAG_ITEM | game::TARGET_FLAG_TRADE_ITEM)) {
+                packet->GetPackedGuid(itemTargetGUID);
+            }
 
             uint32_t itemId = 0;
             if (itemGuid != 0 && itemGuid != casterGuid) {
@@ -1046,7 +1090,7 @@ namespace Nampower {
             }
 
             if (gUserSettings.enableSpellStartEvents) {
-                TriggerSpellStartEvent(itemId, spellId, casterGuid, unitTargetGUID, castFlags, castTime);
+                TriggerSpellStartEvent(itemId, spellId, casterGuid, unitTargetGUID, corpseTargetGUID, castFlags, castTime);
             }
 
             if (casterGuid == game::ClntObjMgrGetActivePlayerGuid()) {
@@ -1199,8 +1243,8 @@ namespace Nampower {
             spellSchool,
             effectsAuraTypeStream.str().c_str());
 
-        delete[] targetGuidStr;
-        delete[] casterGuidStr;
+        FreeGuidString(targetGuidStr);
+        FreeGuidString(casterGuidStr);
     }
 
     int PeriodicAuraLogHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t unk, uint32_t opCode, uint32_t unk2,

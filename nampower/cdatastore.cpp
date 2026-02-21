@@ -119,18 +119,6 @@ namespace Nampower {
     }
 
     void CDataStore::GetPackedGuid(uint64_t &val) {
-        unsigned int bytes = m_read + sizeof(val);
-        if (bytes > m_size) {
-            m_read = m_size + 1;
-            return;
-        }
-        if ((m_read < m_base) || (bytes > m_alloc + m_base)) {
-            if (!AssertFetchRead(m_read, sizeof(val))) {
-                m_read = m_alloc + 1;
-                return;
-            }
-        }
-
         uint64_t guid = 0;
         uint8_t mask; // Read the bitmap
         Get(mask);

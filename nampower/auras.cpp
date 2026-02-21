@@ -6,6 +6,7 @@
 #include "offsets.hpp"
 #include "logging.hpp"
 #include "game.hpp"
+#include "helper.hpp"
 
 namespace Nampower {
     uint32_t gAuraExpirationTime[MAX_AURA_SLOTS] = {};
@@ -71,12 +72,7 @@ namespace Nampower {
         }
 
         static char format[] = "%s%d%d%d%d%d%d";
-        char *guidStr = new char[21]; // 2 for 0x prefix, 18 for the number, and 1 for '\0'
-        if (isSelf) {
-            std::snprintf(guidStr, 21, "0x%016llX", static_cast<unsigned long long>(playerGuid));
-        } else {
-            std::snprintf(guidStr, 21, "0x%016llX", static_cast<unsigned long long>(unitGuid));
-        }
+        char *guidStr = ConvertGuidToString(isSelf ? playerGuid : unitGuid);
 
         // Trigger the event with spellId as parameter
             ((int (__cdecl *)(int, char *, char *, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t)) Offsets::SignalEventParam)(
@@ -90,7 +86,7 @@ namespace Nampower {
                 slot,
                 state);
 
-        delete[] guidStr;
+        FreeGuidString(guidStr);
     }
 
     void CGUnit_C_OnAuraRemovedHook(hadesmem::PatchDetourBase *detour, uintptr_t *unit, void *dummy_edx, uint32_t slot,
@@ -172,14 +168,13 @@ namespace Nampower {
 
         // Trigger UNIT_DIED event
         static char format[] = "%s";
-        char *guidStr = new char[21]; // 2 for 0x prefix, 18 for the number, and 1 for '\0'
-        std::snprintf(guidStr, 21, "0x%016llX", static_cast<unsigned long long>(guid));
+        char *guidStr = ConvertGuidToString(guid);
 
         ((int (__cdecl *)(int, char *, char *)) Offsets::SignalEventParam)(
             game::UNIT_DIED,
             format,
             guidStr);
 
-        delete[] guidStr;
+        FreeGuidString(guidStr);
     }
 }

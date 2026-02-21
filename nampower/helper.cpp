@@ -286,13 +286,28 @@ namespace Nampower {
         return startTime != 0 && duration > 1.5;
     }
 
+    const char kNilGuidStr[] = "0x0000000000000000";
+
+    void FreeGuidString(char *str) {
+        if (str != kNilGuidStr) {
+            delete[] str;
+        }
+    }
+
     char *ConvertGuidToString(uint64_t guid) {
+        if (!guid) {
+            return const_cast<char *>(kNilGuidStr);
+        }
         char *guidStr = new char[21]; // 2 for 0x prefix, 18 for the number, and 1 for '\0'
         std::snprintf(guidStr, 21, "0x%016llX", static_cast<unsigned long long>(guid));
         return guidStr;
     }
 
     void PushGuidString(uintptr_t *luaState, uint64_t guid) {
+        if (!guid) {
+            lua_pushstring(luaState, const_cast<char *>(kNilGuidStr));
+            return;
+        }
         char guidStr[21] = {0};
         std::snprintf(guidStr, sizeof(guidStr), "0x%016llX", static_cast<unsigned long long>(guid));
         lua_pushstring(luaState, guidStr);

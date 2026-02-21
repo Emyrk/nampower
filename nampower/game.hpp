@@ -1789,6 +1789,41 @@ namespace game {
         UNIT_FLAG_UNK_29 = 0x20000000, // used in Feing Death spell
     };
 
+    constexpr uint32_t OBJECT_END = 6; // ObjectFields: guid(2) + type + entry + scaleX + padding
+
+    enum ECorpseFields {
+        CORPSE_FIELD_OWNER                         = OBJECT_END + 0x00,
+        CORPSE_FIELD_FACING                        = OBJECT_END + 0x02,
+        CORPSE_FIELD_POS_X                         = OBJECT_END + 0x03,
+        CORPSE_FIELD_POS_Y                         = OBJECT_END + 0x04,
+        CORPSE_FIELD_POS_Z                         = OBJECT_END + 0x05,
+        CORPSE_FIELD_DISPLAY_ID                    = OBJECT_END + 0x06,
+        CORPSE_FIELD_ITEM                          = OBJECT_END + 0x07, // 19
+        CORPSE_FIELD_BYTES_1                       = OBJECT_END + 0x1A,
+        CORPSE_FIELD_BYTES_2                       = OBJECT_END + 0x1B,
+        CORPSE_FIELD_GUILD                         = OBJECT_END + 0x1C,
+        CORPSE_FIELD_FLAGS                         = OBJECT_END + 0x1D,
+        CORPSE_FIELD_DYNAMIC_FLAGS                 = OBJECT_END + 0x1E,
+        CORPSE_FIELD_PAD                           = OBJECT_END + 0x1F,
+        CORPSE_END                                 = OBJECT_END + 0x20,
+    };
+
+    typedef struct CorpseFields {
+        uint64_t owner;          // Size:2
+        float facing;            // Size:1
+        float posX;              // Size:1
+        float posY;              // Size:1
+        float posZ;              // Size:1
+        uint32_t displayId;      // Size:1
+        uint32_t items[19];      // Size:19
+        uint32_t bytes1;         // Size:1
+        uint32_t bytes2;         // Size:1
+        uint32_t guild;          // Size:1
+        uint32_t flags;          // Size:1
+        uint32_t dynamicFlags;   // Size:1
+        uint32_t pad;            // Size:1
+    } CorpseFields;
+
     typedef struct UnitFields {
         uint64_t charm; // Size:2
         uint64_t summon; // Size:2
@@ -1910,4 +1945,6 @@ namespace game {
     bool UnitIsDebuffCapped(uintptr_t *unit);
 
     uint32_t UnitGetMountDisplayId(uintptr_t *unit);
+
+    uint64_t GetCorpseOwner(uintptr_t *corpse);
 }

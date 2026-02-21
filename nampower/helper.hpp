@@ -70,7 +70,9 @@ namespace Nampower {
 
     bool IsSpellOnCooldown(uint32_t spellId);
 
+    extern const char kNilGuidStr[];
     char *ConvertGuidToString(uint64_t guid);
+    void FreeGuidString(char *str);
     void PushGuidString(uintptr_t *luaState, uint64_t guid);
     bool IsReadableMemory(const void *ptr, size_t size);
     bool SafeReadMemory(const void *address, void *out, size_t size);

@@ -277,4 +277,17 @@ namespace game {
 
         return unitFields->mountDisplayId;
     }
+
+    uint64_t GetCorpseOwner(uintptr_t *corpse) {
+        if (!corpse) {
+            return 0;
+        }
+
+        auto *corpseFields = *reinterpret_cast<CorpseFields **>(corpse + 68);
+        if (!corpseFields) {
+            return 0;
+        }
+
+        return corpseFields->owner;
+    }
 }

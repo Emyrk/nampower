@@ -328,8 +328,7 @@ namespace Nampower {
     void
     TriggerSpellCastEvent(bool result, uint32_t spellId, CastType castType, std::uint64_t guid, uint32_t itemId) {
         static char format[] = "%d%d%d%s%d";
-        char *guidStr = new char[21]; // 2 for 0x prefix, 18 for the number, and 1 for '\0'
-        std::snprintf(guidStr, 21, "0x%016llX", static_cast<unsigned long long>(guid));
+        char *guidStr = ConvertGuidToString(guid);
 
         ((int (__cdecl *)(int, char *, uint32_t, uint32_t, uint32_t, char *, uint32_t)) Offsets::SignalEventParam)(
             game::SPELL_CAST_EVENT, // SPELL_CAST_EVENT event we are adding
@@ -340,7 +339,7 @@ namespace Nampower {
             guidStr,
             itemId);
 
-        delete[] guidStr;
+        FreeGuidString(guidStr);
     }
 
     void clearCastingSpell() {

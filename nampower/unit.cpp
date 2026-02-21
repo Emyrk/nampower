@@ -127,7 +127,7 @@ namespace Nampower {
             if (!filtered) {
                 char *guidStr = ConvertGuidToString(names.guid);
                 SignalEventParam(eventCode, format, guidStr);
-                delete[] guidStr;
+                FreeGuidString(guidStr);
             }
         }
 
@@ -199,7 +199,7 @@ namespace Nampower {
                         names.pet ? 1 : 0,
                         names.partyIndex,
                         names.raidIndex);
-        delete[] guidStr;
+        FreeGuidString(guidStr);
     }
 
     void SendUnitSignalHook(hadesmem::PatchDetourBase *detour, uint64_t *guid, uint32_t eventCode) {
@@ -266,7 +266,7 @@ namespace Nampower {
                              names.pet ? 1 : 0,
                              names.partyIndex,
                              names.raidIndex);
-            delete[] guidStr;
+            FreeGuidString(guidStr);
         }
     }
 }

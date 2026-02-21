@@ -45,8 +45,8 @@ namespace Nampower {
             totalAbsorb,
             totalResist);
 
-        delete[] attackerGuidStr;
-        delete[] targetGuidStr;
+        FreeGuidString(attackerGuidStr);
+        FreeGuidString(targetGuidStr);
     }
 
     void AttackRoundInfo_ReadPacketHook(hadesmem::PatchDetourBase *detour, void *thisptr, void *dummy_edx,

@@ -29,7 +29,7 @@ namespace Nampower {
             targetGuidStr,
             duration);
 
-        delete[] targetGuidStr;
+        FreeGuidString(targetGuidStr);
     }
 
     void TriggerSpellChannelUpdateEvent(uint32_t spellId, uint32_t channelRemainingTime) {
@@ -49,7 +49,7 @@ namespace Nampower {
             targetGuidStr,
             channelRemainingTime);
 
-        delete[] targetGuidStr;
+        FreeGuidString(targetGuidStr);
     }
 
     int SpellChannelStartHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet) {

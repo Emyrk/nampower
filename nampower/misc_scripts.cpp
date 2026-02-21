@@ -960,9 +960,7 @@ namespace Nampower {
             uint32_t guidHigh = frameObj[0x13b];
             uint64_t guid = (static_cast<uint64_t>(guidHigh) << 32) | guidLow;
 
-            char guidStr[21] = {0};
-            std::snprintf(guidStr, sizeof(guidStr), "0x%016llX", static_cast<unsigned long long>(guid));
-            lua_pushstring(luaState, guidStr);
+            PushGuidString(luaState, guid);
         } else {
             // GetName via vtable[1] (offset 0x4)
             using GetNameT = char *(__thiscall *)(uintptr_t *thisPtr);
