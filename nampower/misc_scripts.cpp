@@ -3,6 +3,7 @@
 //
 
 #include "misc_scripts.hpp"
+#include "logging.hpp"
 #include "offsets.hpp"
 #include "items.hpp"
 #include "dbc_fields.hpp"
@@ -10,6 +11,9 @@
 #include "helper.hpp"
 #include "lua_refs.hpp"
 #include "auras.hpp"
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
 #include <cstring>
 
 namespace Nampower {
@@ -916,6 +920,129 @@ namespace Nampower {
         return 1;
     }
 
+    uint32_t Script_UnitGUID(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isstring(luaState, 1)) {
+            lua_error(luaState, "Usage: UnitGUID(unitToken)");
+            return 0;
+        }
+
+        const char *unitToken = lua_tostring(luaState, 1);
+        if (!unitToken || unitToken[0] == '\0') {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        auto const getGUIDFromName = reinterpret_cast<GetGUIDFromNameT>(Offsets::GetGUIDFromName);
+        const uint64_t guid = getGUIDFromName(unitToken);
+        if (guid == 0) {
+            lua_pushnil(luaState);
+        } else {
+            PushGuidString(luaState, guid);
+        }
+
+        return 1;
+    }
+
+    uint64_t GetGUIDFromNameHook(hadesmem::PatchDetourBase *detour, const char *nameStr) {
+        auto const original = detour->GetTrampolineT<GetGUIDFromNameT>();
+
+        if (!nameStr || nameStr[0] == '\0') {
+            return 0;
+        }
+
+        // Hex GUID with optional suffix: "0x[16 hex digits][owner|target|pet]"
+        const size_t tokenLen = std::strlen(nameStr);
+        const bool isHexToken = (nameStr[0] == '0' && (nameStr[1] == 'x' || nameStr[1] == 'X'));
+        const bool hasHexAndUnitSuffix = isHexToken && tokenLen > 18 &&
+                                      (_stricmp(nameStr + 18, "owner") == 0 ||
+                                       _stricmp(nameStr + 18, "target") == 0 ||
+                                       _stricmp(nameStr + 18, "pet") == 0);
+
+        // Handle mark1-mark8 before calling original, so original parser can't error on custom tokens.
+        if (_strnicmp(nameStr, "mark", 4) == 0) {
+            const char digit = nameStr[4];
+            if (digit >= '1' && digit <= '8' && nameStr[5] == '\0') {
+                const uint32_t markIndex = static_cast<uint32_t>(digit - '1');
+                auto const markGuids = reinterpret_cast<uint64_t *>(static_cast<uintptr_t>(Offsets::RaidTargetMarkGuidBase));
+                return markGuids[markIndex];
+            }
+        }
+
+        if (!hasHexAndUnitSuffix) {
+            uint64_t result = original(nameStr);
+            if (result != 0) {
+                return result;
+            }
+        }
+
+        if (isHexToken) {
+            if (tokenLen < 18) {
+                return 0;
+            }
+
+            char guidHex[17] = {};
+            std::memcpy(guidHex, nameStr + 2, 16);
+            if (!std::all_of(guidHex, guidHex + 16,
+                             [](unsigned char c) { return std::isxdigit(c) != 0; })) {
+                return 0;
+            }
+
+            const uint64_t parsedGuid = std::strtoull(guidHex, nullptr, 16);
+
+            // Suffix must begin exactly after 16 hex digits (no substring matching).
+            const char *const hexSuffix = nameStr + 18;
+
+            // "owner" suffix
+            if (_stricmp(hexSuffix, "owner") == 0) {
+                return game::UnitGetOwnerGuidForGuid(parsedGuid);
+            }
+
+            // "target" suffix
+            if (_stricmp(hexSuffix, "target") == 0) {
+                return game::UnitGetTargetGuidForGuid(parsedGuid);
+            }
+
+            // "pet" suffix
+            if (_stricmp(hexSuffix, "pet") == 0) {
+                return game::UnitGetPetGuidForGuid(parsedGuid);
+            }
+
+            return parsedGuid;
+        }
+
+        // Non-hex token ending in owner/target/pet suffix (up to 20 chars total)
+        if (tokenLen <= 0x14) {
+            auto resolveBaseGuid = [&](size_t suffixLen) -> uint64_t {
+                // Copy prefix (everything before suffix) and resolve it.
+                // Call via the hooked address so nested custom tokens also resolve.
+                char buf[0x15] = {};
+                std::memcpy(buf, nameStr, tokenLen - suffixLen);
+                auto const hooked = reinterpret_cast<GetGUIDFromNameT>(
+                    static_cast<uint32_t>(Offsets::GetGUIDFromName));
+                return hooked(buf);
+            };
+
+            if (tokenLen > 5 && _stricmp(nameStr + tokenLen - 5, "owner") == 0) {
+                const uint64_t baseGuid = resolveBaseGuid(5);
+                return game::UnitGetOwnerGuidForGuid(baseGuid);
+            }
+
+            if (tokenLen > 6 && _stricmp(nameStr + tokenLen - 6, "target") == 0) {
+                const uint64_t baseGuid = resolveBaseGuid(6);
+                return game::UnitGetTargetGuidForGuid(baseGuid);
+            }
+
+            if (tokenLen > 3 && _stricmp(nameStr + tokenLen - 3, "pet") == 0) {
+                const uint64_t baseGuid = resolveBaseGuid(3);
+                return game::UnitGetPetGuidForGuid(baseGuid);
+            }
+        }
+
+        return 0;
+    }
+
     uint32_t CSimpleFrame_GetNameHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState) {
         luaState = GetLuaStatePtr();
 
@@ -930,6 +1057,7 @@ namespace Nampower {
         uint32_t typeId = *nameplateTypeId;
 
         uintptr_t *frameObj = nullptr;
+        uintptr_t *vtable = nullptr;
 
         int luaArgType = lua_type(luaState, 1);
         if (luaArgType == LUA_TTABLE) {
@@ -940,10 +1068,19 @@ namespace Nampower {
 
             if (frameObj == nullptr) {
                 lua_error(luaState, "Attempt to find 'this' in non-frame table");
+            } else if (!IsReadableMemory(frameObj, sizeof(uintptr_t))) {
+                // Stale frame pointer (object was destroyed) - return nil silently
+                lua_pushnil(luaState);
+                return 1;
             } else {
+                vtable = reinterpret_cast<uintptr_t *>(*frameObj);
+                // Validate vtable covers entries [0..4] before touching isType at [4]
+                if (!IsReadableMemory(vtable, 5 * sizeof(uintptr_t))) {
+                    lua_pushnil(luaState);
+                    return 1;
+                }
                 // Type check via vtable[4] (offset 0x10)
                 using IsTypeT = char (__thiscall *)(uintptr_t *thisPtr, uint32_t typeId);
-                auto vtable = reinterpret_cast<uintptr_t *>(*frameObj);
                 auto isType = reinterpret_cast<IsTypeT>(vtable[4]);
                 if (isType(frameObj, typeId) == 0) {
                     lua_error(luaState, "Wrong object type for member function");
@@ -953,18 +1090,22 @@ namespace Nampower {
             lua_error(luaState, "Attempt to find 'this' in non-table value");
         }
 
+        // frameObj and vtable are guaranteed valid here (lua_error longjmps otherwise)
+
         // Check if second arg is passed (e.g. nameplate:GetName(1) to get GUID)
         if (lua_isnumber(luaState, 2) && static_cast<int>(lua_tonumber(luaState, 2)) != 0) {
             // Return GUID string from frame object at offset 0x4E8/0x4EC
-            uint32_t guidLow = frameObj[0x13a];
-            uint32_t guidHigh = frameObj[0x13b];
-            uint64_t guid = (static_cast<uint64_t>(guidHigh) << 32) | guidLow;
-
-            PushGuidString(luaState, guid);
+            if (!IsReadableMemory(frameObj + 0x13a, 2 * sizeof(uint32_t))) {
+                lua_pushnil(luaState);
+            } else {
+                uint32_t guidLow = frameObj[0x13a];
+                uint32_t guidHigh = frameObj[0x13b];
+                uint64_t guid = (static_cast<uint64_t>(guidHigh) << 32) | guidLow;
+                PushGuidString(luaState, guid);
+            }
         } else {
-            // GetName via vtable[1] (offset 0x4)
+            // GetName via vtable[1] (offset 0x4) - vtable already validated above
             using GetNameT = char *(__thiscall *)(uintptr_t *thisPtr);
-            auto vtable = reinterpret_cast<uintptr_t *>(*frameObj);
             auto getName = reinterpret_cast<GetNameT>(vtable[1]);
             char *name = getName(frameObj);
 
@@ -976,6 +1117,43 @@ namespace Nampower {
         }
 
         return 1;
+    }
+
+    void EmitKeyEvent(uint32_t eventCode, EVENT_DATA_KEY *keyData) {
+        // don't trigger events until player exists as event won't be registered
+        if (keyData == nullptr || game::ClntObjMgrGetActivePlayerGuid() == 0) {
+            return;
+        }
+
+        static char format[] = "%d%d%d%d";
+        reinterpret_cast<int (__cdecl *)(int, char *, uint32_t, uint32_t, uint32_t, uint32_t)>(Offsets::SignalEventParam)(
+            eventCode,
+            format,
+            keyData->key,
+            keyData->metaKeyState,
+            keyData->repeat,
+            keyData->time);
+    }
+
+    bool CSimpleTop_OnKeyDownHook(hadesmem::PatchDetourBase *detour, EVENT_DATA_KEY *keyData, int param_2) {
+        auto const onKeyDown = detour->GetTrampolineT<CSimpleTop_OnKeyDownT>();
+        auto result = onKeyDown(keyData, param_2);
+
+        auto const isModifierKeyDown = reinterpret_cast<IsModifierKeyDownT>(Offsets::Script_IsAltKeyDown);
+        auto altDown = isModifierKeyDown(2);
+
+        EmitKeyEvent(game::KEY_DOWN, keyData);
+
+        return result;
+    }
+
+    bool CSimpleTop_OnKeyUpHook(hadesmem::PatchDetourBase *detour, EVENT_DATA_KEY *keyData, int param_2) {
+        auto const onKeyUp = detour->GetTrampolineT<CSimpleTop_OnKeyUpT>();
+        auto result = onKeyUp(keyData, param_2);
+
+        EmitKeyEvent(game::KEY_UP, keyData);
+
+        return result;
     }
 
 }

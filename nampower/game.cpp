@@ -35,6 +35,29 @@
 #include <cstdint>
 
 namespace game {
+    namespace {
+        // CGUnit_C descriptor pointer is stored at object + 0x110 in this client build.
+        constexpr uintptr_t kUnitDescriptorPtrOffset = 0x110;
+        constexpr uintptr_t kOwnerGuidOffset = 0x10;
+        constexpr uintptr_t kOwnerGuidFallbackOffset = 0x20;
+        constexpr uintptr_t kPetGuidOffset = 0x08;
+        constexpr uintptr_t kTargetGuidOffset = 0x28;
+
+        uint8_t *GetUnitDescriptor(uintptr_t *unit) {
+            if (!unit) {
+                return nullptr;
+            }
+
+            auto descriptorPtr = *reinterpret_cast<uintptr_t *>(reinterpret_cast<uint8_t *>(unit) +
+                                                                kUnitDescriptorPtrOffset);
+            if (descriptorPtr == 0) {
+                return nullptr;
+            }
+
+            return reinterpret_cast<uint8_t *>(descriptorPtr);
+        }
+    }
+
     uintptr_t *GetObjectPtr(std::uint64_t guid) {
         uintptr_t *(__stdcall *getObjectPtr)(std::uint64_t) = hadesmem::detail::AliasCast<decltype(getObjectPtr)>(
                 Offsets::GetObjectPtr);
@@ -169,6 +192,65 @@ namespace game {
         }
 
         return unitFields->target;
+    }
+
+    uint64_t UnitGetOwnerGuid(uintptr_t *unit) {
+        auto *desc = GetUnitDescriptor(unit);
+        if (!desc) {
+            return 0;
+        }
+
+        uint32_t low = *reinterpret_cast<uint32_t *>(desc + kOwnerGuidOffset);
+        uint32_t high = *reinterpret_cast<uint32_t *>(desc + kOwnerGuidOffset + sizeof(uint32_t));
+        if (low == 0 && high == 0) {
+            low = *reinterpret_cast<uint32_t *>(desc + kOwnerGuidFallbackOffset);
+            high = *reinterpret_cast<uint32_t *>(desc + kOwnerGuidFallbackOffset + sizeof(uint32_t));
+        }
+
+        return (static_cast<uint64_t>(high) << 32) | low;
+    }
+
+    uint64_t UnitGetPetGuid(uintptr_t *unit) {
+        auto *desc = GetUnitDescriptor(unit);
+        if (!desc) {
+            return 0;
+        }
+
+        uint32_t low = *reinterpret_cast<uint32_t *>(desc + kPetGuidOffset);
+        uint32_t high = *reinterpret_cast<uint32_t *>(desc + kPetGuidOffset + sizeof(uint32_t));
+        return (static_cast<uint64_t>(high) << 32) | low;
+    }
+
+    uint64_t UnitGetOwnerGuidForGuid(uint64_t guid) {
+        auto *unit = ClntObjMgrObjectPtr(static_cast<TypeMask>(TYPEMASK_UNIT | TYPEMASK_PLAYER), guid);
+        return UnitGetOwnerGuid(unit);
+    }
+
+    uint64_t UnitGetTargetGuidForGuid(uint64_t guid) {
+        auto *unit = ClntObjMgrObjectPtr(static_cast<TypeMask>(TYPEMASK_UNIT | TYPEMASK_PLAYER), guid);
+        if (!unit) {
+            return 0;
+        }
+
+        uint64_t targetGuid = UnitGetTargetGuid(unit);
+        if (targetGuid != 0) {
+            return targetGuid;
+        }
+
+        // Fallback to descriptor offsets used by legacy code paths.
+        auto *desc = GetUnitDescriptor(unit);
+        if (!desc) {
+            return 0;
+        }
+
+        uint32_t low = *reinterpret_cast<uint32_t *>(desc + kTargetGuidOffset);
+        uint32_t high = *reinterpret_cast<uint32_t *>(desc + kTargetGuidOffset + sizeof(uint32_t));
+        return (static_cast<uint64_t>(high) << 32) | low;
+    }
+
+    uint64_t UnitGetPetGuidForGuid(uint64_t guid) {
+        auto *unit = ClntObjMgrObjectPtr(static_cast<TypeMask>(TYPEMASK_UNIT | TYPEMASK_PLAYER), guid);
+        return UnitGetPetGuid(unit);
     }
 
     bool UnitIsPvpFlagged(uintptr_t *unit) {

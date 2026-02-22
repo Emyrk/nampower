@@ -154,6 +154,8 @@ enum class Offsets : std::uint32_t {
     Framescript_SetEventCount = 0X007053B0,
     Framescript_EventObject_Data = 0x00CEEF68,
 
+    FrameScript_Execute = 0x00704CF0,
+
     // Existing script functions
     GetGUIDFromName = 0X00515970,
     Script_CastSpellByName = 0x004B4AB0,
@@ -161,6 +163,7 @@ enum class Offsets : std::uint32_t {
     Script_SetCVar = 0x00488C10,
     Script_RunScript = 0x0048B980,
     Script_SpellStopCasting = 0x006E6E80,
+    Script_IsAltKeyDown = 0x0041F8F0,
     Script_UseInventoryItem = 0x004c8de0,
     Script_UseContainerItem = 0x004fa0e0,
 
@@ -171,6 +174,7 @@ enum class Offsets : std::uint32_t {
     lua_type = 0X006F3400,
     lua_isstring = 0x006F3510,
     lua_isnumber = 0X006F34D0,
+    lua_toflag = 0X006F1C10,
     lua_tostring = 0x006F3690,
     lua_tonumber = 0X006F3620,
     lua_pushnumber = 0X006F3810,
@@ -192,6 +196,8 @@ enum class Offsets : std::uint32_t {
     luaL_unref = 0x006F5400,
 
     CGInputControlGetActive = 0XBE1148,
+    UpdateSyncKeyState = 0x00424810,
+    ClientEventContext = 0x00882670,
     LastHardwareAction = 0X00CF0BC8,
     CGInputControlSetReleaseAction = 0x514810,
     CGInputControlSetControlBit = 0x515090,
@@ -248,5 +254,12 @@ enum class Offsets : std::uint32_t {
     CursorModelSetSequence = 0x00523c20,
     CGGameUI_DisplayError = 0x00496720,
 
+    CSimpleTop_OnKeyDown = 0x00765f10,
+    CSimpleTop_OnKeyUp = 0x00765fd0,
+
     CSimpleFrame_GetName = 0x007a1390,
+
+    XMLNode_GetAttributeByName = 0x006f2cf0,
+
+    RaidTargetMarkGuidBase = 0xB71368,
 };

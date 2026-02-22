@@ -25,7 +25,7 @@ namespace Nampower {
     constexpr uint32_t DISENCHANT_QUALITY_PURPLE = 0x04;  // Epic
 
     constexpr uint32_t MAJOR_VERSION = 2;
-    constexpr uint32_t MINOR_VERSION = 40;
+    constexpr uint32_t MINOR_VERSION = 41;
     constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
@@ -89,6 +89,11 @@ namespace Nampower {
     using Spell_C_HandleSpriteClickT = bool (__fastcall *)(game::CSpriteClickEvent *event);
     using Spell_C_HandleTerrainClickT = uint32_t (__fastcall *)(game::CTerrainClickEvent *event);
     using CGWorldFrame_OnLayerTrackTerrainT = void (__fastcall *)(void *thisptr, int dummy_edx, int param_1);
+    using CSimpleTop_OnKeyDownT = bool (__fastcall *)(EVENT_DATA_KEY *param_1, int param_2);
+    using CSimpleTop_OnKeyUpT = bool (__fastcall *)(EVENT_DATA_KEY *param_1, int param_2);
+    using IsModifierKeyDownT = uint32_t (__fastcall *)(int param_1);
+    using Script_IsAltKeyDownT = uint32_t (__fastcall *)(void *param_1);
+    using UpdateSyncKeyStateT = void (__fastcall *)(void *evtContext, uint32_t key, int *syncType);
     using Spell_C_TargetSpellT = bool (__fastcall *)(
             uint32_t *player,
             uint32_t *spellId,
@@ -123,6 +128,7 @@ namespace Nampower {
     using LuaGetTableT = void (__fastcall *)(uintptr_t *luaState, int globalsIndex);
     using LuaCallT = void (__fastcall *)(const char *code, const char *unused);
     using LuaScriptT = uint32_t (__fastcall *)(uintptr_t *luaState);
+    using FrameScript_ExecuteT = void (__fastcall *)(int param_1);
     using GetGUIDFromNameT = std::uint64_t (__fastcall *)(const char *);
     using GetUnitFromNameT = uintptr_t *(__fastcall *)(const char *);
     using GetNamesFromGUIDT = char **(__fastcall *)(uint64_t *guid, int *numNamesReturn);
@@ -133,6 +139,7 @@ namespace Nampower {
     using lua_typeT = int (__fastcall *)(uintptr_t *, int);
     using lua_isstringT = bool (__fastcall *)(uintptr_t *, int);
     using lua_isnumberT = bool (__fastcall *)(uintptr_t *, int);
+    using lua_toflagT = uint32_t (__fastcall *)(uintptr_t *, int, uint32_t);
     using lua_tostringT = char *(__fastcall *)(uintptr_t *, int);
     using lua_tonumberT = double (__fastcall *)(uintptr_t *, int);
     using lua_pushnumberT = void (__fastcall *)(uintptr_t *, double);
@@ -180,6 +187,8 @@ namespace Nampower {
     using InvalidFunctionPtrCheckT = void (__fastcall *)(uint32_t param_1);
 
     using CGGameUI_DisplayErrorT = void (__cdecl *)(uint32_t errorCode);
+
+    using XMLNode_GetAttributeByNameT = uint32_t (__thiscall *)(void *thisptr, const char *name);
 
     void RegisterLuaFunction(char *, uintptr_t *func);
 

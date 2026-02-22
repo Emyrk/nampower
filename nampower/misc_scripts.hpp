@@ -38,6 +38,10 @@ namespace Nampower {
     uint32_t Script_CancelPlayerAuraSpellId(uintptr_t *luaState);
 
     uint32_t Script_SetMouseoverUnit(uintptr_t *luaState);
+    uint32_t Script_UnitGUID(uintptr_t *luaState);
 
     uint32_t CSimpleFrame_GetNameHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState);
+    uint64_t GetGUIDFromNameHook(hadesmem::PatchDetourBase *detour, const char *nameStr);
+    bool CSimpleTop_OnKeyDownHook(hadesmem::PatchDetourBase *detour, EVENT_DATA_KEY *keyData, int param_2);
+    bool CSimpleTop_OnKeyUpHook(hadesmem::PatchDetourBase *detour, EVENT_DATA_KEY *keyData, int param_2);
 }

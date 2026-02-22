@@ -32,6 +32,9 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
     - [GetItemIconTexture](#getitemicontexturedisplayinfoid)
     - [GetSpellIconTexture](#getspellicontexturespelliconid)
     - [GetPlayerAuraDuration](#getplayerauradurationauraslot)
+    - [CancelPlayerAuraSlot](#cancelplayerauraslotauraslot)
+    - [CancelPlayerAuraSpellId](#cancelplayerauraspellidspellid-ignoremissing)
+    - [LearnTalentRank](#learntalentranktalentpage-talentindex-rank)
   - [Spell Casting and Queuing](#spell-casting-and-queuing)
     - [QueueSpellByName](#queuespellbynamespellname)
     - [CastSpellByNameNoQueue](#castspellbynamenoqueuespellname)
@@ -500,6 +503,39 @@ for slot = 32, 47 do
 end
 ```
 
+#### CancelPlayerAuraSpellId(spellId, [ignoreMissing])
+Cancels a player aura by spell ID.
+
+**Parameters:**
+- `spellId` (number): Aura spell ID to cancel
+- `ignoreMissing` (number, optional): Pass `1` to skip the aura-slot presence check (useful for buff-capped cases). Pass `0` or omit to keep the default check.
+
+**Returns:**
+- `1` if cancel was attempted
+- `0` if `spellId` is invalid or (when `ignoreMissing` is `0`/omitted) no matching aura is present
+
+#### CancelPlayerAuraSlot(auraSlot)
+Cancels a player aura by raw aura slot index.
+
+**Parameters:**
+- `auraSlot` (number): Aura slot index to cancel
+
+**Returns:**
+- `1` if the slot contains an aura and cancel was attempted
+- `0` if the slot is invalid/out of range or no aura is present in that slot
+
+#### LearnTalentRank(talentPage, talentIndex, rank)
+Learns a specific talent rank directly by tab/index.
+
+**Parameters:**
+- `talentPage` (number): Valid range `1-3`
+- `talentIndex` (number): Valid range `1-32`
+- `rank` (number): Valid range `1-5`
+
+**Returns:**
+- `1` on success
+- Raises a Lua error on invalid parameters or if the talent entry cannot be resolved
+
 #### GetSpellRec(spellId, [copy])
 Returns a Lua table reference containing all fields for the spell's `SpellRec` record (including localized `name` and `rank`). Returns nil if the spell cannot be found.
 
@@ -650,6 +686,7 @@ Returns a Lua table reference containing all unit fields for the specified unit.
 
 **Returns:**
 - A Lua table reference containing all unit fields, or nil if the unit cannot be found
+- Object-reference GUID fields are returned as hex GUID strings (not numbers) to avoid Lua 64-bit precision issues. This includes fields such as `charm`, `summon`, `charmedBy`, `summonedBy`, `createdBy`, `target`, `persuaded`, and `channelObject`.
 
 Full field name lists are in [`UNIT_FIELDS.md`](UNIT_FIELDS.md).
 
@@ -678,6 +715,7 @@ Fast lookup for a single field on a unit. More efficient than GetUnitData when y
 **Returns:**
 - The requested field value; returns nil if the unit is not found; raises a Lua error if the field name is invalid
 - For array fields (like "aura", "resistances"), returns a Lua table with numeric indices
+- Object-reference GUID fields are returned as hex GUID strings (not numbers) to avoid Lua 64-bit precision issues. This includes fields such as `charm`, `summon`, `charmedBy`, `summonedBy`, `createdBy`, `target`, `persuaded`, and `channelObject`.
 
 Full field name lists are in [`UNIT_FIELDS.md`](UNIT_FIELDS.md).
 
@@ -929,6 +967,7 @@ A Lua table where each entry contains:
 - `itemId` (number)
 - `trinketName` (string, `"Unknown"` if no name available)
 - `texture` (string): Texture name for the item icon
+- `itemLevel` (number): Item level
 - `bagIndex` (number|nil): `nil` when equipped; `0` for backpack; `1-4` for equipped bags
 - `slotIndex` (number): Lua 1-based slot within the container (or 1/2 for equipped trinket slots)
 

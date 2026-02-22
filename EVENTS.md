@@ -44,6 +44,7 @@ For custom Lua functions, see [SCRIPTS.md](SCRIPTS.md). For general usage inform
 - [SPELL_MISS_SELF and SPELL_MISS_OTHER](#spell_miss_self-and-spell_miss_other)
 - [UNIT_DIED](#unit_died)
 - [Unit GUID Events](#unit-guid-events)
+- [KEY_DOWN and KEY_UP](#key_down-and-key_up)
 
 ---
 
@@ -573,6 +574,128 @@ Example:
 frame:RegisterEvent("UNIT_DIED", function(guid)
     DEFAULT_CHAT_FRAME:AddMessage("Unit died: " .. guid)
 end)
+```
+
+### KEY_DOWN and KEY_UP
+Fire when keyboard input is processed by `CSimpleTop::OnKeyDown` / `CSimpleTop::OnKeyUp`.  You could accomplish similar already
+by calling EnableKeyBoard and using 'OnKeyDown' / 'OnKeyUp' scripts but that blocks all keyboard input to the game.  You could also poll for IsShiftKeyDown, IsAltKeyDown, in OnUpdate but that was also limiting.
+
+Parameters:
+1.  int key
+2.  int metaKeyState
+3.  int repeat
+4.  int time
+
+Note: `repeat` currently appears to stay constant in testing and may not reflect real key repeat count/state.
+
+`metaKeyState` bitmask:
+- Shift = `1`
+- Ctrl = `2`
+- Alt = `4`
+
+```c
+typedef enum KEY {
+    KEY_NONE=-1,
+    KEY_SHIFT=0,
+    KEY_CONTROL=1,
+    KEY_ALT=2,
+    KEY_LASTMETAKEY=2,
+    KEY_SPACE=32,
+    KEY_0=48,
+    KEY_1=49,
+    KEY_2=50,
+    KEY_3=51,
+    KEY_4=52,
+    KEY_5=53,
+    KEY_6=54,
+    KEY_7=55,
+    KEY_8=56,
+    KEY_9=57,
+    KEY_A=65,
+    KEY_B=66,
+    KEY_C=67,
+    KEY_D=68,
+    KEY_E=69,
+    KEY_F=70,
+    KEY_G=71,
+    KEY_H=72,
+    KEY_I=73,
+    KEY_J=74,
+    KEY_K=75,
+    KEY_L=76,
+    KEY_M=77,
+    KEY_N=78,
+    KEY_O=79,
+    KEY_P=80,
+    KEY_Q=81,
+    KEY_R=82,
+    KEY_S=83,
+    KEY_T=84,
+    KEY_U=85,
+    KEY_V=86,
+    KEY_W=87,
+    KEY_X=88,
+    KEY_Y=89,
+    KEY_Z=90,
+    KEY_TILDE=256,
+    KEY_NUMPAD0=257,
+    KEY_NUMPAD1=258,
+    KEY_NUMPAD2=259,
+    KEY_NUMPAD3=260,
+    KEY_NUMPAD4=261,
+    KEY_NUMPAD5=262,
+    KEY_NUMPAD6=263,
+    KEY_NUMPAD7=264,
+    KEY_NUMPAD8=265,
+    KEY_NUMPAD9=266,
+    KEY_NUMPAD_PLUS=267,
+    KEY_NUMPAD_MINUS=268,
+    KEY_NUMPAD_MULTIPLY=269,
+    KEY_NUMPAD_DIVIDE=270,
+    KEY_NUMPAD_DECIMAL=271,
+    KEY_PLUS=272,
+    KEY_MINUS=273,
+    KEY_BRACKET_OPEN=274,
+    KEY_BRACKET_CLOSE=275,
+    KEY_SLASH=276,
+    KEY_BACKSLASH=277,
+    KEY_SEMICOLON=278,
+    KEY_APOSTROPHE=279,
+    KEY_COMMA=280,
+    KEY_PERIOD=281,
+    KEY_ESCAPE=512,
+    KEY_ENTER=513,
+    KEY_BACKSPACE=514,
+    KEY_TAB=515,
+    KEY_LEFT=516,
+    KEY_UP=517,
+    KEY_RIGHT=518,
+    KEY_DOWN=519,
+    KEY_INSERT=520,
+    KEY_DELETE=521,
+    KEY_HOME=522,
+    KEY_END=523,
+    KEY_PAGEUP=524,
+    KEY_PAGEDOWN=525,
+    KEY_CAPSLOCK=526,
+    KEY_NUMLOCK=527,
+    KEY_SCROLLLOCK=528,
+    KEY_PAUSE=529,
+    KEY_PRINTSCREEN=530,
+    KEY_F1=768,
+    KEY_F2=769,
+    KEY_F3=770,
+    KEY_F4=771,
+    KEY_F5=772,
+    KEY_F6=773,
+    KEY_F7=774,
+    KEY_F8=775,
+    KEY_F9=776,
+    KEY_F10=777,
+    KEY_F11=778,
+    KEY_F12=779,
+    KEY_LAST=780
+} KEY;
 ```
 
 ---

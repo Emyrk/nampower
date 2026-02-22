@@ -6,8 +6,7 @@
 #include "offsets.hpp"
 #include "main.hpp"
 #include "dbc_fields.hpp"
-#include <algorithm>
-#include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <unordered_map>
 #include <string>
@@ -20,6 +19,7 @@ namespace Nampower {
     lua_typeT lua_type = reinterpret_cast<lua_typeT>(Offsets::lua_type);
     lua_isstringT lua_isstring = reinterpret_cast<lua_isstringT>(Offsets::lua_isstring);
     lua_isnumberT lua_isnumber = reinterpret_cast<lua_isnumberT>(Offsets::lua_isnumber);
+    lua_toflagT lua_toflag = reinterpret_cast<lua_toflagT>(Offsets::lua_toflag);
     lua_tostringT lua_tostring = reinterpret_cast<lua_tostringT>(Offsets::lua_tostring);
     lua_tonumberT lua_tonumber = reinterpret_cast<lua_tonumberT>(Offsets::lua_tonumber);
     lua_pushnumberT lua_pushnumber = reinterpret_cast<lua_pushnumberT>(Offsets::lua_pushnumber);
@@ -369,14 +369,28 @@ namespace Nampower {
             return 0;
         }
 
-        // Check if it's a GUID string (starts with "0x" or "0X")
-        if (strncmp(unitToken, "0x", 2) == 0 || strncmp(unitToken, "0X", 2) == 0) {
-            return std::stoull(unitToken, nullptr, 16);
-        } else {
-            // Get GUID from unit token
-            auto const getGUIDFromName = reinterpret_cast<GetGUIDFromNameT>(Offsets::GetGUIDFromName);
-            return getGUIDFromName(unitToken);
+        if (unitToken[0] == '\0') {
+            return 0;
         }
+
+        // Resolve through the shared unit-token parser first so suffix forms
+        // (owner/target/pet, mark1-mark8, nested forms) work consistently.
+        auto const getGUIDFromName = reinterpret_cast<GetGUIDFromNameT>(Offsets::GetGUIDFromName);
+        const uint64_t resolvedGuid = getGUIDFromName(unitToken);
+        if (resolvedGuid != 0) {
+            return resolvedGuid;
+        }
+
+        // Fallback: strict raw-hex parse when resolver returns 0.
+        if (strncmp(unitToken, "0x", 2) == 0 || strncmp(unitToken, "0X", 2) == 0) {
+            char *endPtr = nullptr;
+            const auto parsed = std::strtoull(unitToken, &endPtr, 16);
+            if (endPtr && *endPtr == '\0') {
+                return static_cast<uint64_t>(parsed);
+            }
+        }
+
+        return 0;
     }
 
     uint64_t GetUnitGuidFromLuaParam(uintptr_t *luaState, int paramIndex) {

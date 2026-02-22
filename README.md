@@ -142,6 +142,31 @@ Examples:
 /run print(GetSpellTexture("Fireball")) -- name search
 ```
 
+### Unit Token Extensions (`UnitGUID` + all `unitToken`/`target` string params)
+`UnitGUID(unitToken)` now uses the same extended unit-token parser used by Nampower's unit-string APIs.
+In practice, any Lua function documented as taking a unit string (`unitToken`, `target`, etc.) can use the formats below.
+
+Supported formats:
+- Standard unit tokens supported by the client parser (`player`, `target`, `pet`, `mouseover`, `party1`, `raid1`, etc.)
+- Raw GUID strings: `0x` + 16 hex digits (example: `0xF5300000000000A5`)
+- Raid target markers: `mark1` through `mark8`
+- Derived-unit suffixes appended directly to a base unit string (no separator): `<base>owner`, `<base>target`, `<base>pet`
+
+How base resolution works:
+- `<base>` can be a normal unit token (`targetowner`, `party1pet`, etc.)
+- `<base>` can be a GUID string (`0xF5300000000000A5owner`, `0xF5300000000000A5target`, `0xF5300000000000A5pet`)
+- `<base>` can be a raid marker (`mark1target`, `mark8owner`, etc.)
+- Suffix matching is case-insensitive (`targetOwner`, `mark1PET`, etc.)
+
+Examples:
+```
+/run print(UnitGUID("mark1"))
+/run print(UnitGUID("mark1target"))
+/run print(UnitGUID("targetowner"))
+/run print(UnitGUID("party1pet"))
+/run print(UnitGUID("0xF5300000000000A5target"))
+```
+
 
 ### CSimpleFrame:GetName() Enhancement
 The built-in `CSimpleFrame:GetName()` method is hooked to support an optional argument for retrieving the GUID of the unit associated with a nameplate frame.
@@ -176,7 +201,7 @@ Valid ranges are: `talentPage` = `1-3`, `talentIndex` = `1-32`, `rank` = `1-5`.
 For unit data APIs, object-reference GUID fields are returned as strings (hex format) rather than numbers to avoid Lua 64-bit precision issues.
 This applies to both `GetUnitData` and `GetUnitField` for fields such as: `charm`, `summon`, `charmedBy`, `summonedBy`, `createdBy`, `target`, `persuaded`, and `channelObject`.
 
-`CancelPlayerAuraSpellId(spellId, [ignoreMissing])` supports an optional second parameter where `1` skips the aura-slot presence check (useful for buff-capped cases) and `0`/omitted keeps the default check.
+`CancelPlayerAuraSpellId(spellId, [ignoreMissing])` supports an optional second parameter where `1` skips the aura-slot presence check (thought this might work when buff-capped but doesn't seem to work) and `0`/omitted keeps the default check.
 
 Cooldown detail tables now also expose `itemId`, `itemHasActiveSpell`, and `itemActiveSpellId` alongside the existing per-category timing data.
 
@@ -198,6 +223,7 @@ Available events:
 - SPELL_HEAL_BY_SELF, SPELL_HEAL_BY_OTHER, and SPELL_HEAL_ON_SELF - Spell healing events (fires when spell heals are processed; includes target, caster, spell ID, amount, critical flag, and periodic flag). Set `NP_EnableSpellHealEvents=1` to enable. See EVENTS.md for details.
 - SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_OTHER, and SPELL_ENERGIZE_ON_SELF - Spell energize events (fires when power is restored via spells; includes target, caster, spell ID, power type, amount, and periodic flag). Set `NP_EnableSpellEnergizeEvents=1` to enable. See EVENTS.md for details.
 - UNIT_DIED - Fires when a unit dies
+- KEY_DOWN and KEY_UP - Keyboard key events from `CSimpleTop::OnKeyDown` / `CSimpleTop::OnKeyUp` (see [EVENTS.md](EVENTS.md#key_down-and-key_up) for full argument and key-code details)
 
 ## Bug Reporting
 If you encounter any bugs please report them in the issues tab.  Please include the nampower_debug.txt file in the same directory as your WoW.exe to help me diagnose the issue.  If you are able to reproduce the bug please include the steps to reproduce it.  In a future version once bugs are ironed out I'll make logging optional.

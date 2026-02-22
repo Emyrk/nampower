@@ -15,6 +15,7 @@ namespace Nampower {
     extern lua_typeT lua_type;
     extern lua_isstringT lua_isstring;
     extern lua_isnumberT lua_isnumber;
+    extern lua_toflagT lua_toflag;
     extern lua_tostringT lua_tostring;
     extern lua_tonumberT lua_tonumber;
     extern lua_pushnumberT lua_pushnumber;

@@ -158,3 +158,9 @@ struct CastData {
     uint32_t channelDuration;
 };
 
+struct EVENT_DATA_KEY {
+    uint32_t key;
+    uint32_t metaKeyState;
+    uint32_t repeat;
+    uint32_t time;
+};

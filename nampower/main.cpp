@@ -157,6 +157,9 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<GetSpellSlotFromLuaT> > gGetSpellSlotFromLuaDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<LuaScriptT> > gCSimpleFrame_GetNameDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CSimpleTop_OnKeyDownT> > gCSimpleTop_OnKeyDownDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CSimpleTop_OnKeyUpT> > gCSimpleTop_OnKeyUpDetour;
+    std::unique_ptr<hadesmem::PatchDetour<GetGUIDFromNameT> > gGetGUIDFromNameDetour;
     std::unique_ptr<hadesmem::PatchDetour<LuaScriptT> > gCastSpellByNameDetour;
     std::unique_ptr<hadesmem::PatchDetour<SendUnitSignalT> > gSendUnitSignalDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGGameUI_ShowCombatFeedbackT> > gCGGameUI_ShowCombatFeedbackDetour;
@@ -1422,6 +1425,8 @@ namespace Nampower {
                                                               &Spell_C_SpellFailedHook);
         gSpellGoDetour = createHook<SpellGoT>(process, Offsets::SpellGo, &SpellGoHook);
         gSpellDelayedDetour = createHook<PacketHandlerT>(process, Offsets::SpellDelayed, &SpellDelayedHook);
+        gGetGUIDFromNameDetour = createHook<GetGUIDFromNameT>(process, Offsets::GetGUIDFromName,
+                                                              &GetGUIDFromNameHook);
         gCastSpellByNameDetour = createHook<LuaScriptT>(process, Offsets::Script_CastSpellByName,
                                                         &Script_CastSpellByNameHook);
         gSpellTargetUnitDetour = createHook<LuaScriptT>(process, Offsets::Script_SpellTargetUnit,
@@ -1458,6 +1463,10 @@ namespace Nampower {
                                                                                      &AttackRoundInfo_ReadPacketHook);
         gCSimpleFrame_GetNameDetour = createHook<LuaScriptT>(process, Offsets::CSimpleFrame_GetName,
                                                                 &CSimpleFrame_GetNameHook);
+        gCSimpleTop_OnKeyDownDetour = createHook<CSimpleTop_OnKeyDownT>(
+            process, Offsets::CSimpleTop_OnKeyDown, &CSimpleTop_OnKeyDownHook);
+        gCSimpleTop_OnKeyUpDetour = createHook<CSimpleTop_OnKeyUpT>(
+            process, Offsets::CSimpleTop_OnKeyUp, &CSimpleTop_OnKeyUpHook);
         gSendUnitSignalDetour = createHook<SendUnitSignalT>(process, Offsets::SendUnitSignal,
                                                             &SendUnitSignalHook);
         gCGGameUI_ShowCombatFeedbackDetour = createHook<CGGameUI_ShowCombatFeedbackT>(
@@ -1644,6 +1653,12 @@ namespace Nampower {
 
         char PLAYER_GUILD_UPDATE_GUID[] = "PLAYER_GUILD_UPDATE_GUID";
         addCustomEvent(game::PLAYER_GUILD_UPDATE_GUID, PLAYER_GUILD_UPDATE_GUID);
+
+        char KEY_DOWN[] = "KEY_DOWN";
+        addCustomEvent(game::KEY_DOWN, KEY_DOWN);
+
+        char KEY_UP[] = "KEY_UP";
+        addCustomEvent(game::KEY_UP, KEY_UP);
     }
 
     void FrameScript_CreateEventsHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t maxEventId) {
@@ -1818,6 +1833,9 @@ namespace Nampower {
 
         char setMouseoverUnit[] = "SetMouseoverUnit";
         RegisterLuaFunction(setMouseoverUnit, reinterpret_cast<uintptr_t *>(Script_SetMouseoverUnit));
+
+        char unitGUID[] = "UnitGUID";
+        RegisterLuaFunction(unitGUID, reinterpret_cast<uintptr_t *>(Script_UnitGUID));
 
     }
 

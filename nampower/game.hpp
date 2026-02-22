@@ -1635,6 +1635,10 @@ namespace game {
         UNIT_AURA_GUID = 595,
         UNIT_DYNAMIC_FLAGS_GUID = 596,
         PLAYER_GUILD_UPDATE_GUID = 597,
+        KEY_DOWN = 598,
+        KEY_UP = 599,
+
+        UNIT_CASTEVENT=600 // superwow
     };
 
     enum TypeMask {
@@ -1935,6 +1939,12 @@ namespace game {
     bool UnitCanAttackUnit(uintptr_t *unit1, uintptr_t *unit2);
 
     uint64_t UnitGetTargetGuid(uintptr_t *unit);
+    uint64_t UnitGetOwnerGuid(uintptr_t *unit);
+    uint64_t UnitGetPetGuid(uintptr_t *unit);
+
+    uint64_t UnitGetOwnerGuidForGuid(uint64_t guid);
+    uint64_t UnitGetTargetGuidForGuid(uint64_t guid);
+    uint64_t UnitGetPetGuidForGuid(uint64_t guid);
 
     bool UnitIsPvpFlagged(uintptr_t *unit);
 
