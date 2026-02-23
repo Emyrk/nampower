@@ -101,12 +101,12 @@ The event is `SPELL_CAST_EVENT` and has 5 parameters:
 
 Possible Cast Types:
 ```
-NORMAL=1
-NON_GCD=2
-ON_SWING=3
-CHANNEL=4
-TARGETING=5 (targeting is the term I used for spells with terrain targeting)
-TARGETING_NON_GCD=6
+NORMAL=0
+NON_GCD=1
+ON_SWING=2
+CHANNEL=3
+TARGETING=4 (targeting is the term I used for spells with terrain targeting)
+TARGETING_NON_GCD=5
 ```
 
 targetGuid will be "0x000000000" unless an explicit target is specified which currently only happens in 2 circumstances:
