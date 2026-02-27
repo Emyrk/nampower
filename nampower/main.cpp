@@ -1837,6 +1837,9 @@ namespace Nampower {
         char unitGUID[] = "UnitGUID";
         RegisterLuaFunction(unitGUID, reinterpret_cast<uintptr_t *>(Script_UnitGUID));
 
+        char isAuraHidden[] = "IsAuraHidden";
+        RegisterLuaFunction(isAuraHidden, reinterpret_cast<uintptr_t *>(Script_IsAuraHidden));
+
     }
 
     void load() {

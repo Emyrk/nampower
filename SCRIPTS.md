@@ -34,6 +34,7 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
     - [GetPlayerAuraDuration](#getplayerauradurationauraslot)
     - [CancelPlayerAuraSlot](#cancelplayerauraslotauraslot)
     - [CancelPlayerAuraSpellId](#cancelplayerauraspellidspellid-ignoremissing)
+    - [IsAuraHidden](#isaurahiddenspellid)
     - [LearnTalentRank](#learntalentranktalentpage-talentindex-rank)
   - [Spell Casting and Queuing](#spell-casting-and-queuing)
     - [QueueSpellByName](#queuespellbynamespellname)
@@ -56,6 +57,7 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
     - [PlayerIsRooted](#playerisrooted)
     - [PlayerIsSwimming](#playerisswimming)
   - [Utility Functions](#utility-functions)
+    - [UnitGUID](#unitguidunittoken)
     - [DisenchantAll](#disenchantallitemidorname-includesoulbound-or-disenchantallquality-includesoulbound)
 ---
 
@@ -523,6 +525,25 @@ Cancels a player aura by raw aura slot index.
 **Returns:**
 - `1` if the slot contains an aura and cancel was attempted
 - `0` if the slot is invalid/out of range or no aura is present in that slot
+
+#### IsAuraHidden(spellId)
+Returns whether a spell's aura would be hidden from Lua aura APIs (e.g. `GetPlayerBuff`).
+
+An aura is considered hidden if it has the `SPELL_ATTR_HIDDEN_CLIENTSIDE` attribute, the `SPELL_ATTR_EX_NO_AURA_ICON` attribute, or is a tracking aura (track creatures, resources, or stealthed).
+
+**Parameters:**
+- `spellId` (number): The spell ID to check.
+
+**Returns:**
+- `1` if the aura is hidden from Lua
+- `0` if the aura is visible to Lua
+
+**Examples:**
+```lua
+if IsAuraHidden(2458) == 1 then
+    print("Aura is hidden")
+end
+```
 
 #### LearnTalentRank(talentPage, talentIndex, rank)
 Learns a specific talent rank directly by tab/index.
@@ -1187,6 +1208,44 @@ end
 ---
 
 ### Utility Functions
+
+#### UnitGUID(unitToken)
+Returns the GUID of the unit identified by the given unit token.
+
+This function replaces the vanilla client's `UnitGUID` with an extended version that supports Nampower's additional unit-token formats (see [Unit Token Extensions](README.md#unit-token-extensions-unitguid--all-unittokentarget-string-params)).
+
+**Parameters:**
+- `unitToken` (string): A unit token or extended unit token string.
+
+**Returns:**
+- `guid` (string): The unit's GUID as a hex string (e.g. `"0xF5300000000000A5"`), or `nil` if the unit cannot be resolved.
+
+**Supported token formats:**
+- Standard tokens: `"player"`, `"target"`, `"pet"`, `"mouseover"`, `"party1"`–`"party4"`, `"partypet1"`–`"partypet4"`, `"raid1"`–`"raid40"`, `"raidpet1"`–`"raidpet40"`
+- Raid target marks: `"mark1"`–`"mark8"`
+- Suffix forms: any token with `"owner"`, `"target"`, or `"pet"` appended (e.g. `"targetowner"`, `"mark1target"`, `"party1pet"`)
+- Raw hex GUIDs with optional suffix: `"0x[16 hex digits]"`, `"0x[16 hex digits]target"`, etc.
+
+**Examples:**
+```lua
+-- Standard tokens
+print(UnitGUID("player"))
+print(UnitGUID("target"))
+print(UnitGUID("party1"))
+
+-- Raid target marks
+print(UnitGUID("mark1"))
+
+-- Suffix forms
+print(UnitGUID("mark1target"))     -- target of the unit marked with mark 1
+print(UnitGUID("targetowner"))     -- owner of the current target
+print(UnitGUID("party1pet"))       -- pet of party member 1
+
+-- Raw hex GUID with suffix
+print(UnitGUID("0xF5300000000000A5target"))
+```
+
+---
 
 #### DisenchantAll(itemIdOrName, [includeSoulbound]) or DisenchantAll(quality, [includeSoulbound])
 Automatically disenchants items in your inventory. Can disenchant a specific item by ID/name, or all weapons and armor of a specified quality.

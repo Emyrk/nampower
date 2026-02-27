@@ -945,6 +945,19 @@ namespace Nampower {
         return 1;
     }
 
+    uint32_t Script_IsAuraHidden(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isnumber(luaState, 1)) {
+            lua_error(luaState, "Usage: IsAuraHidden(spellId)");
+            return 0;
+        }
+
+        auto const spellId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+        lua_pushnumber(luaState, IsAuraHiddenForLua(spellId) ? 1 : 0);
+        return 1;
+    }
+
     uint64_t GetGUIDFromNameHook(hadesmem::PatchDetourBase *detour, const char *nameStr) {
         auto const original = detour->GetTrampolineT<GetGUIDFromNameT>();
 

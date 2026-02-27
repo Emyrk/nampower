@@ -258,11 +258,11 @@ DEBUFF_REMOVED_OTHER
 
 All eight events pass the same parameters:
 1.  string guid - unit guid like "0xF5300000000000A5"
-2.  int luaSlot - 1-based Lua slot index for the buff/debuff (skips empty slots to match UnitBuff/UnitDebuff ordering). This is the slot you would pass to UnitBuff/UnitDebuff.
+2.  int luaSlot - 1-based Lua slot index for the buff/debuff (skips empty/hidden slots to match UnitBuff/UnitDebuff ordering). If the aura that triggered the event itself is hidden, this value is `0`.
 3.  int spellId
 4.  int stackCount - current stack count for the aura 
 5.  int auraLevel - caster level for the aura from UnitFields.auraLevels (uint8 per slot, 48 entries)
-6.  int auraSlot - the raw 0-based aura slot index (0-31 for buffs, 32-47 for debuffs). This is the raw internal slot, not the Lua slot. Consistent with unit data fields, GetPlayerAuraDuration, and BUFF/DEBUFF_UPDATE_DURATION_SELF events.
+6.  int auraSlot - the raw 0-based aura slot index (0-31 for buffs, 32-47 for debuffs). This is the raw internal slot, not the Lua slot. Consistent with the aura field on units, GetPlayerAuraDuration, and BUFF/DEBUFF_UPDATE_DURATION_SELF events.
 7.  int state - indicates why the event fired: `0` = newly added, `1` = newly removed, `2` = modified (stack change). When state is `2`, the event type (*_ADDED_* or *_REMOVED_*) reflects whether stacks increased or decreased.
 
 Example:

@@ -143,8 +143,7 @@ Examples:
 ```
 
 ### Unit Token Extensions (`UnitGUID` + all `unitToken`/`target` string params)
-`UnitGUID(unitToken)` now uses the same extended unit-token parser used by Nampower's unit-string APIs.
-In practice, any Lua function documented as taking a unit string (`unitToken`, `target`, etc.) can use the formats below.
+All functions taking a unit string like "player", "target", "raid1", etc now uses the same extended unit-token parser used by Superwow.
 
 Supported formats:
 - Standard unit tokens supported by the client parser (`player`, `target`, `pet`, `mouseover`, `party1`, `raid1`, etc.)
@@ -189,7 +188,7 @@ This includes functions for:
 - Cast information (GetCastInfo, GetCurrentCastingInfo)
 - Cooldown tracking (GetSpellIdCooldown, GetItemIdCooldown), including item metadata on cooldown detail tables
 - Inventory helpers (GetTrinketCooldown, GetTrinkets, GetAmmo)
-- Aura duration tracking and cancel helpers (GetPlayerAuraDuration, CancelPlayerAuraSlot, CancelPlayerAuraSpellId)
+- Aura duration tracking, cancel helpers, and aura visibility checks (GetPlayerAuraDuration, CancelPlayerAuraSlot, CancelPlayerAuraSpellId, IsAuraHidden)
 - Spell duration lookup (GetSpellDuration) - returns channel duration for channeling spells and the first aura effect duration for non-channeling spells
 - Player movement state queries (PlayerIsMoving, PlayerIsRooted, PlayerIsSwimming)
 - Talent helpers (LearnTalentRank)
