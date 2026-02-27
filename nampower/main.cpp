@@ -1834,8 +1834,8 @@ namespace Nampower {
         char setMouseoverUnit[] = "SetMouseoverUnit";
         RegisterLuaFunction(setMouseoverUnit, reinterpret_cast<uintptr_t *>(Script_SetMouseoverUnit));
 
-        char unitGUID[] = "UnitGUID";
-        RegisterLuaFunction(unitGUID, reinterpret_cast<uintptr_t *>(Script_UnitGUID));
+        char getUnitGUID[] = "GetUnitGUID";
+        RegisterLuaFunction(getUnitGUID, reinterpret_cast<uintptr_t *>(Script_GetUnitGUID));
 
         char isAuraHidden[] = "IsAuraHidden";
         RegisterLuaFunction(isAuraHidden, reinterpret_cast<uintptr_t *>(Script_IsAuraHidden));

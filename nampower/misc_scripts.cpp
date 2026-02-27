@@ -920,11 +920,11 @@ namespace Nampower {
         return 1;
     }
 
-    uint32_t Script_UnitGUID(uintptr_t *luaState) {
+    uint32_t Script_GetUnitGUID(uintptr_t *luaState) {
         luaState = GetLuaStatePtr();
 
         if (!lua_isstring(luaState, 1)) {
-            lua_error(luaState, "Usage: UnitGUID(unitToken)");
+            lua_error(luaState, "Usage: GetUnitGUID(unitToken)");
             return 0;
         }
 
@@ -954,7 +954,11 @@ namespace Nampower {
         }
 
         auto const spellId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
-        lua_pushnumber(luaState, IsAuraHiddenForLua(spellId) ? 1 : 0);
+        if (IsAuraHiddenForLua(spellId)) {
+            lua_pushnumber(luaState, 1);
+        } else {
+            lua_pushnil(luaState);
+        }
         return 1;
     }
 

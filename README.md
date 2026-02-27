@@ -142,7 +142,7 @@ Examples:
 /run print(GetSpellTexture("Fireball")) -- name search
 ```
 
-### Unit Token Extensions (`UnitGUID` + all `unitToken`/`target` string params)
+### Unit Token Extensions (`GetUnitGUID` + all `unitToken`/`target` string params)
 All functions taking a unit string like "player", "target", "raid1", etc now uses the same extended unit-token parser used by Superwow.
 
 Supported formats:
@@ -159,11 +159,11 @@ How base resolution works:
 
 Examples:
 ```
-/run print(UnitGUID("mark1"))
-/run print(UnitGUID("mark1target"))
-/run print(UnitGUID("targetowner"))
-/run print(UnitGUID("party1pet"))
-/run print(UnitGUID("0xF5300000000000A5target"))
+/run print(GetUnitGUID("mark1"))
+/run print(GetUnitGUID("mark1target"))
+/run print(GetUnitGUID("targetowner"))
+/run print(GetUnitGUID("party1pet"))
+/run print(GetUnitGUID("0xF5300000000000A5target"))
 ```
 
 

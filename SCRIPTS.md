@@ -57,7 +57,7 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
     - [PlayerIsRooted](#playerisrooted)
     - [PlayerIsSwimming](#playerisswimming)
   - [Utility Functions](#utility-functions)
-    - [UnitGUID](#unitguidunittoken)
+    - [GetUnitGUID](#getunitguidunittoken)
     - [DisenchantAll](#disenchantallitemidorname-includesoulbound-or-disenchantallquality-includesoulbound)
 ---
 
@@ -536,11 +536,11 @@ An aura is considered hidden if it has the `SPELL_ATTR_HIDDEN_CLIENTSIDE` attrib
 
 **Returns:**
 - `1` if the aura is hidden from Lua
-- `0` if the aura is visible to Lua
+- `nil` if the aura is visible to Lua
 
 **Examples:**
 ```lua
-if IsAuraHidden(2458) == 1 then
+if IsAuraHidden(2458) then
     print("Aura is hidden")
 end
 ```
@@ -1209,10 +1209,10 @@ end
 
 ### Utility Functions
 
-#### UnitGUID(unitToken)
+#### GetUnitGUID(unitToken)
 Returns the GUID of the unit identified by the given unit token.
 
-This function replaces the vanilla client's `UnitGUID` with an extended version that supports Nampower's additional unit-token formats (see [Unit Token Extensions](README.md#unit-token-extensions-unitguid--all-unittokentarget-string-params)).
+Supports Nampower's extended unit-token formats (see [Unit Token Extensions](README.md#unit-token-extensions-getunitguid--all-unittokentarget-string-params)).
 
 **Parameters:**
 - `unitToken` (string): A unit token or extended unit token string.
@@ -1229,20 +1229,20 @@ This function replaces the vanilla client's `UnitGUID` with an extended version 
 **Examples:**
 ```lua
 -- Standard tokens
-print(UnitGUID("player"))
-print(UnitGUID("target"))
-print(UnitGUID("party1"))
+print(GetUnitGUID("player"))
+print(GetUnitGUID("target"))
+print(GetUnitGUID("party1"))
 
 -- Raid target marks
-print(UnitGUID("mark1"))
+print(GetUnitGUID("mark1"))
 
 -- Suffix forms
-print(UnitGUID("mark1target"))     -- target of the unit marked with mark 1
-print(UnitGUID("targetowner"))     -- owner of the current target
-print(UnitGUID("party1pet"))       -- pet of party member 1
+print(GetUnitGUID("mark1target"))     -- target of the unit marked with mark 1
+print(GetUnitGUID("targetowner"))     -- owner of the current target
+print(GetUnitGUID("party1pet"))       -- pet of party member 1
 
 -- Raw hex GUID with suffix
-print(UnitGUID("0xF5300000000000A5target"))
+print(GetUnitGUID("0xF5300000000000A5target"))
 ```
 
 ---
