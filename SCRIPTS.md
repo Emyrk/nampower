@@ -39,6 +39,7 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
   - [Spell Casting and Queuing](#spell-casting-and-queuing)
     - [QueueSpellByName](#queuespellbynamespellname)
     - [CastSpellByNameNoQueue](#castspellbynamenoqueuespellname)
+    - [CastSpellNoQueue](#castspellnoqueuespellid-spellbook--unit)
     - [QueueScript](#queuescriptscript-priority)
     - [IsSpellInRange](#isspellinrangespellname-target-or-isspellinrangespellid-target)
     - [IsSpellUsable](#isspellusablespellname-or-isspellusablespellid)
@@ -774,6 +775,19 @@ The vanilla `CastSpellByName` is enhanced to accept a unit token string (e.g. "m
 
 #### CastSpellByNameNoQueue(spellName, [onSelfOrUnit])
 Will force a spell cast to never queue even if your settings would normally queue.  Can be used to fix addons that don't work with queued spells.  Supports the same unit string parameter as `CastSpellByName`.
+
+#### CastSpellNoQueue(spellId, spellBook [, unit])
+Same as `CastSpellByNameNoQueue` but takes a numeric spell ID and spellbook type instead of a spell name.  `spellBook` is `spell` for player spells and `pet` for pet spells.  Accepts the same spell slot formats as the enhanced `CastSpell` (numeric slot, spell name string, or `"spellId:123"` prefix).
+
+The optional `unit` parameter accepts any unit token (e.g. `"target"`, `"mouseover"`, `"focus"`, a GUID string) to cast on a specific unit.  The original CastSpell doesn't support this as it is registered with only 2 arguments currently.
+
+```lua
+-- Cast spell ID 133 (Fireball) on mouseover without queuing
+CastSpellNoQueue(133, 0, "mouseover")
+
+-- Cast by slot without a unit token (uses current target)
+CastSpellNoQueue(5, 0)
+```
 
 #### QueueScript(script, [priority])
 Queues any arbitrary script using the same logic as a regular spell using NP_SpellQueueWindowMs as the window.  If no spell is being cast and you are not on the gcd the script will be run immediately.

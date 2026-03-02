@@ -64,6 +64,40 @@ namespace Nampower {
         return castSpellByName(luaState);
     }
 
+
+    uint32_t Script_CastSpellNoQueue(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        // If 3rd arg is a unit token, resolve target and call directly
+        if (lua_isstring(luaState, 3)) {
+            uint32_t spellSlot = 0, bookType = 0;
+            auto const getSpellSlotFromLua = reinterpret_cast<GetSpellSlotFromLuaT>(Offsets::GetSpellSlotFromLua);
+            if (!getSpellSlotFromLua(luaState, &spellSlot, &bookType)) {
+                lua_error(luaState, "Invalid spell slot in CastSpellNoQueue");
+                return 0;
+            }
+
+            auto const unitToken = lua_tostring(luaState, 3);
+            auto const targetGuid = GetUnitGuidFromString(unitToken);
+
+            DEBUG_LOG("CastSpellNoQueue with unit token");
+            gNoQueueCast = true;
+            auto const castSpell = reinterpret_cast<CGSpellBook_CastSpellT>(Offsets::CGSpellBook_CastSpell);
+            castSpell(spellSlot, bookType, targetGuid);
+            gNoQueueCast = false;
+
+            return 0;
+        }
+
+        DEBUG_LOG("Casting next spell without queuing");
+        gNoQueueCast = true;
+        auto const scriptCastSpell = reinterpret_cast<LuaScriptT>(Offsets::Script_CastSpell);
+        auto result = scriptCastSpell(luaState);
+        gNoQueueCast = false;
+
+        return result;
+    }
+
     uint32_t Script_QueueSpellByName(uintptr_t *luaState) {
         luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
 
@@ -536,9 +570,8 @@ namespace Nampower {
         return 3;
     }
 
-    uint32_t GetSpellSlotFromLuaHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t *slot, uint32_t *type) {
-        // Get Lua state pointer
-        uintptr_t *luaState = GetLuaStatePtr();
+    uint32_t GetSpellSlotFromLuaHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState, uint32_t *slot, uint32_t *type) {
+        luaState = GetLuaStatePtr();
 
         // Check if first parameter is not a number
         if (lua_isnumber(luaState, 1) == 0) {
@@ -598,7 +631,7 @@ namespace Nampower {
         } else {
             auto const getSpellSlotFromLua = detour->GetTrampolineT<GetSpellSlotFromLuaT>();
             // Fall back to original function
-            return getSpellSlotFromLua(param_1, slot, type);
+            return getSpellSlotFromLua(luaState, slot, type);
         }
 
         return 0;

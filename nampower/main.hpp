@@ -7,6 +7,7 @@
 #include <hadesmem/patcher.hpp>
 
 #include <fstream>
+#include <string>
 
 #include "game.hpp"
 #include "types.h"
@@ -25,7 +26,7 @@ namespace Nampower {
     constexpr uint32_t DISENCHANT_QUALITY_PURPLE = 0x04;  // Epic
 
     constexpr uint32_t MAJOR_VERSION = 3;
-    constexpr uint32_t MINOR_VERSION = 0;
+    constexpr uint32_t MINOR_VERSION = 1;
     constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
@@ -112,7 +113,7 @@ namespace Nampower {
     using CGCharacterInfo_UseItemT = void (__fastcall *)(uintptr_t *this_ptr, void *dummy_edx, uint32_t itemSlot, uint64_t *targetGuid);
 
     using GetSpellSlotAndTypeT = int32_t (__fastcall *)(const char *, uint32_t *);
-    using GetSpellSlotFromLuaT = uint32_t (__fastcall *)(int param_1, uint32_t *slot, uint32_t *type);
+    using GetSpellSlotFromLuaT = uint32_t (__fastcall *)(uintptr_t *luaState, uint32_t *slot, uint32_t *type);
     using GetTimeMsT = uint64_t (__stdcall *)();
 
     using GetClientConnectionT = uintptr_t *(__stdcall *)();
@@ -178,7 +179,7 @@ namespace Nampower {
 
     using TargetUnitT = void (__fastcall *)(uint64_t *guid);
 
-    using CVarLookupT = uintptr_t *(__fastcall *)(const char *);
+    using CVarLookupT = game::CVar *(__fastcall *)(const char *);
     using SetCVarT = int (__fastcall *)(uintptr_t *luaPtr);
     using CVarRegisterT = int *(__fastcall *)(char *name, char *help, int unk1, const char *defaultValuePtr,
                                               void *callbackPtr,
@@ -226,5 +227,8 @@ namespace Nampower {
 
     void SetAttackTarget(uint64_t target);
 
+    const char *GetStringCvar(const char *cvar);
+
+    void loadUserVar(const char *cvar);
 
 }

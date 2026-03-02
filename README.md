@@ -93,6 +93,10 @@ SET NP_TargetingQueueWindowMs "1000"
 
 - `NP_SpamProtectionEnabled` - Whether to enable spam protection functionality that blocks spamming spells while waiting for the server to respond to your initial cast due to issues spamming can cause.  0 to disable, 1 to enable. Default is 1.
 
+- `NP_PreserveGreaterDemonAutocast` - Whether to remember and restore Felguard/Doomguard autocast preferences when swapping or resummoning those greater demons. 0 to disable, 1 to enable. Default is 1.
+- `NP_FelguardAutocastData` - Saved Felguard autocast state data used by `NP_PreserveGreaterDemonAutocast` (managed automatically).
+- `NP_DoomguardAutocastData` - Saved Doomguard autocast state data used by `NP_PreserveGreaterDemonAutocast` (managed automatically).
+
 - `NP_PreventMountingWhenBuffCapped` - Whether to prevent mounting when you have 32 buffs (buff capped) and are not already mounted. This prevents the issue where you mount but cannot dismount because the mount aura fails to apply due to the buff cap. When blocked, displays an error message. 0 to disable, 1 to enable. Default is 1.
 
 - `NP_EnableAuraCastEvents` - Whether to enable AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER events. 0 to disable, 1 to enable. Default is 0.
@@ -184,7 +188,7 @@ For complete documentation of all custom Lua functions added by Nampower, see **
 
 This includes functions for:
 - Spell/item/unit information (GetItemStats, GetSpellRec, GetUnitData, etc.)
-- Spell casting and queuing (QueueSpellByName, QueueScript, etc.)
+- Spell casting and queuing (QueueSpellByName, QueueScript, CastSpellByNameNoQueue, CastSpellNoQueue, etc.)
 - Cast information (GetCastInfo, GetCurrentCastingInfo)
 - Cooldown tracking (GetSpellIdCooldown, GetItemIdCooldown), including item metadata on cooldown detail tables
 - Inventory helpers (GetTrinketCooldown, GetTrinkets, GetAmmo)

@@ -10,6 +10,8 @@
 namespace Nampower {
     uint32_t Script_CastSpellByNameNoQueue(uintptr_t *luaState);
 
+    uint32_t Script_CastSpellNoQueue(uintptr_t *luaState);
+
     uint32_t Script_CastSpellByNameHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState);
 
     uint32_t Script_QueueSpellByName(uintptr_t *luaState);
@@ -36,5 +38,5 @@ namespace Nampower {
 
     uint32_t Script_GetSpellDuration(uintptr_t *luaState);
 
-    uint32_t GetSpellSlotFromLuaHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t *slot, uint32_t *type);
+    uint32_t GetSpellSlotFromLuaHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState, uint32_t *slot, uint32_t *type);
 }

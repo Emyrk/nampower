@@ -46,6 +46,7 @@
 #include "lua_refs.hpp"
 #include "autoattack.hpp"
 #include "unit.hpp"
+#include "pet.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -162,6 +163,9 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<GetGUIDFromNameT> > gGetGUIDFromNameDetour;
     std::unique_ptr<hadesmem::PatchDetour<LuaScriptT> > gCastSpellByNameDetour;
     std::unique_ptr<hadesmem::PatchDetour<SendUnitSignalT> > gSendUnitSignalDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGPetInfo_SetPetT> > gCGPetInfo_SetPetDetour;
+    std::unique_ptr<hadesmem::PatchDetour<TogglePetSlotAutocastT> > gTogglePetSlotAutocastDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGPetInfo_GetPetSpellActionT> > gCGPetInfo_GetPetSpellActionDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGGameUI_ShowCombatFeedbackT> > gCGGameUI_ShowCombatFeedbackDetour;
 
     // Flags for one-time initialization
@@ -687,6 +691,9 @@ namespace Nampower {
         } else if (strcmp(cvar, "NP_SpamProtectionEnabled") == 0) {
             gUserSettings.spamProtectionEnabled = atoi(value) != 0;
             DEBUG_LOG("Set NP_SpamProtectionEnabled to " << gUserSettings.spamProtectionEnabled);
+        } else if (strcmp(cvar, "NP_PreserveGreaterDemonAutocast") == 0) {
+            gUserSettings.preserveGreaterDemonAutocast = atoi(value) != 0;
+            DEBUG_LOG("Set NP_PreserveGreaterDemonAutocast to " << gUserSettings.preserveGreaterDemonAutocast);
         } else if (strcmp(cvar, "NP_EnableUnitEventsPet") == 0) {
             gUserSettings.enableUnitEventsPet = atoi(value) != 0;
             DEBUG_LOG("Set NP_EnableUnitEventsPet to " << gUserSettings.enableUnitEventsPet);
@@ -780,19 +787,28 @@ namespace Nampower {
         return cvarSetOrig(luaState);
     }
 
-    int *getCvar(const char *cvar) {
+    int *GetIntCVar(const char *cvar) {
         auto const cvarLookup = hadesmem::detail::AliasCast<CVarLookupT>(Offsets::CVarLookup);
-        uintptr_t *cvarPtr = cvarLookup(cvar);
+        auto *cvarPtr = cvarLookup(cvar);
 
         if (cvarPtr) {
-            return reinterpret_cast<int *>(cvarPtr +
-                                           10); // get intValue from CVar which is consistent, strValue more complicated
+            return &cvarPtr->m_intValue;
         }
         return nullptr;
     }
 
+    const char *GetStringCvar(const char *cvar) {
+        auto const cvarLookup = hadesmem::detail::AliasCast<CVarLookupT>(Offsets::CVarLookup);
+        auto *cvarPtr = cvarLookup(cvar);
+        if (!cvarPtr) {
+            return nullptr;
+        }
+
+        return cvarPtr->m_stringValue;
+    }
+
     void loadUserVar(const char *cvar) {
-        int *value = getCvar(cvar);
+        int *value = GetIntCVar(cvar);
         if (value) {
             updateFromCvar(cvar, std::to_string(*value).c_str());
         } else {
@@ -1216,6 +1232,36 @@ namespace Nampower {
                      0, // unk2
                      0); // unk3
 
+        char NP_PreserveGreaterDemonAutocast[] = "NP_PreserveGreaterDemonAutocast";
+        CVarRegister(NP_PreserveGreaterDemonAutocast, // name
+                     nullptr, // help
+                     0, // unk1
+                     gUserSettings.preserveGreaterDemonAutocast ? defaultTrue : defaultFalse, // default value address
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
+        char NP_FelguardAutocastData[] = "NP_FelguardAutocastData";
+        CVarRegister(NP_FelguardAutocastData, // name
+                     nullptr, // help
+                     0, // unk1
+                     "", // default value address
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
+        char NP_DoomguardAutocastData[] = "NP_DoomguardAutocastData";
+        CVarRegister(NP_DoomguardAutocastData, // name
+                     nullptr, // help
+                     0, // unk1
+                     "", // default value address
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
         char NP_ChannelLatencyReductionPercentage[] = "NP_ChannelLatencyReductionPercentage";
         CVarRegister(NP_ChannelLatencyReductionPercentage, // name
                      nullptr, // help
@@ -1259,6 +1305,7 @@ namespace Nampower {
         loadUserVar("NP_DoubleCastToEndChannelEarly");
 
         loadUserVar("NP_SpamProtectionEnabled");
+        loadUserVar("NP_PreserveGreaterDemonAutocast");
 
         loadUserVar("NP_EnableUnitEventsPet");
         loadUserVar("NP_EnableUnitEventsParty");
@@ -1469,6 +1516,12 @@ namespace Nampower {
             process, Offsets::CSimpleTop_OnKeyUp, &CSimpleTop_OnKeyUpHook);
         gSendUnitSignalDetour = createHook<SendUnitSignalT>(process, Offsets::SendUnitSignal,
                                                             &SendUnitSignalHook);
+        gCGPetInfo_SetPetDetour = createHook<CGPetInfo_SetPetT>(process, Offsets::CGPetInfo_SetPet,
+                                                                &CGPetInfo_SetPetHook);
+        gTogglePetSlotAutocastDetour = createHook<TogglePetSlotAutocastT>(
+            process, Offsets::TogglePetSlotAutocast, &TogglePetSlotAutocastHook);
+        gCGPetInfo_GetPetSpellActionDetour = createHook<CGPetInfo_GetPetSpellActionT>(
+            process, Offsets::CGPetInfo_GetPetSpellAction, &CGPetInfo_GetPetSpellActionHook);
         gCGGameUI_ShowCombatFeedbackDetour = createHook<CGGameUI_ShowCombatFeedbackT>(
             process, Offsets::CGGameUI_ShowCombatFeedback, &CGGameUI_ShowCombatFeedbackHook);
         gLoadScriptFunctionsDetour = createHook<LoadScriptFunctionsT>(process, Offsets::LoadScriptFunctions,
@@ -1696,6 +1749,9 @@ namespace Nampower {
 
         char castSpellByNameNoQueue[] = "CastSpellByNameNoQueue";
         RegisterLuaFunction(castSpellByNameNoQueue, reinterpret_cast<uintptr_t *>(Script_CastSpellByNameNoQueue));
+
+        char castSpellNoQueue[] = "CastSpellNoQueue";
+        RegisterLuaFunction(castSpellNoQueue, reinterpret_cast<uintptr_t *>(Script_CastSpellNoQueue));
 
         char queueScript[] = "QueueScript";
         RegisterLuaFunction(queueScript, reinterpret_cast<uintptr_t *>(Script_QueueScript));

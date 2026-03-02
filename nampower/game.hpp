@@ -34,6 +34,21 @@
 
 namespace game {
 #pragma pack(push, 1)
+    struct CVar {
+        uint8_t unk0[0x1C];
+        uint32_t m_flags;
+        char *m_stringValue;
+        float m_floatValue;
+        int32_t m_intValue;
+        int32_t m_modified;
+        char *m_defaultValue;
+        char *m_resetValue;
+        char *m_latchedValue;
+        uint8_t unk3C[0x80];
+        void *m_callback;
+        void *m_arg;
+    };
+
     enum ItemClass {
         ITEM_CLASS_CONSUMABLE = 0,
         ITEM_CLASS_CONTAINER = 1,
@@ -1142,6 +1157,19 @@ namespace game {
         TARGET_FLAG_UNK1 = 0x00004000, // 199 spells, opening object/lock
         TARGET_FLAG_CORPSE = 0x00008000, // pguid, resurrection spells
         TARGET_FLAG_UNK2 = 0x00010000, // pguid, not used in any spells (can be set dynamically)
+    };
+
+    constexpr uint32_t UnitActionButtonAction(uint32_t x) { return x & 0x00FFFFFFu; }
+    constexpr uint32_t UnitActionButtonType(uint32_t x)   { return (x & 0xFF000000u) >> 24; }
+
+    enum ActiveStates : uint8_t
+    {
+        ACT_DECIDE   = 0x00,                                    // custom
+        ACT_PASSIVE  = 0x01,                                    // 0x01 - passive
+        ACT_REACTION = 0x06,                                    // 0x02 | 0x04
+        ACT_COMMAND  = 0x07,                                    // 0x01 | 0x02 | 0x04
+        ACT_DISABLED = 0x81,                                    // 0x80 - castable
+        ACT_ENABLED  = 0xC1,                                    // 0x40 | 0x80 - auto cast + castable
     };
 
     enum Events : std::uint32_t {

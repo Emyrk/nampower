@@ -29,6 +29,7 @@ struct UserSettings {
 
     bool spamProtectionEnabled = true;
     bool enableAuraCastEvents = false;
+    bool preserveGreaterDemonAutocast = true;
 
     bool enableUnitEventsPet = true;
     bool enableUnitEventsParty = true;

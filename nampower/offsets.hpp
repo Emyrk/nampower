@@ -158,6 +158,7 @@ enum class Offsets : std::uint32_t {
 
     // Existing script functions
     GetGUIDFromName = 0X00515970,
+    Script_CastSpell = 0x004B42F0,
     Script_CastSpellByName = 0x004B4AB0,
     Script_SpellTargetUnit = 0x006E6D90,
     Script_SetCVar = 0x00488C10,
@@ -262,4 +263,10 @@ enum class Offsets : std::uint32_t {
     XMLNode_GetAttributeByName = 0x006f2cf0,
 
     RaidTargetMarkGuidBase = 0xB71368,
+
+    CGPetInfo_SetPet = 0x004bc7e0,
+    TogglePetSlotAutocast = 0x004bcbb0,
+    CGPetInfo_GetPetSpellAction = 0x004bd190,
+    PetActionBarSlots = 0x00b71438,
+    ActivePetGuid = 0x00b714a0,
 };

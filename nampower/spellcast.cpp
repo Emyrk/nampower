@@ -328,6 +328,11 @@ namespace Nampower {
     void
     TriggerSpellCastEvent(bool result, uint32_t spellId, CastType castType, std::uint64_t guid, uint32_t itemId) {
         static char format[] = "%d%d%d%s%d";
+
+        if (!guid) {
+            // default to current target
+            guid = game::GetCurrentTargetGuid();
+        }
         char *guidStr = ConvertGuidToString(guid);
 
         ((int (__cdecl *)(int, char *, uint32_t, uint32_t, uint32_t, char *, uint32_t)) Offsets::SignalEventParam)(
