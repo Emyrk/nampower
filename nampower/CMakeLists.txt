@@ -25,6 +25,8 @@ set(SOURCE_FILES
         spellevents.cpp
         misc_scripts.hpp
         misc_scripts.cpp
+        file_scripts.hpp
+        file_scripts.cpp
         spell_scripts.hpp
         spell_scripts.cpp
         cooldown_scripts.hpp

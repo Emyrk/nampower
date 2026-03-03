@@ -37,6 +37,7 @@ enum class Offsets : std::uint32_t {
     ClntObjMgrObjectPtr = 0x00468460,
     GetObjectPtr = 0x464870,
     GetActivePlayer = 0x468550,
+    CGlueMgr_DefaultServerLogin = 0x0046AFB0,
     GetUnitFromName = 0x00515940,
     GetNamesFromGUID = 0x00000000, // TODO: set correct offset
     SendUnitSignal = 0x00515e50,
@@ -143,18 +144,22 @@ enum class Offsets : std::uint32_t {
 
     CVarLookup = 0x0063DEC0,
     RegisterCVar = 0X0063DB90,
+    SLogFlush = 0x0065A970,
+    CombatLogFileHandle = 0x00B50544,
 
     GetClientConnection = 0X005AB490,
     GetNetStats = 0X00537F20,
     ClientServices_Send = 0X005AB630,
 
-    LoadScriptFunctions = 0x00490250,
+    Player_LoadScriptFunctions = 0x00490250,
+    Glue_LoadScriptFunctions = 0x0046ABB0,
     FrameScript_RegisterFunction = 0x00704120,
     FrameScript_CreateEvents = 0X00703D90,
     Framescript_SetEventCount = 0X007053B0,
     Framescript_EventObject_Data = 0x00CEEF68,
 
     FrameScript_Execute = 0x00704CF0,
+    FrameScript_ExecuteFile = 0x00704BC0,
 
     // Existing script functions
     GetGUIDFromName = 0X00515970,

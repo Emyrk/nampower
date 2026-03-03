@@ -962,6 +962,16 @@ namespace Nampower {
         return 1;
     }
 
+    uint32_t Script_CombatLogFlush(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        auto const slogFlush = reinterpret_cast<void(__stdcall *)(uint32_t)>(Offsets::SLogFlush);
+        auto const combatLogFileHandle = *reinterpret_cast<uint32_t *>(Offsets::CombatLogFileHandle);
+        slogFlush(combatLogFileHandle);
+
+        return 0;
+    }
+
     uint64_t GetGUIDFromNameHook(hadesmem::PatchDetourBase *detour, const char *nameStr) {
         auto const original = detour->GetTrampolineT<GetGUIDFromNameT>();
 

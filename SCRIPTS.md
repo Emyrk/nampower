@@ -24,6 +24,7 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
     - [GetSpellDuration](#getspelldurationspellid-ignoremodifiers)
     - [GetUnitData](#getunitdataunittoken-copy)
     - [GetUnitField](#getunitfieldunittoken-fieldname-copy)
+    - [GetUnitGUID](#getunitguidunittoken)
     - [GetSpellIdForName](#getspellidfornamenspellname)
     - [GetSpellNameAndRankForId](#getspellnameandrankforidid)
     - [GetSpellSlotTypeIdForName](#getspellslottypeidfornamenspellname)
@@ -58,7 +59,15 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
     - [PlayerIsRooted](#playerisrooted)
     - [PlayerIsSwimming](#playerisswimming)
   - [Utility Functions](#utility-functions)
-    - [GetUnitGUID](#getunitguidunittoken)
+    - [WriteCustomFile(filename, content, [mode])](#writecustomfilefilename-content-mode)
+    - [ReadCustomFile(filename)](#readcustomfilefilename)
+    - [CustomFileExists(filename)](#customfileexistsfilename)
+    - [ImportFile(filename)](#importfilefilename)
+    - [ExportFile(filename, text)](#exportfilefilename-text)
+    - [ExecuteCustomLuaFile(filename)](#executecustomluafilefilename)
+    - [EncryptPassword(password)](#encryptpasswordpassword)
+    - [EncryptedServerLogin(username, encryptedPasswordBase64String)](#encryptedserverloginusername-encryptedpasswordbase64string)
+    - [CombatLogFlush()](#combatlogflush)
     - [DisenchantAll](#disenchantallitemidorname-includesoulbound-or-disenchantallquality-includesoulbound)
 ---
 
@@ -762,6 +771,42 @@ local resistances = GetUnitField("player", "resistances")
 -- resistances[1] = armor, [2] = holy, [3] = fire, [4] = nature, [5] = frost, [6] = shadow, [7] = arcane
 ```
 
+#### GetUnitGUID(unitToken)
+Returns the GUID of the unit identified by the given unit token.
+
+Supports Nampower's extended unit-token formats (see [Unit Token Extensions](README.md#unit-token-extensions-getunitguid--all-unittokentarget-string-params)).
+
+**Parameters:**
+- `unitToken` (string): A unit token or extended unit token string.
+
+**Returns:**
+- `guid` (string): The unit's GUID as a hex string (e.g. `"0xF5300000000000A5"`), or `nil` if the unit cannot be resolved.
+
+**Supported token formats:**
+- Standard tokens: `"player"`, `"target"`, `"pet"`, `"mouseover"`, `"party1"`–`"party4"`, `"partypet1"`–`"partypet4"`, `"raid1"`–`"raid40"`, `"raidpet1"`–`"raidpet40"`
+- Raid target marks: `"mark1"`–`"mark8"`
+- Suffix forms: any token with `"owner"`, `"target"`, or `"pet"` appended (e.g. `"targetowner"`, `"mark1target"`, `"party1pet"`)
+- Raw hex GUIDs with optional suffix: `"0x[16 hex digits]"`, `"0x[16 hex digits]target"`, etc.
+
+**Examples:**
+```lua
+-- Standard tokens
+print(GetUnitGUID("player"))
+print(GetUnitGUID("target"))
+print(GetUnitGUID("party1"))
+
+-- Raid target marks
+print(GetUnitGUID("mark1"))
+
+-- Suffix forms
+print(GetUnitGUID("mark1target"))     -- target of the unit marked with mark 1
+print(GetUnitGUID("targetowner"))     -- owner of the current target
+print(GetUnitGUID("party1pet"))       -- pet of party member 1
+
+-- Raw hex GUID with suffix
+print(GetUnitGUID("0xF5300000000000A5target"))
+```
+
 #### QueueSpellByName(spellName)
 Will force queue a spell regardless of the appropriate queue window.  If no spell is currently being cast it will be cast immediately.
 For example can make a macro with 
@@ -1223,43 +1268,240 @@ end
 
 ### Utility Functions
 
-#### GetUnitGUID(unitToken)
-Returns the GUID of the unit identified by the given unit token.
+#### WriteCustomFile(filename, content, [mode])
+Writes text to a file in the `CustomData` directory.
 
-Supports Nampower's extended unit-token formats (see [Unit Token Extensions](README.md#unit-token-extensions-getunitguid--all-unittokentarget-string-params)).
+**Availability:**
+- In-game Lua and GlueXML.
 
 **Parameters:**
-- `unitToken` (string): A unit token or extended unit token string.
+- `filename` (string): File name only (must not contain path separators or invalid filename characters).
+- `content` (string): Content to write.
+- `mode` (string, optional): One-character mode:
+  - `"w"` = truncate/overwrite (default)
+  - `"b"` = write in binary mode
+  - `"a"` = append
 
 **Returns:**
-- `guid` (string): The unit's GUID as a hex string (e.g. `"0xF5300000000000A5"`), or `nil` if the unit cannot be resolved.
+- No return value.
+- Raises a Lua error on invalid filename, invalid mode, or write failure.
 
-**Supported token formats:**
-- Standard tokens: `"player"`, `"target"`, `"pet"`, `"mouseover"`, `"party1"`–`"party4"`, `"partypet1"`–`"partypet4"`, `"raid1"`–`"raid40"`, `"raidpet1"`–`"raidpet40"`
-- Raid target marks: `"mark1"`–`"mark8"`
-- Suffix forms: any token with `"owner"`, `"target"`, or `"pet"` appended (e.g. `"targetowner"`, `"mark1target"`, `"party1pet"`)
-- Raw hex GUIDs with optional suffix: `"0x[16 hex digits]"`, `"0x[16 hex digits]target"`, etc.
+**Behavior:**
+- Paths are constrained to the `CustomData` directory.
+- If `mode` is omitted, `"w"` is used.
 
 **Examples:**
 ```lua
--- Standard tokens
-print(GetUnitGUID("player"))
-print(GetUnitGUID("target"))
-print(GetUnitGUID("party1"))
-
--- Raid target marks
-print(GetUnitGUID("mark1"))
-
--- Suffix forms
-print(GetUnitGUID("mark1target"))     -- target of the unit marked with mark 1
-print(GetUnitGUID("targetowner"))     -- owner of the current target
-print(GetUnitGUID("party1pet"))       -- pet of party member 1
-
--- Raw hex GUID with suffix
-print(GetUnitGUID("0xF5300000000000A5target"))
+WriteCustomFile("notes.txt", "hello")
+WriteCustomFile("notes.txt", "more text\n", "a")
+WriteCustomFile("blob.bin", "raw-bytes", "b")
 ```
 
 ---
+
+#### ReadCustomFile(filename)
+Reads text from a file in the `CustomData` directory.
+
+**Availability:**
+- In-game Lua and GlueXML.
+
+**Parameters:**
+- `filename` (string): File name only (must not contain path separators or invalid filename characters).
+
+**Returns:**
+- File contents as a string.
+- `nil` if the file does not exist.
+- Raises a Lua error on invalid filename/path or other read failures.
+
+**Behavior:**
+- Paths are constrained to the `CustomData` directory.
+
+**Examples:**
+```lua
+local text = ReadCustomFile("notes.txt")
+```
+
+---
+
+#### CustomFileExists(filename)
+Returns whether a file exists in the `CustomData` directory.
+
+**Availability:**
+- In-game Lua and GlueXML.
+
+**Parameters:**
+- `filename` (string): File name only (must not contain path separators or invalid filename characters).
+
+**Returns:**
+- `true` if the file exists and is a regular file.
+- `false` if it does not exist.
+- Raises a Lua error on invalid filename/path or stat failures.
+
+**Behavior:**
+- Paths are constrained to the `CustomData` directory.
+
+**Examples:**
+```lua
+if CustomFileExists("notes.txt") then
+    print("notes.txt exists")
+end
+```
+
+---
+
+#### ImportFile(filename)
+Reads a `.txt` file from the `Imports` directory.  This is provided for backwards compatibility with SuperWoW and to patch some security issues with the original implementation.
+
+**Availability:**
+- In-game Lua and GlueXML.
+
+**Parameters:**
+- `filename` (string): Base filename; `.txt` is always appended automatically.
+
+**Returns:**
+- File contents as a string.
+- `nil` if the file does not exist.
+- Raises a Lua error if the filename/path is invalid or other read failures occur.
+
+**Behavior:**
+- Path is constrained to `Imports`.
+- `.txt` is always appended to the provided filename.
+
+**Examples:**
+```lua
+local data = ImportFile("data")  -- will read from Imports/data.txt
+```
+
+---
+
+#### ExportFile(filename, text)
+Writes text to a `.txt` file in the `Imports` directory.  This is provided for backwards compatibility with SuperWoW and to patch some security issues with the original implementation.
+
+**Availability:**
+- In-game Lua and GlueXML.
+
+**Parameters:**
+- `filename` (string): Base filename; `.txt` is always appended automatically.
+- `text` (string): Content to write.
+
+**Returns:**
+- No return value.
+- Raises a Lua error on invalid parameters, invalid filename/path, or write failure.
+
+**Behavior:**
+- Path is constrained to `Imports`.
+- `.txt` is always appended to the provided filename.
+- Exactly 2 parameters are accepted (no mode argument).
+- Writes in overwrite mode.
+
+**Examples:**
+```lua
+ExportFile("profile", "value=1")
+```
+
+---
+
+#### ExecuteCustomLuaFile(filename)
+Executes a `.lua` file from the `CustomData` directory using the same function used to load WTF files.
+
+**Availability:**
+- In-game Lua and GlueXML.
+
+**Parameters:**
+- `filename` (string): Must end with `.lua`.
+
+**Returns:**
+- No return value.
+- Raises a Lua error on invalid filename/path or execution setup failure.
+
+**Behavior:**
+- Path is constrained to `CustomData`.
+- Only `.lua` files are accepted.
+
+**Examples:**
+```lua
+ExecuteCustomLuaFile("bootstrap.lua")
+```
+
+---
+
+#### EncryptPassword(password)
+Encrypts a plaintext password using Windows DPAPI and returns a tagged ciphertext string.  
+Requires the user to have set an environment variable WOW_ENCRYPTION_KEY.
+This exists to support autologin workflows without storing passwords in plain text.
+
+**Availability:**
+- GlueXML only (not available to in-game Lua).
+
+**Parameters:**
+- `password` (string): Plaintext password, or an already encrypted tagged value.
+
+**Returns:**
+- Encrypted value as `":encrypted:" .. base64Ciphertext`.
+- If input already starts with `:encrypted:`, it is returned unchanged to avoid double encrypting.
+- Raises a Lua error if `WOW_ENCRYPTION_KEY` is not set or encryption fails.
+
+**Behavior:**
+- Uses `WOW_ENCRYPTION_KEY` as DPAPI entropy.
+- Output is idempotently tagged with `:encrypted:`.
+
+**Examples:**
+```lua
+local p = EncryptPassword("hunter2")
+-- p starts with ":encrypted:"
+```
+
+---
+
+#### EncryptedServerLogin(username, encryptedPasswordBase64String)
+Logs in using an encrypted password generated by `EncryptPassword`.
+Requires the user to have set an environment variable WOW_ENCRYPTION_KEY.
+This exists to support autologin workflows without storing passwords in plain text.
+
+**Availability:**
+- GlueXML only (not available to in-game Lua).
+
+**Parameters:**
+- `username` (string): Account username.
+- `encryptedPasswordBase64String` (string): Must start with `:encrypted:`.
+
+**Returns:**
+- No return value.
+- Raises a Lua error if parameters are invalid, the prefix is missing, `WOW_ENCRYPTION_KEY` is not set, or decryption fails.
+
+**Behavior:**
+- Looks for the `:encrypted:` prefix added by EncryptPassword.
+- Removes the prefix before base64+DPAPI decryption.
+- Uses `WOW_ENCRYPTION_KEY` as DPAPI entropy before calling the game login function.
+
+**Examples:**
+```lua
+local enc = EncryptPassword("hunter2")
+EncryptedServerLogin("my_user", enc)
+```
+
+---
+
+#### CombatLogFlush()
+Forces the current combat log file buffer to flush to disk immediately.
+
+**Availability:**
+- In-game Lua and GlueXML.
+
+**Parameters:**
+- None.
+
+**Returns:**
+- No return value.
+
+**Behavior:**
+- Calls the client `SLogFlush` routine with the current combat-log file handle.
+- Useful if you need log lines persisted to disk right away.
+
+**Examples:**
+```lua
+CombatLogFlush()
+```
 
 #### DisenchantAll(itemIdOrName, [includeSoulbound]) or DisenchantAll(quality, [includeSoulbound])
 Automatically disenchants items in your inventory. Can disenchant a specific item by ID/name, or all weapons and armor of a specified quality.

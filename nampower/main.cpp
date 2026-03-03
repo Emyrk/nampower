@@ -34,6 +34,7 @@
 #include "spellevents.hpp"
 #include "spellcast.hpp"
 #include "misc_scripts.hpp"
+#include "file_scripts.hpp"
 #include "spell_scripts.hpp"
 #include "player_scripts.hpp"
 #include "spellchannel.hpp"
@@ -167,13 +168,15 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<TogglePetSlotAutocastT> > gTogglePetSlotAutocastDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGPetInfo_GetPetSpellActionT> > gCGPetInfo_GetPetSpellActionDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGGameUI_ShowCombatFeedbackT> > gCGGameUI_ShowCombatFeedbackDetour;
+    std::unique_ptr<hadesmem::PatchDetour<LoadScriptFunctionsT> > gGlueLoadScriptFunctionsDetour;
 
     // Flags for one-time initialization
     std::once_flag loadFlag;
     std::once_flag initHooksFlag;
 
     // Forward declarations for hook functions
-    void LoadScriptFunctionsHook(hadesmem::PatchDetourBase *detour);
+    void Player_LoadScriptFunctionsHook(hadesmem::PatchDetourBase *detour);
+    void Glue_LoadScriptFunctionsHook(hadesmem::PatchDetourBase *detour);
 
     void FrameScript_CreateEventsHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t maxEventId);
 
@@ -1524,8 +1527,10 @@ namespace Nampower {
             process, Offsets::CGPetInfo_GetPetSpellAction, &CGPetInfo_GetPetSpellActionHook);
         gCGGameUI_ShowCombatFeedbackDetour = createHook<CGGameUI_ShowCombatFeedbackT>(
             process, Offsets::CGGameUI_ShowCombatFeedback, &CGGameUI_ShowCombatFeedbackHook);
-        gLoadScriptFunctionsDetour = createHook<LoadScriptFunctionsT>(process, Offsets::LoadScriptFunctions,
-                                                                      &LoadScriptFunctionsHook);
+        gLoadScriptFunctionsDetour = createHook<LoadScriptFunctionsT>(process, Offsets::Player_LoadScriptFunctions,
+                                                                      &Player_LoadScriptFunctionsHook);
+        gGlueLoadScriptFunctionsDetour = createHook<LoadScriptFunctionsT>(process, Offsets::Glue_LoadScriptFunctions,
+                                                                          &Glue_LoadScriptFunctionsHook);
         gCreateEventsDetour = createHook<FrameScript_CreateEventsT>(process, Offsets::FrameScript_CreateEvents,
                                                                     &FrameScript_CreateEventsHook);
         gSetEventCountDetour = createHook<FramescriptSetEventCountT>(process, Offsets::Framescript_SetEventCount,
@@ -1735,7 +1740,7 @@ namespace Nampower {
         setEventCount(thisPtr, dummy_edx, count);
     }
 
-    void LoadScriptFunctionsHook(hadesmem::PatchDetourBase *detour) {
+    void Player_LoadScriptFunctionsHook(hadesmem::PatchDetourBase *detour) {
         auto const loadScriptFunctions = detour->GetTrampolineT<LoadScriptFunctionsT>();
         loadScriptFunctions();
 
@@ -1896,6 +1901,57 @@ namespace Nampower {
         char isAuraHidden[] = "IsAuraHidden";
         RegisterLuaFunction(isAuraHidden, reinterpret_cast<uintptr_t *>(Script_IsAuraHidden));
 
+        char combatLogFlush[] = "CombatLogFlush";
+        RegisterLuaFunction(combatLogFlush, reinterpret_cast<uintptr_t *>(Script_CombatLogFlush));
+
+        char writeCustomFile[] = "WriteCustomFile";
+        RegisterLuaFunction(writeCustomFile, reinterpret_cast<uintptr_t *>(Script_WriteCustomFile));
+
+        char readCustomFile[] = "ReadCustomFile";
+        RegisterLuaFunction(readCustomFile, reinterpret_cast<uintptr_t *>(Script_ReadCustomFile));
+
+        char customFileExists[] = "CustomFileExists";
+        RegisterLuaFunction(customFileExists, reinterpret_cast<uintptr_t *>(Script_CustomFileExists));
+
+        char importFile[] = "ImportFile";
+        RegisterLuaFunction(importFile, reinterpret_cast<uintptr_t *>(Script_ImportFile));
+
+        char exportFile[] = "ExportFile";
+        RegisterLuaFunction(exportFile, reinterpret_cast<uintptr_t *>(Script_ExportFile));
+
+        char executeCustomLuaFile[] = "ExecuteCustomLuaFile";
+        RegisterLuaFunction(executeCustomLuaFile, reinterpret_cast<uintptr_t *>(Script_ExecuteCustomLuaFile));
+    }
+
+    void Glue_LoadScriptFunctionsHook(hadesmem::PatchDetourBase *detour) {
+        auto const loadScriptFunctions = detour->GetTrampolineT<LoadScriptFunctionsT>();
+        loadScriptFunctions();
+
+        DEBUG_LOG("Registering Glue Lua functions");
+
+        char writeCustomFile[] = "WriteCustomFile";
+        RegisterLuaFunction(writeCustomFile, reinterpret_cast<uintptr_t *>(Script_WriteCustomFile));
+
+        char readCustomFile[] = "ReadCustomFile";
+        RegisterLuaFunction(readCustomFile, reinterpret_cast<uintptr_t *>(Script_ReadCustomFile));
+
+        char customFileExists[] = "CustomFileExists";
+        RegisterLuaFunction(customFileExists, reinterpret_cast<uintptr_t *>(Script_CustomFileExists));
+
+        char importFile[] = "ImportFile";
+        RegisterLuaFunction(importFile, reinterpret_cast<uintptr_t *>(Script_ImportFile));
+
+        char exportFile[] = "ExportFile";
+        RegisterLuaFunction(exportFile, reinterpret_cast<uintptr_t *>(Script_ExportFile));
+
+        char executeCustomLuaFile[] = "ExecuteCustomLuaFile";
+        RegisterLuaFunction(executeCustomLuaFile, reinterpret_cast<uintptr_t *>(Script_ExecuteCustomLuaFile));
+
+        char encryptPassword[] = "EncryptPassword";
+        RegisterLuaFunction(encryptPassword, reinterpret_cast<uintptr_t *>(Script_EncryptPassword));
+
+        char encryptedServerLogin[] = "EncryptedServerLogin";
+        RegisterLuaFunction(encryptedServerLogin, reinterpret_cast<uintptr_t *>(Script_EncryptedServerLogin));
     }
 
     void load() {

@@ -195,8 +195,10 @@ This includes functions for:
 - Aura duration tracking, cancel helpers, and aura visibility checks (GetPlayerAuraDuration, CancelPlayerAuraSlot, CancelPlayerAuraSpellId, IsAuraHidden)
 - Spell duration lookup (GetSpellDuration) - returns channel duration for channeling spells and the first aura effect duration for non-channeling spells
 - Player movement state queries (PlayerIsMoving, PlayerIsRooted, PlayerIsSwimming)
+- File and script helpers (WriteCustomFile, ReadCustomFile, CustomFileExists, ImportFile, ExportFile, ExecuteCustomLuaFile)
+- Encrypted login helpers (EncryptPassword, EncryptedServerLogin)
 - Talent helpers (LearnTalentRank)
-- Spell lookups and utilities
+- Spell lookups and utilities (GetUnitGUID, CombatLogFlush, etc.)
 
 `LearnTalentRank(talentPage, talentIndex, rank)` learns a specific talent rank directly by tab/index.
 Valid ranges are: `talentPage` = `1-3`, `talentIndex` = `1-32`, `rank` = `1-5`.

@@ -168,7 +168,17 @@ namespace Nampower {
 
                 uint64_t targetGUID = GetUnitGuidFromString(target);
 
-                auto playerUnit = game::GetObjectPtr(game::ClntObjMgrGetActivePlayerGuid());
+                const auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+                if (playerGuid == 0) {
+                    lua_error(luaState, "IsSpellInRange: active player not available");
+                    return 0;
+                }
+
+                auto playerUnit = game::GetObjectPtr(playerGuid);
+                if (!playerUnit) {
+                    lua_error(luaState, "IsSpellInRange: active player unit not available");
+                    return 0;
+                }
 
                 auto const RangeCheckSelected = reinterpret_cast<RangeCheckSelectedT>(Offsets::RangeCheckSelected);
                 auto const result = RangeCheckSelected(playerUnit, spell, targetGUID, '\0');

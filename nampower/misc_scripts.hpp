@@ -40,6 +40,7 @@ namespace Nampower {
     uint32_t Script_SetMouseoverUnit(uintptr_t *luaState);
     uint32_t Script_GetUnitGUID(uintptr_t *luaState);
     uint32_t Script_IsAuraHidden(uintptr_t *luaState);
+    uint32_t Script_CombatLogFlush(uintptr_t *luaState);
 
     uint32_t CSimpleFrame_GetNameHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState);
     uint64_t GetGUIDFromNameHook(hadesmem::PatchDetourBase *detour, const char *nameStr);
