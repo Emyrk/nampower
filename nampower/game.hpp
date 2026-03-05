@@ -1082,59 +1082,54 @@ namespace game {
         MAX_SPELL_TARGETS
     };
 
-    enum SpellMissInfo
-    {
-        SPELL_MISS_NONE                    = 0,
-        SPELL_MISS_MISS                    = 1,
-        SPELL_MISS_RESIST                  = 2,
-        SPELL_MISS_DODGE                   = 3,
-        SPELL_MISS_PARRY                   = 4,
-        SPELL_MISS_BLOCK                   = 5,
-        SPELL_MISS_EVADE                   = 6,
-        SPELL_MISS_IMMUNE                  = 7,
-        SPELL_MISS_IMMUNE2                 = 8,
-        SPELL_MISS_DEFLECT                 = 9,
-        SPELL_MISS_ABSORB                  = 10,
-        SPELL_MISS_REFLECT                 = 11
+    enum SpellMissInfo {
+        SPELL_MISS_NONE = 0,
+        SPELL_MISS_MISS = 1,
+        SPELL_MISS_RESIST = 2,
+        SPELL_MISS_DODGE = 3,
+        SPELL_MISS_PARRY = 4,
+        SPELL_MISS_BLOCK = 5,
+        SPELL_MISS_EVADE = 6,
+        SPELL_MISS_IMMUNE = 7,
+        SPELL_MISS_IMMUNE2 = 8,
+        SPELL_MISS_DEFLECT = 9,
+        SPELL_MISS_ABSORB = 10,
+        SPELL_MISS_REFLECT = 11
     };
 
-    enum SpellHitType
-    {
-        SPELL_HIT_TYPE_CRIT_DEBUG           = 0x01,
-        SPELL_HIT_TYPE_CRIT                 = 0x02,
-        SPELL_HIT_TYPE_HIT_DEBUG            = 0x04,
-        SPELL_HIT_TYPE_SPLIT                = 0x08,
-        SPELL_HIT_TYPE_VICTIM_IS_ATTACKER   = 0x10,
-        SPELL_HIT_TYPE_ATTACK_TABLE_DEBUG   = 0x20
+    enum SpellHitType {
+        SPELL_HIT_TYPE_CRIT_DEBUG = 0x01,
+        SPELL_HIT_TYPE_CRIT = 0x02,
+        SPELL_HIT_TYPE_HIT_DEBUG = 0x04,
+        SPELL_HIT_TYPE_SPLIT = 0x08,
+        SPELL_HIT_TYPE_VICTIM_IS_ATTACKER = 0x10,
+        SPELL_HIT_TYPE_ATTACK_TABLE_DEBUG = 0x20
     };
 
-    enum SpellDmgClass
-    {
-        SPELL_DAMAGE_CLASS_NONE     = 0,
-        SPELL_DAMAGE_CLASS_MAGIC    = 1,
-        SPELL_DAMAGE_CLASS_MELEE    = 2,
-        SPELL_DAMAGE_CLASS_RANGED   = 3
+    enum SpellDmgClass {
+        SPELL_DAMAGE_CLASS_NONE = 0,
+        SPELL_DAMAGE_CLASS_MAGIC = 1,
+        SPELL_DAMAGE_CLASS_MELEE = 2,
+        SPELL_DAMAGE_CLASS_RANGED = 3
     };
 
-    enum SpellPreventionType
-    {
-        SPELL_PREVENTION_TYPE_NONE      = 0,
-        SPELL_PREVENTION_TYPE_SILENCE   = 1,
-        SPELL_PREVENTION_TYPE_PACIFY    = 2
+    enum SpellPreventionType {
+        SPELL_PREVENTION_TYPE_NONE = 0,
+        SPELL_PREVENTION_TYPE_SILENCE = 1,
+        SPELL_PREVENTION_TYPE_PACIFY = 2
     };
 
-    enum SpellCastFlags
-    {
-        CAST_FLAG_NONE              = 0x00000000,
-        CAST_FLAG_HIDDEN_COMBATLOG  = 0x00000001,               // hide in combat log?
-        CAST_FLAG_UNKNOWN2          = 0x00000002,
-        CAST_FLAG_UNKNOWN3          = 0x00000004,
-        CAST_FLAG_UNKNOWN4          = 0x00000008,
-        CAST_FLAG_UNKNOWN5          = 0x00000010,
-        CAST_FLAG_AMMO              = 0x00000020,               // Projectiles visual
-        CAST_FLAG_UNKNOWN7          = 0x00000040,               // !0x41 mask used to call CGTradeSkillInfo::DoRecast
-        CAST_FLAG_UNKNOWN8          = 0x00000080,
-        CAST_FLAG_UNKNOWN9          = 0x00000100,
+    enum SpellCastFlags {
+        CAST_FLAG_NONE = 0x00000000,
+        CAST_FLAG_HIDDEN_COMBATLOG = 0x00000001, // hide in combat log?
+        CAST_FLAG_UNKNOWN2 = 0x00000002,
+        CAST_FLAG_UNKNOWN3 = 0x00000004,
+        CAST_FLAG_UNKNOWN4 = 0x00000008,
+        CAST_FLAG_UNKNOWN5 = 0x00000010,
+        CAST_FLAG_AMMO = 0x00000020, // Projectiles visual
+        CAST_FLAG_UNKNOWN7 = 0x00000040, // !0x41 mask used to call CGTradeSkillInfo::DoRecast
+        CAST_FLAG_UNKNOWN8 = 0x00000080,
+        CAST_FLAG_UNKNOWN9 = 0x00000100,
     };
 
     // SpellEntry::Targets
@@ -1160,16 +1155,15 @@ namespace game {
     };
 
     constexpr uint32_t UnitActionButtonAction(uint32_t x) { return x & 0x00FFFFFFu; }
-    constexpr uint32_t UnitActionButtonType(uint32_t x)   { return (x & 0xFF000000u) >> 24; }
+    constexpr uint32_t UnitActionButtonType(uint32_t x) { return (x & 0xFF000000u) >> 24; }
 
-    enum ActiveStates : uint8_t
-    {
-        ACT_DECIDE   = 0x00,                                    // custom
-        ACT_PASSIVE  = 0x01,                                    // 0x01 - passive
-        ACT_REACTION = 0x06,                                    // 0x02 | 0x04
-        ACT_COMMAND  = 0x07,                                    // 0x01 | 0x02 | 0x04
-        ACT_DISABLED = 0x81,                                    // 0x80 - castable
-        ACT_ENABLED  = 0xC1,                                    // 0x40 | 0x80 - auto cast + castable
+    enum ActiveStates : uint8_t {
+        ACT_DECIDE = 0x00, // custom
+        ACT_PASSIVE = 0x01, // 0x01 - passive
+        ACT_REACTION = 0x06, // 0x02 | 0x04
+        ACT_COMMAND = 0x07, // 0x01 | 0x02 | 0x04
+        ACT_DISABLED = 0x81, // 0x80 - castable
+        ACT_ENABLED = 0xC1, // 0x40 | 0x80 - auto cast + castable
     };
 
     enum Events : std::uint32_t {
@@ -1666,8 +1660,107 @@ namespace game {
         KEY_DOWN = 598,
         KEY_UP = 599,
 
-        UNIT_CASTEVENT=600 // superwow
+        UNIT_CASTEVENT = 600 // superwow
     };
+
+    typedef enum CHAT_COMMAND_ID {
+        CHAT_CMD_ADDON = 0xFFFFFFFF,
+        CHAT_CMD_SAY = 0x00,
+        CHAT_CMD_PARTY = 0x01,
+        CHAT_CMD_RAID = 0x02,
+        CHAT_CMD_GUILD = 0x03,
+        CHAT_CMD_OFFICER = 0x04,
+        CHAT_CMD_YELL = 0x05,
+        CHAT_CMD_WHISPER = 0x06,
+        CHAT_CMD_WHISPER_INFORM = 0x07,
+        CHAT_CMD_EMOTE = 0x08,
+        CHAT_CMD_TEXT_EMOTE = 0x09,
+        CHAT_CMD_SYSTEM = 0x0A,
+        CHAT_CMD_MONSTER_SAY = 0x0B,
+        CHAT_CMD_MONSTER_YELL = 0x0C,
+        CHAT_CMD_MONSTER_EMOTE = 0x0D,
+        CHAT_CMD_CHANNEL = 0x0E,
+        CHAT_CMD_CHANNEL_JOIN = 0x0F,
+        CHAT_CMD_CHANNEL_LEAVE = 0x10,
+        CHAT_CMD_CHANNEL_LIST = 0x11,
+        CHAT_CMD_CHANNEL_NOTICE = 0x12,
+        CHAT_CMD_CHANNEL_NOTICE_USER = 0x13,
+        CHAT_CMD_AFK = 0x14,
+        CHAT_CMD_DND = 0x15,
+        CHAT_CMD_IGNORED = 0x16,
+        CHAT_CMD_SKILL = 0x17,
+        CHAT_CMD_LOOT = 0x18,
+        CHAT_CMD_COMBAT_MISC_INFO = 0x19,
+        CHAT_CMD_MONSTER_WHISPER = 0x1A,
+        CHAT_CMD_COMBAT_SELF_HITS = 0x1B,
+        CHAT_CMD_COMBAT_SELF_MISSES = 0x1C,
+        CHAT_CMD_COMBAT_PET_HITS = 0x1D,
+        CHAT_CMD_COMBAT_PET_MISSES = 0x1E,
+        CHAT_CMD_COMBAT_PARTY_HITS = 0x1F,
+        CHAT_CMD_COMBAT_PARTY_MISSES = 0x20,
+        CHAT_CMD_COMBAT_FRIENDLYPLAYER_HITS = 0x21,
+        CHAT_CMD_COMBAT_FRIENDLYPLAYER_MISSES = 0x22,
+        CHAT_CMD_COMBAT_HOSTILEPLAYER_HITS = 0x23,
+        CHAT_CMD_COMBAT_HOSTILEPLAYER_MISSES = 0x24,
+        CHAT_CMD_COMBAT_CREATURE_VS_SELF_HITS = 0x25,
+        CHAT_CMD_COMBAT_CREATURE_VS_SELF_MISSES = 0x26,
+        CHAT_CMD_COMBAT_CREATURE_VS_PARTY_HITS = 0x27,
+        CHAT_CMD_COMBAT_CREATURE_VS_PARTY_MISSES = 0x28,
+        CHAT_CMD_COMBAT_CREATURE_VS_CREATURE_HITS = 0x29,
+        CHAT_CMD_COMBAT_CREATURE_VS_CREATURE_MISSES = 0x2A,
+        CHAT_CMD_COMBAT_FRIENDLY_DEATH = 0x2B,
+        CHAT_CMD_COMBAT_HOSTILE_DEATH = 0x2C,
+        CHAT_CMD_COMBAT_XP_GAIN = 0x2D,
+        CHAT_CMD_SPELL_SELF_DAMAGE = 0x2E,
+        CHAT_CMD_SPELL_SELF_BUFF = 0x2F,
+        CHAT_CMD_SPELL_PET_DAMAGE = 0x30,
+        CHAT_CMD_SPELL_PET_BUFF = 0x31,
+        CHAT_CMD_SPELL_PARTY_DAMAGE = 0x32,
+        CHAT_CMD_SPELL_PARTY_BUFF = 0x33,
+        CHAT_CMD_SPELL_FRIENDLYPLAYER_DAMAGE = 0x34,
+        CHAT_CMD_SPELL_FRIENDLYPLAYER_BUFF = 0x35,
+        CHAT_CMD_SPELL_HOSTILEPLAYER_DAMAGE = 0x36,
+        CHAT_CMD_SPELL_HOSTILEPLAYER_BUFF = 0x37,
+        CHAT_CMD_SPELL_CREATURE_VS_SELF_DAMAGE = 0x38,
+        CHAT_CMD_SPELL_CREATURE_VS_SELF_BUFF = 0x39,
+        CHAT_CMD_SPELL_CREATURE_VS_PARTY_DAMAGE = 0x3A,
+        CHAT_CMD_SPELL_CREATURE_VS_PARTY_BUFF = 0x3B,
+        CHAT_CMD_SPELL_CREATURE_VS_CREATURE_DAMAGE = 0x3C,
+        CHAT_CMD_SPELL_CREATURE_VS_CREATURE_BUFF = 0x3D,
+        CHAT_CMD_SPELL_TRADESKILLS = 0x3E,
+        CHAT_CMD_SPELL_DAMAGESHIELDS_ON_SELF = 0x3F,
+        CHAT_CMD_SPELL_DAMAGESHIELDS_ON_OTHERS = 0x40,
+        CHAT_CMD_SPELL_AURA_GONE_SELF = 0x41,
+        CHAT_CMD_SPELL_AURA_GONE_PARTY = 0x42,
+        CHAT_CMD_SPELL_AURA_GONE_OTHER = 0x43,
+        CHAT_CMD_SPELL_ITEM_ENCHANTMENTS = 0x44,
+        CHAT_CMD_SPELL_BREAK_AURA = 0x45,
+        CHAT_CMD_SPELL_PERIODIC_SELF_DAMAGE = 0x46,
+        CHAT_CMD_SPELL_PERIODIC_SELF_BUFFS = 0x47,
+        CHAT_CMD_SPELL_PERIODIC_PARTY_DAMAGE = 0x48,
+        CHAT_CMD_SPELL_PERIODIC_PARTY_BUFFS = 0x49,
+        CHAT_CMD_SPELL_PERIODIC_FRIENDLYPLAYER_DAMAGE = 0x4A,
+        CHAT_CMD_SPELL_PERIODIC_FRIENDLYPLAYER_BUFFS = 0x4B,
+        CHAT_CMD_SPELL_PERIODIC_HOSTILEPLAYER_DAMAGE = 0x4C,
+        CHAT_CMD_SPELL_PERIODIC_HOSTILEPLAYER_BUFFS = 0x4D,
+        CHAT_CMD_SPELL_PERIODIC_CREATURE_DAMAGE = 0x4E,
+        CHAT_CMD_SPELL_PERIODIC_CREATURE_BUFFS = 0x4F,
+        CHAT_CMD_SPELL_FAILED_LOCALPLAYER = 0x50,
+        CHAT_CMD_COMBAT_HONOR_GAIN = 0x51,
+        CHAT_CMD_BG_SYSTEM_NEUTRAL = 0x52,
+        CHAT_CMD_BG_SYSTEM_ALLIANCE = 0x53,
+        CHAT_CMD_BG_SYSTEM_HORDE = 0x54,
+        CHAT_CMD_COMBAT_FACTION_CHANGE = 0x55,
+        CHAT_CMD_MONEY = 0x56,
+        CHAT_CMD_RAID_LEADER = 0x57,
+        CHAT_CMD_RAID_WARNING = 0x58,
+        CHAT_CMD_RAID_BOSS_WHISPER = 0x59, // appears as whisper, yet name is not in client
+        CHAT_CMD_RAID_BOSS_EMOTE = 0x5A,
+        CHAT_CMD_FILTERED = 0x5B,
+        CHAT_CMD_BATTLEGROUND = 0x5C,
+        CHAT_CMD_BATTLEGROUND_LEADER = 0x5D,
+        CHAT_CMD_HARDCORE = 0x5E,
+    } CHAT_COMMAND_ID;
 
     enum TypeMask {
         TYPEMASK_OBJECT = 0x1,
@@ -1824,36 +1917,36 @@ namespace game {
     constexpr uint32_t OBJECT_END = 6; // ObjectFields: guid(2) + type + entry + scaleX + padding
 
     enum ECorpseFields {
-        CORPSE_FIELD_OWNER                         = OBJECT_END + 0x00,
-        CORPSE_FIELD_FACING                        = OBJECT_END + 0x02,
-        CORPSE_FIELD_POS_X                         = OBJECT_END + 0x03,
-        CORPSE_FIELD_POS_Y                         = OBJECT_END + 0x04,
-        CORPSE_FIELD_POS_Z                         = OBJECT_END + 0x05,
-        CORPSE_FIELD_DISPLAY_ID                    = OBJECT_END + 0x06,
-        CORPSE_FIELD_ITEM                          = OBJECT_END + 0x07, // 19
-        CORPSE_FIELD_BYTES_1                       = OBJECT_END + 0x1A,
-        CORPSE_FIELD_BYTES_2                       = OBJECT_END + 0x1B,
-        CORPSE_FIELD_GUILD                         = OBJECT_END + 0x1C,
-        CORPSE_FIELD_FLAGS                         = OBJECT_END + 0x1D,
-        CORPSE_FIELD_DYNAMIC_FLAGS                 = OBJECT_END + 0x1E,
-        CORPSE_FIELD_PAD                           = OBJECT_END + 0x1F,
-        CORPSE_END                                 = OBJECT_END + 0x20,
+        CORPSE_FIELD_OWNER = OBJECT_END + 0x00,
+        CORPSE_FIELD_FACING = OBJECT_END + 0x02,
+        CORPSE_FIELD_POS_X = OBJECT_END + 0x03,
+        CORPSE_FIELD_POS_Y = OBJECT_END + 0x04,
+        CORPSE_FIELD_POS_Z = OBJECT_END + 0x05,
+        CORPSE_FIELD_DISPLAY_ID = OBJECT_END + 0x06,
+        CORPSE_FIELD_ITEM = OBJECT_END + 0x07, // 19
+        CORPSE_FIELD_BYTES_1 = OBJECT_END + 0x1A,
+        CORPSE_FIELD_BYTES_2 = OBJECT_END + 0x1B,
+        CORPSE_FIELD_GUILD = OBJECT_END + 0x1C,
+        CORPSE_FIELD_FLAGS = OBJECT_END + 0x1D,
+        CORPSE_FIELD_DYNAMIC_FLAGS = OBJECT_END + 0x1E,
+        CORPSE_FIELD_PAD = OBJECT_END + 0x1F,
+        CORPSE_END = OBJECT_END + 0x20,
     };
 
     typedef struct CorpseFields {
-        uint64_t owner;          // Size:2
-        float facing;            // Size:1
-        float posX;              // Size:1
-        float posY;              // Size:1
-        float posZ;              // Size:1
-        uint32_t displayId;      // Size:1
-        uint32_t items[19];      // Size:19
-        uint32_t bytes1;         // Size:1
-        uint32_t bytes2;         // Size:1
-        uint32_t guild;          // Size:1
-        uint32_t flags;          // Size:1
-        uint32_t dynamicFlags;   // Size:1
-        uint32_t pad;            // Size:1
+        uint64_t owner; // Size:2
+        float facing; // Size:1
+        float posX; // Size:1
+        float posY; // Size:1
+        float posZ; // Size:1
+        uint32_t displayId; // Size:1
+        uint32_t items[19]; // Size:19
+        uint32_t bytes1; // Size:1
+        uint32_t bytes2; // Size:1
+        uint32_t guild; // Size:1
+        uint32_t flags; // Size:1
+        uint32_t dynamicFlags; // Size:1
+        uint32_t pad; // Size:1
     } CorpseFields;
 
     typedef struct UnitFields {
@@ -1954,6 +2047,7 @@ namespace game {
     const char *GetSpellName(uint32_t spellId);
 
     std::uint64_t ClntObjMgrGetActivePlayerGuid();
+
     UnitFields *GetActivePlayerUnitFields();
 
     std::uint64_t GetCurrentTargetGuid();
@@ -1962,16 +2056,22 @@ namespace game {
 
     uint64_t UnitGetGuid(uintptr_t *unit);
 
+    C3Vector UnitGetPosition(uintptr_t *unit);
+
     char *UnitGetName(uintptr_t *unit);
 
     bool UnitCanAttackUnit(uintptr_t *unit1, uintptr_t *unit2);
 
     uint64_t UnitGetTargetGuid(uintptr_t *unit);
+
     uint64_t UnitGetOwnerGuid(uintptr_t *unit);
+
     uint64_t UnitGetPetGuid(uintptr_t *unit);
 
     uint64_t UnitGetOwnerGuidForGuid(uint64_t guid);
+
     uint64_t UnitGetTargetGuidForGuid(uint64_t guid);
+
     uint64_t UnitGetPetGuidForGuid(uint64_t guid);
 
     bool UnitIsPvpFlagged(uintptr_t *unit);

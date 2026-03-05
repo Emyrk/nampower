@@ -59,7 +59,8 @@ enum class Offsets : std::uint32_t {
     GetSpellSlotFromLua = 0X004B3EC0,
     OsGetAsyncTimeMs = 0X0042B790,
     ChannelTargetGuid = 0xC4D980,
-    NameplateDistance = 0xC4D988, // float containing the distance squared ready to be pythagorean'd
+    NameplateDistanceSq = 0xC4D988, // float containing the distance squared ready to be pythagorean'd
+    ChatBubbleDistanceSq = 0x00806798,
     DBCacheGetRecord = 0X0055BA30,
     InvQuestionMark = 0X00847FE4,
 
@@ -225,6 +226,13 @@ enum class Offsets : std::uint32_t {
     CGBuffBar_UpdateDuration = 0x004E4390,
     GetBuffByIndex = 0X004E4430,
 
+    CGUnit_C_AddChatBubble = 0x00608ac0,
+    CGChat_GetChatColor = 0x0049e990,
+    CGUnit_RemoveChatBubble = 0x00608c00,
+    CGChatBubbleFrame_GetNewChatBubble = 0x004b1870,
+    CGChatBubbleFrame_Initialize = 0x004b1600,
+    OnChatMessagePatchCallSite = 0x0049DB9F,
+    CurrentFramePointer = 0x00b4b2bc,
     CGUnit_C_ClearCastingSpell = 0x0060d040,
     CGUnit_C_ClearSpellEffect = 0x00614150,
     CGUnit_C_GetEquippedItemAtSlot = 0x005f0d60,
@@ -272,6 +280,8 @@ enum class Offsets : std::uint32_t {
     CGPetInfo_SetPet = 0x004bc7e0,
     TogglePetSlotAutocast = 0x004bcbb0,
     CGPetInfo_GetPetSpellAction = 0x004bd190,
+    CGPetInfo_SendPetAction = 0x004bd1d0,
     PetActionBarSlots = 0x00b71438,
+    PetReactionMode = 0x00b71468,
     ActivePetGuid = 0x00b714a0,
 };

@@ -470,6 +470,11 @@ namespace Nampower {
         }
 
         auto const spell = game::GetSpellInfo(spellId);
+        if (!spell) {
+            DEBUG_LOG("Spell info not found for spell id " << spellId);
+            auto const castSpell = detour->GetTrampolineT<Spell_C_CastSpellT>();
+            return castSpell(casterUnit, spellId, item, guid);
+        }
         auto const spellIsOnSwing = SpellIsOnSwing(spell);
         auto const spellName = game::GetSpellName(spellId);
         auto currentTime = GetTime();

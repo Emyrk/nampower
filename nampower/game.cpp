@@ -171,6 +171,14 @@ namespace game {
         return *reinterpret_cast<uint64_t *>(Offsets::LockedTargetGuid);
     }
 
+    C3Vector UnitGetPosition(uintptr_t *unit) {
+        using GetPositionT = C3Vector* (__fastcall *)(void *thisptr, void *dummy_edx, C3Vector *outPos);
+        auto getPos = reinterpret_cast<GetPositionT>((*reinterpret_cast<void ***>(unit))[5]); // vtable[0x14/4]
+        C3Vector pos{};
+        getPos(unit, nullptr, &pos);
+        return pos;
+    }
+
     uint64_t UnitGetGuid(uintptr_t *unit) {
         if (!unit) {
             return 0;

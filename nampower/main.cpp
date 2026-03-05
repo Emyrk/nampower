@@ -34,6 +34,7 @@
 #include "spellevents.hpp"
 #include "spellcast.hpp"
 #include "misc_scripts.hpp"
+#include "chat.hpp"
 #include "file_scripts.hpp"
 #include "spell_scripts.hpp"
 #include "player_scripts.hpp"
@@ -159,6 +160,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<GetSpellSlotFromLuaT> > gGetSpellSlotFromLuaDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<LuaScriptT> > gCSimpleFrame_GetNameDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_AddChatBubbleT> > gCGUnit_C_AddChatBubbleDetour;
     std::unique_ptr<hadesmem::PatchDetour<CSimpleTop_OnKeyDownT> > gCSimpleTop_OnKeyDownDetour;
     std::unique_ptr<hadesmem::PatchDetour<CSimpleTop_OnKeyUpT> > gCSimpleTop_OnKeyUpDetour;
     std::unique_ptr<hadesmem::PatchDetour<GetGUIDFromNameT> > gGetGUIDFromNameDetour;
@@ -167,6 +169,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<CGPetInfo_SetPetT> > gCGPetInfo_SetPetDetour;
     std::unique_ptr<hadesmem::PatchDetour<TogglePetSlotAutocastT> > gTogglePetSlotAutocastDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGPetInfo_GetPetSpellActionT> > gCGPetInfo_GetPetSpellActionDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGPetInfo_SendPetActionT> > gCGPetInfo_SendPetActionDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGGameUI_ShowCombatFeedbackT> > gCGGameUI_ShowCombatFeedbackDetour;
     std::unique_ptr<hadesmem::PatchDetour<LoadScriptFunctionsT> > gGlueLoadScriptFunctionsDetour;
 
@@ -770,6 +773,10 @@ namespace Nampower {
             SetNameplateDistance(distance);
             DEBUG_LOG(
                 "Set NP_NameplateDistance to " << distance);
+        } else if (strcmp(cvar, "NP_ChatBubbleDistance") == 0) {
+            gUserSettings.chatBubbleDistance = static_cast<uint32_t>(atoi(value));
+            SetChatBubbleDistance(static_cast<float>(gUserSettings.chatBubbleDistance));
+            DEBUG_LOG("Set NP_ChatBubbleDistance to " << gUserSettings.chatBubbleDistance);
         }
     }
 
@@ -1265,6 +1272,16 @@ namespace Nampower {
                      0, // unk2
                      0); // unk3
 
+        char NP_InfernalAutocastData[] = "NP_InfernalAutocastData";
+        CVarRegister(NP_InfernalAutocastData, // name
+                     nullptr, // help
+                     0, // unk1
+                     "", // default value address
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
         char NP_ChannelLatencyReductionPercentage[] = "NP_ChannelLatencyReductionPercentage";
         CVarRegister(NP_ChannelLatencyReductionPercentage, // name
                      nullptr, // help
@@ -1280,6 +1297,46 @@ namespace Nampower {
                      nullptr, // help
                      0, // unk1
                      std::to_string(GetNameplateDistance()).c_str(), // use the game's DAT value as the default
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
+        char NP_ChatBubbleDistance[] = "NP_ChatBubbleDistance";
+        CVarRegister(NP_ChatBubbleDistance, // name
+                     nullptr, // help
+                     0, // unk1
+                     std::to_string(GetChatBubbleDistance()).c_str(), // use game's value as default
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
+        char NP_ChatBubblesWhisper[] = "NP_ChatBubblesWhisper";
+        CVarRegister(NP_ChatBubblesWhisper, // name
+                     nullptr, // help
+                     0, // unk1
+                     "0", // default value address
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
+        char NP_ChatBubblesRaid[] = "NP_ChatBubblesRaid";
+        CVarRegister(NP_ChatBubblesRaid, // name
+                     nullptr, // help
+                     0, // unk1
+                     "0", // default value address
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
+        char NP_ChatBubblesBattleground[] = "NP_ChatBubblesBattleground";
+        CVarRegister(NP_ChatBubblesBattleground, // name
+                     nullptr, // help
+                     0, // unk1
+                     "0", // default value address
                      nullptr, // callback
                      1, // category
                      0, // unk2
@@ -1338,6 +1395,8 @@ namespace Nampower {
         loadUserVar("NP_ChannelLatencyReductionPercentage");
 
         loadUserVar("NP_NameplateDistance");
+        loadUserVar("NP_ChatBubbleDistance");
+        loadUserVar("NP_ChatBubblesBattleground");
 
         gBufferTimeMs = gUserSettings.minBufferTimeMs;
     }
@@ -1513,6 +1572,8 @@ namespace Nampower {
                                                                                      &AttackRoundInfo_ReadPacketHook);
         gCSimpleFrame_GetNameDetour = createHook<LuaScriptT>(process, Offsets::CSimpleFrame_GetName,
                                                                 &CSimpleFrame_GetNameHook);
+        gCGUnit_C_AddChatBubbleDetour = createHook<CGUnit_C_AddChatBubbleT>(
+            process, Offsets::CGUnit_C_AddChatBubble, &CGUnit_C_AddChatBubbleHook);
         gCSimpleTop_OnKeyDownDetour = createHook<CSimpleTop_OnKeyDownT>(
             process, Offsets::CSimpleTop_OnKeyDown, &CSimpleTop_OnKeyDownHook);
         gCSimpleTop_OnKeyUpDetour = createHook<CSimpleTop_OnKeyUpT>(
@@ -1525,6 +1586,8 @@ namespace Nampower {
             process, Offsets::TogglePetSlotAutocast, &TogglePetSlotAutocastHook);
         gCGPetInfo_GetPetSpellActionDetour = createHook<CGPetInfo_GetPetSpellActionT>(
             process, Offsets::CGPetInfo_GetPetSpellAction, &CGPetInfo_GetPetSpellActionHook);
+        gCGPetInfo_SendPetActionDetour = createHook<CGPetInfo_SendPetActionT>(
+            process, Offsets::CGPetInfo_SendPetAction, &CGPetInfo_SendPetActionHook);
         gCGGameUI_ShowCombatFeedbackDetour = createHook<CGGameUI_ShowCombatFeedbackT>(
             process, Offsets::CGGameUI_ShowCombatFeedback, &CGGameUI_ShowCombatFeedbackHook);
         gLoadScriptFunctionsDetour = createHook<LoadScriptFunctionsT>(process, Offsets::Player_LoadScriptFunctions,
@@ -1535,6 +1598,7 @@ namespace Nampower {
                                                                     &FrameScript_CreateEventsHook);
         gSetEventCountDetour = createHook<FramescriptSetEventCountT>(process, Offsets::Framescript_SetEventCount,
                                                                      &Framescript_SetEventCountHook);
+        ApplyOnChatMessagePatch();
 
         DEBUG_LOG("=== All hooks initialized successfully ===");
     }

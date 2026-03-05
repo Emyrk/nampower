@@ -26,7 +26,7 @@ namespace Nampower {
     constexpr uint32_t DISENCHANT_QUALITY_PURPLE = 0x04;  // Epic
 
     constexpr uint32_t MAJOR_VERSION = 3;
-    constexpr uint32_t MINOR_VERSION = 2;
+    constexpr uint32_t MINOR_VERSION = 3;
     constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
@@ -90,6 +90,12 @@ namespace Nampower {
     using Spell_C_HandleSpriteClickT = bool (__fastcall *)(game::CSpriteClickEvent *event);
     using Spell_C_HandleTerrainClickT = uint32_t (__fastcall *)(game::CTerrainClickEvent *event);
     using CGWorldFrame_OnLayerTrackTerrainT = void (__fastcall *)(void *thisptr, int dummy_edx, int param_1);
+    using CGUnit_C_AddChatBubbleT = void (__fastcall *)(uintptr_t *thisptr, void *dummy_edx, game::CHAT_COMMAND_ID chatType, char *msg);
+    using CGChat_GetChatColorT = void (__fastcall *)(uint32_t *color, game::CHAT_COMMAND_ID chatType);
+    using CGUnit_RemoveChatBubbleT = void (__fastcall *)(void *thisptr, void *dummy_edx);
+    using CGChatBubbleFrame_GetNewChatBubbleT = uintptr_t *(__thiscall *)(void *thisptr);
+    using CGChatBubbleFrame_InitializeT = void (__thiscall *)(uintptr_t *thisptr, uint64_t *unitGuid, char *msg, uint32_t *color);
+    using GetUnitPositionT = game::C3Vector* (__fastcall *)(void *thisptr, void *dummy_edx, game::C3Vector *outPos);
     using CSimpleTop_OnKeyDownT = bool (__fastcall *)(EVENT_DATA_KEY *param_1, int param_2);
     using CSimpleTop_OnKeyUpT = bool (__fastcall *)(EVENT_DATA_KEY *param_1, int param_2);
     using IsModifierKeyDownT = uint32_t (__fastcall *)(int param_1);

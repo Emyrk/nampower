@@ -88,8 +88,10 @@ namespace Nampower {
     uint64_t GetUnitGuidFromString(const char *unitToken);
 
     float GetNameplateDistance();
-
     void SetNameplateDistance(float distance);
+
+    float GetChatBubbleDistance();
+    void SetChatBubbleDistance(float distance);
 
     // Lua table helper functions
     inline void PushTableValue(uintptr_t *luaState, char *key, uint32_t value) {

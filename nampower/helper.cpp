@@ -406,12 +406,25 @@ namespace Nampower {
     }
 
     float GetNameplateDistance() {
-        auto const distanceSquared = *reinterpret_cast<float *>(Offsets::NameplateDistance);
+        auto const distanceSquared = *reinterpret_cast<float *>(Offsets::NameplateDistanceSq);
         return sqrtf(distanceSquared);
     }
 
     void SetNameplateDistance(float distance) {
-        *reinterpret_cast<float *>(Offsets::NameplateDistance) = distance * distance;
+        *reinterpret_cast<float *>(Offsets::NameplateDistanceSq) = distance * distance;
+    }
+
+    float GetChatBubbleDistance() {
+        auto const distanceSquared = *reinterpret_cast<float *>(Offsets::ChatBubbleDistanceSq);
+        return sqrtf(distanceSquared);
+    }
+
+    void SetChatBubbleDistance(float distance) {
+        auto *addr = reinterpret_cast<float *>(Offsets::ChatBubbleDistanceSq);
+        DWORD oldProtect;
+        VirtualProtect(addr, sizeof(float), PAGE_EXECUTE_READWRITE, &oldProtect);
+        *addr = distance * distance;
+        VirtualProtect(addr, sizeof(float), oldProtect, &oldProtect);
     }
 
     bool IsTargetingTerrainSpell() {

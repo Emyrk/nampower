@@ -17,8 +17,13 @@
 namespace Nampower {
     constexpr uint32_t kAutocastEnabledType = 0xC1;
     constexpr uint32_t kAutocastDisabledType = 0x81;
+    constexpr uint32_t kReactStateAggressive = 0x06000002; // REACT_AGGRESSIVE = 2
+    constexpr uint32_t kReactStateDefensive  = 0x06000001; // REACT_DEFENSIVE  = 1
+    constexpr uint32_t kReactStatePassive    = 0x06000000; // REACT_PASSIVE    = 0
     constexpr uint32_t kFelguardDisplayId = 7970;
     constexpr uint32_t kDoomguardDisplayId = 1912;
+    // constexpr uint32_t kDoomguardDisplayId = 4449;  // imp for testing
+    constexpr uint32_t kInfernalDisplayId = 169;
     uint32_t gPendingToggleAutocastSlot = 0;
 
     uint32_t GetActivePetDisplayId() {
@@ -46,6 +51,9 @@ namespace Nampower {
         }
         if (displayId == kDoomguardDisplayId) {
             return "NP_DoomguardAutocastData";
+        }
+        if (displayId == kInfernalDisplayId) {
+            return "NP_InfernalAutocastData";
         }
         return nullptr;
     }
@@ -99,13 +107,9 @@ namespace Nampower {
         }
     }
 
-    void SaveGreaterDemonAutocastPreferences() {
-        SaveGreaterDemonAutocastPreferences(0, 0);
-    }
-
-    void SaveGreaterDemonAutocastPreferences(uint32_t spellSlot, uint32_t actionData) {
+    void SaveGreaterDemonPreferences(uint32_t spellSlot, uint32_t actionData) {
         uint32_t displayId = GetActivePetDisplayId();
-        if (displayId != kFelguardDisplayId && displayId != kDoomguardDisplayId) {
+        if (displayId != kFelguardDisplayId && displayId != kDoomguardDisplayId && displayId != kInfernalDisplayId) {
             return;
         }
 
@@ -123,12 +127,20 @@ namespace Nampower {
         uint32_t actionId = game::UnitActionButtonAction(actionData);
         uint32_t type = game::UnitActionButtonType(actionData);
 
-        if (spellSlot >= 3 && spellSlot <= 7) {
+        if (spellSlot >= 3 && spellSlot <= 6) {
             if (type == kAutocastEnabledType) {
                 autocastData[spellSlot] = actionData;
             } else if (type == kAutocastDisabledType) {
                 autocastData.erase(spellSlot);
             }
+        } else if (spellSlot >= 7 && spellSlot <= 9) {
+            // React states are mutually exclusive — clear all three, save the selected one
+            autocastData.erase(7);
+            autocastData.erase(8);
+            autocastData.erase(9);
+            autocastData[spellSlot] = actionData;
+        } else {
+            return;
         }
 
         std::string serialized = SerializeAutocastData(autocastData);
@@ -140,8 +152,8 @@ namespace Nampower {
         LuaCall(lua.c_str());
 
         DEBUG_LOG("Saved " << cvarName << "=" << serialized
-                  << " (slot=" << spellSlot << ", actionData=" << actionData
-                  << ", actionId=" << actionId << ", type=0x" << std::hex << type << std::dec << ")");
+            << " (slot=" << spellSlot << ", actionData=" << actionData
+            << ", actionId=" << actionId << ", type=0x" << std::hex << type << std::dec << ")");
     }
 
     void RestoreGreaterDemonAutocastPreferences() {
@@ -178,41 +190,57 @@ namespace Nampower {
         }
 
         constexpr uint32_t CMSG_PET_SET_ACTION = 372;
+        constexpr uint32_t CMSG_PET_ACTION = 373;
         uint32_t packetsSent = 0;
 
         for (auto const &entry: autocastData) {
             uint32_t spellSlot = entry.first;
             uint32_t actionData = entry.second;
 
-            if (spellSlot < 3 || spellSlot > 7) {
+            if (spellSlot < 3 || spellSlot > 9) {
                 continue;
             }
 
             auto *petActionBarSlots = reinterpret_cast<uint32_t *>(Offsets::PetActionBarSlots);
-            if (petActionBarSlots) {
-                petActionBarSlots[spellSlot] = actionData;
+            petActionBarSlots[spellSlot] = actionData;
+
+            if (spellSlot >= 7) {
+                // React state: replicate SetPetReactionMode — write react state into lower byte of PetReactionMode
+                auto *reactionMode = reinterpret_cast<uint32_t *>(Offsets::PetReactionMode);
+                uint32_t reactState = game::UnitActionButtonAction(actionData);
+                *reactionMode = (*reactionMode & 0xffffff00u) | reactState;
+
+                // Also notify the server: CMSG_PET_ACTION (petGuid, actionData, targetGuid)
+                CDataStore dataStore;
+                dataStore.Put(CMSG_PET_ACTION);
+                dataStore.Put(petGuid);
+                dataStore.Put(actionData);
+                dataStore.Put(uint64_t(0)); // targetGuid = 0
+                dataStore.Finalize();
+
+                clientServicesSend(&dataStore);
+                packetsSent++;
+            } else {
+                // Autocast: CMSG_PET_SET_ACTION (petGuid, slot, actionData)
+                CDataStore dataStore;
+                dataStore.Put(CMSG_PET_SET_ACTION);
+                dataStore.Put(petGuid);
+                dataStore.Put(spellSlot);
+                dataStore.Put(actionData);
+                dataStore.Finalize();
+
+                clientServicesSend(&dataStore);
+                packetsSent++;
             }
-
-            CDataStore dataStore;
-            dataStore.Put(CMSG_PET_SET_ACTION);
-            dataStore.Put(petGuid);
-            dataStore.Put(spellSlot);
-            dataStore.Put(actionData);
-            dataStore.Finalize();
-
-            clientServicesSend(&dataStore);
-            packetsSent++;
         }
 
         auto const signalEvent = reinterpret_cast<SignalEventT>(Offsets::SignalEvent);
-        if (signalEvent) {
-            signalEvent(game::PET_BAR_UPDATE);
-        }
+        signalEvent(game::PET_BAR_UPDATE);
 
         DEBUG_LOG("Restored greater demon autocast for displayId=" << displayId
-                  << " petGuid=" << petGuid
-                  << " cvar=" << cvarName
-                  << " packetsSent=" << packetsSent);
+            << " petGuid=" << petGuid
+            << " cvar=" << cvarName
+            << " packetsSent=" << packetsSent);
     }
 
     void CGPetInfo_SetPetHook(hadesmem::PatchDetourBase *detour, void *thisptr, void *dummy_edx,
@@ -247,14 +275,43 @@ namespace Nampower {
         uint32_t spellSlot = gPendingToggleAutocastSlot;
 
         uint32_t actionData = action[0];
-        uint32_t actionId = game::UnitActionButtonAction(actionData);
-        uint32_t type = game::UnitActionButtonType(actionData);
 
         // save autocast preferences
         auto activePetGuid = *reinterpret_cast<uint64_t *>(Offsets::ActivePetGuid);
         if (gUserSettings.preserveGreaterDemonAutocast && activePetGuid != 0) {
             DEBUG_LOG("Saving greater demon autocast preferences for slot " << spellSlot);
-            SaveGreaterDemonAutocastPreferences(spellSlot, actionData);
+            SaveGreaterDemonPreferences(spellSlot, actionData);
         }
+    }
+
+    void CGPetInfo_SendPetActionHook(hadesmem::PatchDetourBase *detour, uint32_t *action, uint64_t *target) {
+        auto const orig = detour->GetTrampolineT<CGPetInfo_SendPetActionT>();
+        orig(action, target);
+
+        if (!action) return;
+
+        auto actionData = action[0];
+
+        auto const activePetGuid = *reinterpret_cast<uint64_t *>(Offsets::ActivePetGuid);
+        if (!gUserSettings.preserveGreaterDemonAutocast || activePetGuid == 0) return;
+
+        auto spellSlot = 0;
+
+        switch (actionData) {
+            case kReactStateAggressive:
+                spellSlot = 7;
+                break;
+            case kReactStateDefensive:
+                spellSlot = 8;
+                break;
+            case kReactStatePassive:
+                spellSlot = 9;
+                break;
+            default:
+                return;
+        }
+
+        DEBUG_LOG("Saving greater demon react state slot=" << spellSlot << " actionData=" << actionData);
+        SaveGreaterDemonPreferences(spellSlot, actionData);
     }
 }

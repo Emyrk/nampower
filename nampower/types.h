@@ -56,6 +56,7 @@ struct UserSettings {
     uint32_t nonGcdBufferTimeMs = 100;
 
     int32_t channelLatencyReductionPercentage = 75;
+    uint32_t chatBubbleDistance = 60;
 };
 
 enum CastType {
