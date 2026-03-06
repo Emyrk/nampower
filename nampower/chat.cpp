@@ -104,6 +104,7 @@ namespace Nampower {
             case game::CHAT_CMD_WHISPER_INFORM:
                 bubbleEnabledCvar = "NP_ChatBubblesWhisper";
                 break;
+            case game::CHAT_CMD_RAID:
             case game::CHAT_CMD_RAID_LEADER:
             case game::CHAT_CMD_RAID_WARNING:
                 bubbleEnabledCvar = "NP_ChatBubblesRaid";

@@ -1,6 +1,6 @@
  nampower
 
- Timestamp is 69aa0c43 (Thu Mar  5 15:05:39 2026)
+ Timestamp is 69aafe26 (Fri Mar  6 08:17:42 2026)
 
  Preferred load address is 10000000
 
@@ -8470,8 +8470,8 @@
  0001:0004d409       __catch$?put@?$basic_ostream@DU?$char_traits@D@std@@@std@@QAEAAV12@D@Z$0 1004e409 f i main.cpp.obj
  0001:0004f3c0       __catch$_Load$0            100503c0 f   main.cpp.obj
  0001:0004f45f       __catch$_Load$1            1005045f f   main.cpp.obj
- 0001:0004f8f4       $LN29                      100508f4     chat.cpp.obj
- 0001:0004f90c       $LN28                      1005090c     chat.cpp.obj
+ 0001:0004f8f4       $LN30                      100508f4     chat.cpp.obj
+ 0001:0004f90c       $LN29                      1005090c     chat.cpp.obj
  0001:0004fa10       ??$_Find_last@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@?$_Hash@V?$_Umap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@UCachedEntry@?1??GetSpellSlotAndTypeForName@Nampower@@YAHPBDPAI@Z@V?$_Uhash_compare@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@U?$hash@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@U?$equal_to@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@UCachedEntry@?1??GetSpellSlotAndTypeForName@Nampower@@YAHPBDPAI@Z@@std@@@2@$0A@@std@@@std@@IBE?AU?$_Hash_find_last_result@PAU?$_List_node@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@UCachedEntry@?1??GetSpellSlotAndTypeForName@Nampower@@YAHPBDPAI@Z@@std@@PAX@std@@@1@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@1@I@Z 10050a10 f   helper.cpp.obj
  0001:0004fb70       ??$_Try_emplace@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$V@?$_Hash@V?$_Umap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@UCachedEntry@?1??GetSpellSlotAndTypeForName@Nampower@@YAHPBDPAI@Z@V?$_Uhash_compare@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@U?$hash@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@U?$equal_to@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@UCachedEntry@?1??GetSpellSlotAndTypeForName@Nampower@@YAHPBDPAI@Z@@std@@@2@$0A@@std@@@std@@IAE?AU?$pair@PAU?$_List_node@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@UCachedEntry@?1??GetSpellSlotAndTypeForName@Nampower@@YAHPBDPAI@Z@@std@@PAX@std@@_N@1@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@1@@Z 10050b70 f   helper.cpp.obj
  0001:0004ff80       ??$fill@PAV?$_List_unchecked_iterator@V?$_List_val@U?$_List_simple_types@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@UCachedEntry@?1??GetSpellSlotAndTypeForName@Nampower@@YAHPBDPAI@Z@@std@@@std@@@std@@@std@@V12@@std@@YAXQAV?$_List_unchecked_iterator@V?$_List_val@U?$_List_simple_types@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@UCachedEntry@?1??GetSpellSlotAndTypeForName@Nampower@@YAHPBDPAI@Z@@std@@@std@@@std@@@0@0ABV10@@Z 10050f80 f   helper.cpp.obj
