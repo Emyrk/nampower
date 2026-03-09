@@ -1660,7 +1660,27 @@ namespace game {
         KEY_DOWN = 598,
         KEY_UP = 599,
 
-        UNIT_CASTEVENT = 600 // superwow
+        UNIT_CASTEVENT = 600, // superwow
+
+        ENVIRONMENTAL_DMG_SELF = 650, // nampower
+        ENVIRONMENTAL_DMG_OTHER = 651, // nampower
+
+        DAMAGE_SHIELD_SELF  = 652, // nampower
+        DAMAGE_SHIELD_OTHER = 653, // nampower
+
+        SPELL_DISPEL_BY_SELF  = 654, // nampower
+        SPELL_DISPEL_BY_OTHER = 655, // nampower
+    };
+
+    /// Type of environmental damages
+    enum EnvironmentalDamageType {
+        DAMAGE_EXHAUSTED = 0,
+        DAMAGE_DROWNING = 1,
+        DAMAGE_FALL = 2,
+        DAMAGE_LAVA = 3,
+        DAMAGE_SLIME = 4,
+        DAMAGE_FIRE = 5,
+        DAMAGE_FALL_TO_VOID = 6 // seems to be unused, server converts to DAMAGE_FALL
     };
 
     typedef enum CHAT_COMMAND_ID {

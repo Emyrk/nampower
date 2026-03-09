@@ -269,4 +269,58 @@ namespace Nampower {
             FreeGuidString(guidStr);
         }
     }
+
+    void CGUnit_C_HandleEnvironmentDamageHook(hadesmem::PatchDetourBase *detour, uintptr_t *unit, void *dummy_edx,
+                                              int dmgType, int damage, int absorb, int resist) {
+        auto const original = detour->GetTrampolineT<CGUnit_C_HandleEnvironmentDamageT>();
+        original(unit, dummy_edx, dmgType, damage, absorb, resist);
+
+        auto unitGuid = game::UnitGetGuid(unit);
+        if (unitGuid == 0) return;
+
+        static char format[] = "%s%d%d%d%d";
+        char *unitGuidStr = ConvertGuidToString(unitGuid);
+
+        auto event = game::ENVIRONMENTAL_DMG_OTHER;
+        if (unitGuid == game::ClntObjMgrGetActivePlayerGuid())
+            event = game::ENVIRONMENTAL_DMG_SELF;
+
+        ((int (__cdecl *)(int, char *, char *, int, int, int, int)) Offsets::SignalEventParam)(
+            event,
+            format,
+            unitGuidStr,
+            dmgType,
+            damage,
+            absorb,
+            resist);
+
+        FreeGuidString(unitGuidStr);
+    }
+
+    void UnitCombatLogDamageShieldHook(hadesmem::PatchDetourBase *detour, uint64_t *unitGuid, uint64_t *targetGuid,
+                                        uint32_t damage, uint32_t spellSchool) {
+        auto const original = detour->GetTrampolineT<UnitCombatLogDamageShieldT>();
+        original(unitGuid, targetGuid, damage, spellSchool);
+
+        if (!unitGuid || *unitGuid == 0) return;
+
+        static char format[] = "%s%s%d%d";
+        char *targetGuidString = targetGuid ? ConvertGuidToString(*targetGuid) : nullptr;
+        char *unitGuidStr   = ConvertGuidToString(*unitGuid);
+
+        auto event = game::DAMAGE_SHIELD_OTHER;
+        if (*unitGuid == game::ClntObjMgrGetActivePlayerGuid())
+            event = game::DAMAGE_SHIELD_SELF;
+
+        ((int (__cdecl *)(int, char *, char *, char *, uint32_t, uint32_t)) Offsets::SignalEventParam)(
+            event,
+            format,
+            unitGuidStr,
+            targetGuidString,
+            damage,
+            spellSchool);
+
+        FreeGuidString(unitGuidStr);
+        FreeGuidString(targetGuidString);
+    }
 }

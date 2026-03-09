@@ -43,6 +43,9 @@ For custom Lua functions, see [SCRIPTS.md](SCRIPTS.md). For general usage inform
 - [SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_OTHER, and SPELL_ENERGIZE_ON_SELF](#spell_energize_by_self-spell_energize_by_other-and-spell_energize_on_self)
 - [SPELL_MISS_SELF and SPELL_MISS_OTHER](#spell_miss_self-and-spell_miss_other)
 - [UNIT_DIED](#unit_died)
+- [ENVIRONMENTAL_DMG_SELF and ENVIRONMENTAL_DMG_OTHER](#environmental_dmg_self-and-environmental_dmg_other)
+- [DAMAGE_SHIELD_SELF and DAMAGE_SHIELD_OTHER](#damage_shield_self-and-damage_shield_other)
+- [SPELL_DISPEL_BY_SELF and SPELL_DISPEL_BY_OTHER](#spell_dispel_by_self-and-spell_dispel_by_other)
 - [Unit GUID Events](#unit-guid-events)
 - [KEY_DOWN and KEY_UP](#key_down-and-key_up)
 
@@ -574,6 +577,105 @@ Example:
 frame:RegisterEvent("UNIT_DIED", function(guid)
     DEFAULT_CHAT_FRAME:AddMessage("Unit died: " .. guid)
 end)
+```
+
+### ENVIRONMENTAL_DMG_SELF and ENVIRONMENTAL_DMG_OTHER
+Fire when environmental damage is taken. "Self" fires when the active player is the victim, "Other" fires for any other unit.
+
+Parameters:
+1.  string unitGuid - guid of the unit that took damage like "0xF5300000000000A5"
+2.  int dmgType - type of environmental damage (see below)
+3.  int damage - amount of damage taken
+4.  int absorb - amount of damage absorbed
+5.  int resist - amount of damage resisted
+
+#### EnvironmentalDamageType
+```
+DAMAGE_EXHAUSTED   = 0  -- Fatigue
+DAMAGE_DROWNING    = 1  -- Drowning
+DAMAGE_FALL        = 2  -- Falling
+DAMAGE_LAVA        = 3  -- Lava
+DAMAGE_SLIME       = 4  -- Slime
+DAMAGE_FIRE        = 5  -- Fire
+DAMAGE_FALL_TO_VOID = 6 -- Fall without durability loss (unused, server seems to convert this to DAMAGE_FALL)
+```
+
+Example:
+```lua
+local ENV_DMG_NAMES = {
+    [0] = "Exhausted", [1] = "Drowning", [2] = "Fall",
+    [3] = "Lava", [4] = "Slime", [5] = "Fire", [6] = "FallToVoid",
+}
+
+local function onEnvDmg(unitGuid, dmgType, damage, absorb, resist)
+    DEFAULT_CHAT_FRAME:AddMessage(string.format(
+        "%s took %d %s damage (absorbed: %d, resisted: %d)",
+        unitGuid, damage, ENV_DMG_NAMES[dmgType] or "Unknown", absorb, resist
+    ))
+end
+
+frame:RegisterEvent("ENVIRONMENTAL_DMG_SELF", onEnvDmg)
+frame:RegisterEvent("ENVIRONMENTAL_DMG_OTHER", onEnvDmg)
+```
+
+### DAMAGE_SHIELD_SELF and DAMAGE_SHIELD_OTHER
+Fire when a damage shield (e.g. Thorns, Fire Shield) deals damage to an attacker. "Self" fires when the active player is the shield owner, "Other" fires for any other unit.
+
+Parameters:
+1.  string unitGuid - guid of the unit whose shield dealt the damage like "0xF5300000000000A5"
+2.  string targetGuid - guid of the attacker who took the shield damage like "0xF5300000000000A5"
+3.  int damage - amount of shield damage dealt
+4.  int spellSchool - school of the shield damage (see below)
+
+#### Spell School
+```
+SPELL_SCHOOL_PHYSICAL = 0
+SPELL_SCHOOL_HOLY     = 1
+SPELL_SCHOOL_FIRE     = 2
+SPELL_SCHOOL_NATURE   = 3
+SPELL_SCHOOL_FROST    = 4
+SPELL_SCHOOL_SHADOW   = 5
+SPELL_SCHOOL_ARCANE   = 6
+```
+
+Example:
+```lua
+local SCHOOL_NAMES = {
+    [0] = "Physical", [1] = "Holy", [2] = "Fire",
+    [3] = "Nature", [4] = "Frost", [5] = "Shadow", [6] = "Arcane",
+}
+
+local function onDamageShield(unitGuid, targetGuid, damage, spellSchool)
+    DEFAULT_CHAT_FRAME:AddMessage(string.format(
+        "%s shield dealt %d %s damage to %s",
+        unitGuid, damage, SCHOOL_NAMES[spellSchool] or "Unknown", targetGuid
+    ))
+end
+
+frame:RegisterEvent("DAMAGE_SHIELD_SELF", onDamageShield)
+frame:RegisterEvent("DAMAGE_SHIELD_OTHER", onDamageShield)
+```
+
+### SPELL_DISPEL_BY_SELF and SPELL_DISPEL_BY_OTHER
+Fire when a spell dispel is processed. "Self" fires when the active player performed the dispel, "Other" fires when someone else did.
+
+Parameters:
+1.  string casterGuid - guid of the unit that performed the dispel like "0xF5300000000000A5"
+2.  string targetGuid - guid of the unit that was dispelled like "0xF5300000000000A5"
+3.  int spellId - spell ID of the spell that was dispelled
+
+Example:
+```lua
+local function onDispel(casterGuid, targetGuid, spellId)
+    local spellName = GetSpellInfo(spellId) or tostring(spellId)
+    DEFAULT_CHAT_FRAME:AddMessage(string.format(
+        "%s dispelled %s from %s",
+        casterGuid, spellName, targetGuid
+    ))
+end
+
+frame:RegisterEvent("SPELL_DISPEL_BY_SELF", onDispel)
+frame:RegisterEvent("SPELL_DISPEL_BY_OTHER", onDispel)
 ```
 
 ### KEY_DOWN and KEY_UP

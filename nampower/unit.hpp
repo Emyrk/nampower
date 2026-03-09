@@ -64,6 +64,9 @@ namespace Nampower {
     using CGGameUI_GetRaidMemberT     = uint64_t (__fastcall *)(uint32_t index);
     using CGGameUI_GetRaidMemberPetT  = uint64_t (__fastcall *)(uint32_t index);
 
+    using CGUnit_C_HandleEnvironmentDamageT = void (__fastcall *)(uintptr_t *unit, void *dummy_edx, int dmgType, int damage, int absorb, int resist);
+    using UnitCombatLogDamageShieldT = void (__fastcall *)(uint64_t *victimGuid, uint64_t *unitGuid, uint32_t damage, uint32_t spellSchool);
+
     using CGGameUI_ShowCombatFeedbackT = void (__fastcall *)(uint64_t *guid, const char *action, int damage, int school, int hitInfo);
     using SignalEventParamUnitCombatT  = int (__cdecl *)(uint32_t eventCode, const char *format, const char *unit, const char *action, const char *critIndicator, int damage, int school);
     using SignalEventParamGuidT        = int (__cdecl *)(uint32_t eventCode, const char *format, const char *guid, int isPlayer, int isTarget, int isMouseover, int isPet, int partyIndex, int raidIndex);
@@ -75,4 +78,6 @@ namespace Nampower {
 
     void SendUnitSignalHook(hadesmem::PatchDetourBase *detour, uint64_t *guid, uint32_t eventCode);
     void CGGameUI_ShowCombatFeedbackHook(hadesmem::PatchDetourBase *detour, uint64_t *guid, const char *action, int damage, int school, int hitInfo);
+    void CGUnit_C_HandleEnvironmentDamageHook(hadesmem::PatchDetourBase *detour, uintptr_t *unit, void *dummy_edx, int dmgType, int damage, int absorb, int resist);
+    void UnitCombatLogDamageShieldHook(hadesmem::PatchDetourBase *detour, uint64_t *targetGuid, uint64_t *unitGuid, uint32_t damage, uint32_t spellSchool);
 }

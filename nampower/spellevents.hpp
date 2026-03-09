@@ -7,6 +7,8 @@
 #include "main.hpp"
 
 namespace Nampower {
+    using UnitCombatLogDispelledT = void (__fastcall *)(uint64_t *casterGuid, uint64_t *targetGuid, uint32_t spellId);
+
     void SignalEventHook(hadesmem::PatchDetourBase *detour, game::Events eventId);
 
     int SpellDelayedHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet);
@@ -45,4 +47,6 @@ namespace Nampower {
     int SpellLogMissHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet);
 
     int SpellOrDamageImmuneHandlerHook(hadesmem::PatchDetourBase *detour, uint32_t *opCode, CDataStore *packet);
+
+    void UnitCombatLogDispelledHook(hadesmem::PatchDetourBase *detour, uint64_t *casterGuid, uint64_t *targetGuid, uint32_t spellId);
 }

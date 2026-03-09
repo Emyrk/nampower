@@ -94,6 +94,8 @@ enum class Offsets : std::uint32_t {
     CGGameUI_HandleObjectTrackChange = 0x00492890,
     CGGameUI_Target = 0X00493540,
     CGGameUI_ShowCombatFeedback = 0x00494600,
+    CGUnit_C_HandleEnvironmentDamage = 0x00624f30,
+    UnitCombatLogDamageShield = 0x0062ca20,
     ScriptTargetUnit = 0X00489A40,
 
     MouseoverGuidLow = 0x00B4E2C8,
@@ -124,6 +126,7 @@ enum class Offsets : std::uint32_t {
     ProcResistHandler = 0x006289A0,
     SpellLogMissHandler = 0x005E7E00,
     SpellOrDamageImmuneHandler = 0x005E8CA0,
+    UnitCombatLogDispelled = 0x0062d480,
 
     Spell_C_GetCastTime = 0X006E3340,
     Spell_C_CastSpell = 0x6E4B60,

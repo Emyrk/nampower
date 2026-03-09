@@ -141,6 +141,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gProcResistHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellLogMissHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<PacketHandlerT> > gSpellOrDamageImmuneHandlerDetour;
+    std::unique_ptr<hadesmem::PatchDetour<UnitCombatLogDispelledT> > gUnitCombatLogDispelledDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT> > gSpellStartHandlerDetour;
     std::unique_ptr<hadesmem::PatchDetour<FastCallPacketHandlerT> > gPeriodicAuraLogHandlerDetour;
@@ -171,6 +172,8 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<CGPetInfo_GetPetSpellActionT> > gCGPetInfo_GetPetSpellActionDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGPetInfo_SendPetActionT> > gCGPetInfo_SendPetActionDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGGameUI_ShowCombatFeedbackT> > gCGGameUI_ShowCombatFeedbackDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_HandleEnvironmentDamageT> > gCGUnit_C_HandleEnvironmentDamageDetour;
+    std::unique_ptr<hadesmem::PatchDetour<UnitCombatLogDamageShieldT> > gUnitCombatLogDamageShieldDetour;
     std::unique_ptr<hadesmem::PatchDetour<LoadScriptFunctionsT> > gGlueLoadScriptFunctionsDetour;
 
     // Flags for one-time initialization
@@ -1528,6 +1531,8 @@ namespace Nampower {
                                                                  &SpellLogMissHandlerHook);
         gSpellOrDamageImmuneHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellOrDamageImmuneHandler,
                                                                         &SpellOrDamageImmuneHandlerHook);
+        gUnitCombatLogDispelledDetour = createHook<UnitCombatLogDispelledT>(process, Offsets::UnitCombatLogDispelled,
+                                                                             &UnitCombatLogDispelledHook);
         gSpellFailedOtherHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellFailedOtherHandler,
                                                                     &SpellFailedOtherHandlerHook);
         gSpellFailedDetour = createHook<Spell_C_SpellFailedT>(process, Offsets::Spell_C_SpellFailed,
@@ -1590,6 +1595,10 @@ namespace Nampower {
             process, Offsets::CGPetInfo_SendPetAction, &CGPetInfo_SendPetActionHook);
         gCGGameUI_ShowCombatFeedbackDetour = createHook<CGGameUI_ShowCombatFeedbackT>(
             process, Offsets::CGGameUI_ShowCombatFeedback, &CGGameUI_ShowCombatFeedbackHook);
+        gCGUnit_C_HandleEnvironmentDamageDetour = createHook<CGUnit_C_HandleEnvironmentDamageT>(
+            process, Offsets::CGUnit_C_HandleEnvironmentDamage, &CGUnit_C_HandleEnvironmentDamageHook);
+        gUnitCombatLogDamageShieldDetour = createHook<UnitCombatLogDamageShieldT>(
+            process, Offsets::UnitCombatLogDamageShield, &UnitCombatLogDamageShieldHook);
         gLoadScriptFunctionsDetour = createHook<LoadScriptFunctionsT>(process, Offsets::Player_LoadScriptFunctions,
                                                                       &Player_LoadScriptFunctionsHook);
         gGlueLoadScriptFunctionsDetour = createHook<LoadScriptFunctionsT>(process, Offsets::Glue_LoadScriptFunctions,
@@ -1781,6 +1790,24 @@ namespace Nampower {
 
         char KEY_UP[] = "KEY_UP";
         addCustomEvent(game::KEY_UP, KEY_UP);
+
+        char ENVIRONMENTAL_DMG_SELF[] = "ENVIRONMENTAL_DMG_SELF";
+        addCustomEvent(game::ENVIRONMENTAL_DMG_SELF, ENVIRONMENTAL_DMG_SELF);
+
+        char ENVIRONMENTAL_DMG_OTHER[] = "ENVIRONMENTAL_DMG_OTHER";
+        addCustomEvent(game::ENVIRONMENTAL_DMG_OTHER, ENVIRONMENTAL_DMG_OTHER);
+
+        char DAMAGE_SHIELD_SELF[] = "DAMAGE_SHIELD_SELF";
+        addCustomEvent(game::DAMAGE_SHIELD_SELF, DAMAGE_SHIELD_SELF);
+
+        char DAMAGE_SHIELD_OTHER[] = "DAMAGE_SHIELD_OTHER";
+        addCustomEvent(game::DAMAGE_SHIELD_OTHER, DAMAGE_SHIELD_OTHER);
+
+        char SPELL_DISPEL_BY_SELF[] = "SPELL_DISPEL_BY_SELF";
+        addCustomEvent(game::SPELL_DISPEL_BY_SELF, SPELL_DISPEL_BY_SELF);
+
+        char SPELL_DISPEL_BY_OTHER[] = "SPELL_DISPEL_BY_OTHER";
+        addCustomEvent(game::SPELL_DISPEL_BY_OTHER, SPELL_DISPEL_BY_OTHER);
     }
 
     void FrameScript_CreateEventsHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t maxEventId) {

@@ -1529,4 +1529,30 @@ namespace Nampower {
 
         return spellOrDamageImmuneHandler(opCode, packet);
     }
+
+    void UnitCombatLogDispelledHook(hadesmem::PatchDetourBase *detour, uint64_t *casterGuid, uint64_t *targetGuid,
+                                    uint32_t spellId) {
+        auto const original = detour->GetTrampolineT<UnitCombatLogDispelledT>();
+        original(casterGuid, targetGuid, spellId);
+
+        if (!casterGuid || *casterGuid == 0) return;
+
+        static char format[] = "%s%s%d";
+        char *casterGuidStr = ConvertGuidToString(*casterGuid);
+        char *targetGuidStr = targetGuid ? ConvertGuidToString(*targetGuid) : nullptr;
+
+        auto event = game::SPELL_DISPEL_BY_OTHER;
+        if (*casterGuid == game::ClntObjMgrGetActivePlayerGuid())
+            event = game::SPELL_DISPEL_BY_SELF;
+
+        ((int (__cdecl *)(int, char *, char *, char *, uint32_t)) Offsets::SignalEventParam)(
+            event,
+            format,
+            casterGuidStr,
+            targetGuidStr,
+            spellId);
+
+        FreeGuidString(casterGuidStr);
+        FreeGuidString(targetGuidStr);
+    }
 }
