@@ -157,6 +157,10 @@ namespace Nampower {
             }
         }
 
+        if (!isSelf && isBuff && game::UnitIsPvpFlagged(unit) && game::PlayerCanAttackUnit(unit)) {
+            return;
+        }
+
         bool isHidden = IsHiddenAura(unitFields, slot, spellId, state);
         static char format[] = "%s%d%d%d%d%d%d";
         char *guidStr = ConvertGuidToString(isSelf ? playerGuid : unitGuid);

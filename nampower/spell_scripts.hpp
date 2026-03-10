@@ -38,5 +38,7 @@ namespace Nampower {
 
     uint32_t Script_GetSpellDuration(uintptr_t *luaState);
 
+    uint32_t Script_GetSpellRangeData(uintptr_t *luaState);
+
     uint32_t GetSpellSlotFromLuaHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState, uint32_t *slot, uint32_t *type);
 }

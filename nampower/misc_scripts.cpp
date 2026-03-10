@@ -390,6 +390,12 @@ namespace Nampower {
             return 1;
         }
 
+        // Block data for enemy PvP-flagged units
+        if (game::UnitIsPvpFlagged(unit) && game::PlayerCanAttackUnit(unit)) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
         // Get unit fields (offset 68 from unit pointer)
         auto *unitFields = *reinterpret_cast<game::UnitFields **>(unit + 68);
         if (!unitFields) {
@@ -471,6 +477,12 @@ namespace Nampower {
         // Get unit object pointer
         auto unit = game::GetObjectPtr(guid);
         if (!unit) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // Block data for enemy PvP-flagged units
+        if (game::UnitIsPvpFlagged(unit) && game::PlayerCanAttackUnit(unit)) {
             lua_pushnil(luaState);
             return 1;
         }

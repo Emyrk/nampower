@@ -25,8 +25,8 @@ namespace Nampower {
     constexpr uint32_t DISENCHANT_QUALITY_BLUE = 0x02;    // Rare
     constexpr uint32_t DISENCHANT_QUALITY_PURPLE = 0x04;  // Epic
 
-    constexpr uint32_t MAJOR_VERSION = 3;
-    constexpr uint32_t MINOR_VERSION = 4;
+    constexpr uint32_t MAJOR_VERSION = 4;
+    constexpr uint32_t MINOR_VERSION = 0;
     constexpr uint32_t PATCH_VERSION = 0;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
@@ -169,7 +169,7 @@ namespace Nampower {
                                                                 int clearCooldowns);
 
     using SpellVisualsInitializeT = void (__stdcall *)(void);
-    using SysMsgInitializeT = void (__fastcall *)(void);
+    using WowSysMessageOutputInitializeT = void (__fastcall *)(void);
 
     using PlaySpellVisual = void (__stdcall *)(int **param_1, void *param_2, int param_3, void **param_4);
     using CGUnit_C_ClearCastingSpellT = void (__thiscall *)(uintptr_t *unit, uint32_t param_1, int param_2,

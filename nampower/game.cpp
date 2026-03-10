@@ -355,6 +355,13 @@ namespace game {
         return canAttackFn(unit1, unit2);
     }
 
+    bool PlayerCanAttackUnit(uintptr_t *unit) {
+        auto playerGuid = ClntObjMgrGetActivePlayerGuid();
+        if (!playerGuid) return false;
+        auto playerUnit = GetObjectPtr(playerGuid);
+        return playerUnit && UnitCanAttackUnit(playerUnit, unit);
+    }
+
     uint32_t UnitGetMountDisplayId(uintptr_t *unit) {
         if (!unit) {
             return 0;

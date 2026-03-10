@@ -22,6 +22,7 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
     - [GetSpellModifiers](#getspellmodifiersspellid-modifiertype)
     - [GetSpellPower](#getspellpowermode)
     - [GetSpellDuration](#getspelldurationspellid-ignoremodifiers)
+    - [GetSpellRangeData](#getspellrangedatarangeindex)
     - [GetUnitData](#getunitdataunittoken-copy)
     - [GetUnitField](#getunitfieldunittoken-fieldname-copy)
     - [GetUnitGUID](#getunitguidunittoken)
@@ -706,6 +707,30 @@ local duration = GetSpellDuration(spellId)
 
 -- Get base duration ignoring talent modifiers
 local baseDuration = GetSpellDuration(spellId, 1)
+```
+
+#### GetSpellRangeData(rangeIndex)
+Returns range data for a SpellRange DBC entry by its index (the `rangeIndex` field from SpellRec).
+
+**Parameters:**
+- `rangeIndex` (number): The SpellRange DBC index to look up.
+
+**Returns:**
+- `minRange` (number) - Base minimum range in yards (before combat reach is applied).
+- `maxRange` (number) - Base maximum range in yards (before combat reach is applied).
+- `flags` (number) - Either `0` (ranged) or `1` (melee). `1` is only currently used by `Combat Range` spells.
+- `name` (string) - Localized name of the range entry (e.g. `"Combat Range"`, `"Self Only"`).
+- `nil` - If the rangeIndex is out of bounds or the entry is missing.
+
+**Notes on flags and combat reach:**
+
+The returned `minRange`/`maxRange` are the raw DBC values.  The game adds additional range based on the combat reach of the caster and target as well as 2.667 range for leeway if either the player or target is moving or pvp flagged.  `Combat Range` spells also depend on the scale of the target and add an additional 1.333333 range.
+
+**Examples:**
+```lua
+local rangeIndex = GetSpellRecField(spellId, "rangeIndex")
+local minRange, maxRange, flags, name = GetSpellRangeData(rangeIndex)
+local isMelee = flags == 1
 ```
 
 #### GetUnitData(unitToken, [copy])

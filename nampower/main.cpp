@@ -102,7 +102,7 @@ namespace Nampower {
     CastQueue gCastHistory = CastQueue(30);
 
 
-    std::unique_ptr<hadesmem::PatchDetour<SysMsgInitializeT> > gSysMsgInitDetour;
+    std::unique_ptr<hadesmem::PatchDetour<WowSysMessageOutputInitializeT> > gSysMsgInitDetour;
     std::unique_ptr<hadesmem::PatchDetour<LoadScriptFunctionsT> > gLoadScriptFunctionsDetour;
     std::unique_ptr<hadesmem::PatchDetour<FrameScript_CreateEventsT> > gCreateEventsDetour;
     std::unique_ptr<hadesmem::PatchDetour<FramescriptSetEventCountT> > gSetEventCountDetour;
@@ -1613,7 +1613,7 @@ namespace Nampower {
     }
 
     void SysMsgInitializeHook(hadesmem::PatchDetourBase *detour) {
-        auto const sysMsgInitialize = detour->GetTrampolineT<SysMsgInitializeT>();
+        auto const sysMsgInitialize = detour->GetTrampolineT<WowSysMessageOutputInitializeT>();
         sysMsgInitialize();
         std::call_once(initHooksFlag, []() {
             loadConfig();
@@ -1971,6 +1971,9 @@ namespace Nampower {
         char getSpellDuration[] = "GetSpellDuration";
         RegisterLuaFunction(getSpellDuration, reinterpret_cast<uintptr_t *>(Script_GetSpellDuration));
 
+        char getSpellRangeData[] = "GetSpellRangeData";
+        RegisterLuaFunction(getSpellRangeData, reinterpret_cast<uintptr_t *>(Script_GetSpellRangeData));
+
         char learnTalentRank[] = "LearnTalentRank";
         RegisterLuaFunction(learnTalentRank, reinterpret_cast<uintptr_t *>(Script_LearnTalentRank));
 
@@ -2047,12 +2050,12 @@ namespace Nampower {
 
     void load() {
         std::call_once(loadFlag, []() {
-                           // hook SysMsgInitialize (bootstrap hook)
+                           // hook WowSysMessageOutput::Initialize (bootstrap hook)
                            const hadesmem::Process process(::GetCurrentProcessId());
 
-                           auto const sysMsgInitOrig = hadesmem::detail::AliasCast<SysMsgInitializeT>(
-                               Offsets::SysMsgInitialize);
-                           gSysMsgInitDetour = std::make_unique<hadesmem::PatchDetour<SysMsgInitializeT> >(
+                           auto const sysMsgInitOrig = hadesmem::detail::AliasCast<WowSysMessageOutputInitializeT>(
+                               Offsets::WowSysMessageOutputInitialize);
+                           gSysMsgInitDetour = std::make_unique<hadesmem::PatchDetour<WowSysMessageOutputInitializeT> >(
                                process,
                                sysMsgInitOrig,
                                &SysMsgInitializeHook);

@@ -2082,6 +2082,8 @@ namespace game {
 
     bool UnitCanAttackUnit(uintptr_t *unit1, uintptr_t *unit2);
 
+    bool PlayerCanAttackUnit(uintptr_t *unit);
+
     uint64_t UnitGetTargetGuid(uintptr_t *unit);
 
     uint64_t UnitGetOwnerGuid(uintptr_t *unit);

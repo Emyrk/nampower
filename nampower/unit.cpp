@@ -206,6 +206,7 @@ namespace Nampower {
         if (!guid || *guid == 0) return;
 
         auto names = GetUnitNames(guid);
+
         TriggerUnitEvents(names, eventCode);
     }
 

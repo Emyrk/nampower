@@ -215,7 +215,7 @@ enum class Offsets : std::uint32_t {
     RangeCheckSelected = 0x6E4440,
 
     SpellVisualsInitialize = 0x006ec0e0,
-    SysMsgInitialize = 0x0044cd10,
+    WowSysMessageOutputInitialize = 0x00409040,
 
     UnitCombatParamFormat = 0x0084333c,
     IntIntParamFormat = 0X00843342,
@@ -258,6 +258,9 @@ enum class Offsets : std::uint32_t {
     CGItem_C_Use = 0x005D8D00,
     CGItem_C_GetInventoryArt = 0x005D88B0,
     CGItem_C_ItemIsQuestOrSoulbound = 0x005DA2C0,
+
+    SpellRangeDBMaxId = 0x00c0d7a0,
+    SpellRangeDBArray = 0x00c0d79c,
 
     SpellIconDBMaxId = 0x00c0d7f0,
     SpellIconDBArray = 0x00c0d7ec,

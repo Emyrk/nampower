@@ -724,4 +724,53 @@ namespace Nampower {
         return 1;
     }
 
+    // SpellRange DBC record layout:
+    //  +0x00  id        (uint32)
+    //  +0x04  minRange  (float)
+    //  +0x08  maxRange  (float)
+    //  +0x0c  flags     (uint32)
+    //  +0x10  name      (char* x8 locales + uint32 mask = 36 bytes)
+    uint32_t Script_GetSpellRangeData(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isnumber(luaState, 1)) {
+            lua_error(luaState, "Usage: GetSpellRangeData(rangeIndex)");
+            return 0;
+        }
+
+        auto const rangeIndex = static_cast<int32_t>(lua_tonumber(luaState, 1));
+
+        int32_t maxRangeId = *reinterpret_cast<int32_t *>(Offsets::SpellRangeDBMaxId);
+        uintptr_t *rangeArray = *reinterpret_cast<uintptr_t **>(Offsets::SpellRangeDBArray);
+
+        if (rangeIndex < 0 || rangeIndex > maxRangeId) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        uintptr_t spellRange = reinterpret_cast<uintptr_t *>(rangeArray)[rangeIndex];
+        if (spellRange == 0) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        float minRange = *reinterpret_cast<float *>(spellRange + 0x04);
+        float maxRange = *reinterpret_cast<float *>(spellRange + 0x08);
+        uint32_t flags  = *reinterpret_cast<uint32_t *>(spellRange + 0x0c);
+
+        auto const language = *reinterpret_cast<uint32_t *>(Offsets::Language);
+        const char *name = *reinterpret_cast<const char **>(spellRange + 0x10 + language * 4);
+        if (!name || name[0] == '\0') {
+            // fall back to enUS (index 0)
+            name = *reinterpret_cast<const char **>(spellRange + 0x10);
+        }
+
+        lua_pushnumber(luaState, minRange);
+        lua_pushnumber(luaState, maxRange);
+        lua_pushnumber(luaState, flags);
+        lua_pushstring(luaState, name ? const_cast<char *>(name) : const_cast<char *>(""));
+
+        return 4;
+    }
+
 }

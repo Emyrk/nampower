@@ -198,6 +198,7 @@ This includes functions for:
 - Inventory helpers (GetTrinketCooldown, GetTrinkets, GetAmmo)
 - Aura duration tracking, cancel helpers, and aura visibility checks (GetPlayerAuraDuration, CancelPlayerAuraSlot, CancelPlayerAuraSpellId, IsAuraHidden)
 - Spell duration lookup (GetSpellDuration) - returns channel duration for channeling spells and the first aura effect duration for non-channeling spells
+- Spell range lookup (GetSpellRangeData) - returns minRange, maxRange, flags, name for a SpellRange DBC entry by rangeIndex
 - Player movement state queries (PlayerIsMoving, PlayerIsRooted, PlayerIsSwimming)
 - File and script helpers (WriteCustomFile, ReadCustomFile, CustomFileExists, ImportFile, ExportFile, ExecuteCustomLuaFile)
 - Encrypted login helpers (EncryptPassword, EncryptedServerLogin)
