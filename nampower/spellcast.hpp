@@ -46,4 +46,6 @@ namespace Nampower {
     float Spell_C_GetSpellRadiusHook(hadesmem::PatchDetourBase *detour);
 
     void SendCastHook(hadesmem::PatchDetourBase *detour, game::SpellCast *cast, char unk);
+
+    void TriggerQuickcast();
 }

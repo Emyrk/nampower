@@ -132,8 +132,34 @@ namespace Nampower {
         return true;
     }
 
+    static std::wstring Utf8ToWide(const std::string &utf8) {
+        if (utf8.empty()) {
+            return {};
+        }
+        const int len = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), static_cast<int>(utf8.size()), nullptr, 0);
+        if (len <= 0) {
+            return {};
+        }
+        std::wstring wide(len, L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), static_cast<int>(utf8.size()), &wide[0], len);
+        return wide;
+    }
+
+    static std::string WideToUtf8(const std::wstring &wide) {
+        if (wide.empty()) {
+            return {};
+        }
+        const int len = WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), static_cast<int>(wide.size()), nullptr, 0, nullptr, nullptr);
+        if (len <= 0) {
+            return {};
+        }
+        std::string utf8(len, '\0');
+        WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), static_cast<int>(wide.size()), &utf8[0], len, nullptr, nullptr);
+        return utf8;
+    }
+
     static bool EnsureDirectoryExists(const char *baseDir) {
-        if (CreateDirectoryA(baseDir, nullptr) != 0) {
+        if (CreateDirectoryW(Utf8ToWide(baseDir).c_str(), nullptr) != 0) {
             return true;
         }
 
@@ -155,13 +181,14 @@ namespace Nampower {
     }
 
     static bool TryGetFullPath(const std::string &inputPath, std::string &outFullPath) {
-        char buffer[MAX_PATH] = {};
-        const DWORD result = GetFullPathNameA(inputPath.c_str(), MAX_PATH, buffer, nullptr);
+        const std::wstring wideInput = Utf8ToWide(inputPath);
+        wchar_t buffer[MAX_PATH] = {};
+        const DWORD result = GetFullPathNameW(wideInput.c_str(), MAX_PATH, buffer, nullptr);
         if (result == 0 || result >= MAX_PATH) {
             return false;
         }
 
-        outFullPath.assign(buffer, result);
+        outFullPath = WideToUtf8(std::wstring(buffer, result));
         return true;
     }
 
@@ -213,7 +240,8 @@ namespace Nampower {
 
         DEBUG_LOG("Attempting to read file from " << baseDir << ": " << fullPath);
 
-        const DWORD attributes = GetFileAttributesA(fullPath.c_str());
+        const std::wstring wideFullPath = Utf8ToWide(fullPath);
+        const DWORD attributes = GetFileAttributesW(wideFullPath.c_str());
         if (attributes == INVALID_FILE_ATTRIBUTES) {
             const DWORD errorCode = GetLastError();
             if (returnNilIfMissing && (errorCode == ERROR_FILE_NOT_FOUND || errorCode == ERROR_PATH_NOT_FOUND)) {
@@ -229,7 +257,7 @@ namespace Nampower {
             return 0;
         }
 
-        std::ifstream in(fullPath);
+        std::ifstream in(wideFullPath);
         if (!in) {
             lua_error(luaState, "Failed to open file for reading.");
             return 0;
@@ -273,7 +301,7 @@ namespace Nampower {
             return 0;
         }
 
-        std::ofstream out(fullPath, openMode);
+        std::ofstream out(Utf8ToWide(fullPath), openMode);
         if (!out) {
             lua_error(luaState, "Failed to open file for writing.");
             return 0;
@@ -362,7 +390,7 @@ namespace Nampower {
             return 0;
         }
 
-        const DWORD attributes = GetFileAttributesA(fullPath.c_str());
+        const DWORD attributes = GetFileAttributesW(Utf8ToWide(fullPath).c_str());
         if (attributes == INVALID_FILE_ATTRIBUTES) {
             const DWORD errorCode = GetLastError();
             if (errorCode == ERROR_FILE_NOT_FOUND || errorCode == ERROR_PATH_NOT_FOUND) {

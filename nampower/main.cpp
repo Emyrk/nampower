@@ -72,7 +72,7 @@ namespace Nampower {
     uint32_t gBufferTimeMs; // adjusts dynamically depending on errors
 
     uint32_t gDisenchantItemId = 0;
-    uint32_t gDisenchantQuality = 0;  // 0 = unset
+    uint32_t gDisenchantQuality = 0; // 0 = unset
     bool gDisenchantIncludeSoulbound = false;
     uint32_t gNextDisenchantTimeMs = 0;
 
@@ -182,6 +182,7 @@ namespace Nampower {
 
     // Forward declarations for hook functions
     void Player_LoadScriptFunctionsHook(hadesmem::PatchDetourBase *detour);
+
     void Glue_LoadScriptFunctionsHook(hadesmem::PatchDetourBase *detour);
 
     void FrameScript_CreateEventsHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t maxEventId);
@@ -1424,7 +1425,7 @@ namespace Nampower {
                 }
 
                 return detour;
-            } catch (const hadesmem::Error& e) {
+            } catch (const hadesmem::Error &e) {
                 lastError = e.what();
 
                 if (attempt == 0) {
@@ -1433,7 +1434,7 @@ namespace Nampower {
                 }
 
                 if (attempt < maxRetries - 1) {
-                    Sleep(10);  // Wait 10ms before retry
+                    Sleep(10); // Wait 10ms before retry
                     continue;
                 } else {
                     // Out of retries
@@ -1442,7 +1443,7 @@ namespace Nampower {
                         << "): " << lastError);
                     throw;
                 }
-            } catch (const std::exception& e) {
+            } catch (const std::exception &e) {
                 lastError = e.what();
 
                 if (attempt == 0) {
@@ -1452,7 +1453,7 @@ namespace Nampower {
                 }
 
                 if (attempt < maxRetries - 1) {
-                    Sleep(10);  // Wait 10ms before retry
+                    Sleep(10); // Wait 10ms before retry
                     continue;
                 } else {
                     DEBUG_LOG("  FAILED after " << maxRetries << " attempts (offset 0x"
@@ -1479,7 +1480,7 @@ namespace Nampower {
                 }
 
                 if (attempt < maxRetries - 1) {
-                    Sleep(10);  // Wait 10ms before retry
+                    Sleep(10); // Wait 10ms before retry
                     continue;
                 } else {
                     DEBUG_LOG("  FAILED after " << maxRetries << " attempts (offset 0x"
@@ -1526,13 +1527,13 @@ namespace Nampower {
         gSpellEnergizeLogHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellEnergizeLogHandler,
                                                                     &SpellEnergizeLogHandlerHook);
         gProcResistHandlerDetour = createHook<PacketHandlerT>(process, Offsets::ProcResistHandler,
-                                                               &ProcResistHandlerHook);
+                                                              &ProcResistHandlerHook);
         gSpellLogMissHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellLogMissHandler,
-                                                                 &SpellLogMissHandlerHook);
+                                                                &SpellLogMissHandlerHook);
         gSpellOrDamageImmuneHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellOrDamageImmuneHandler,
-                                                                        &SpellOrDamageImmuneHandlerHook);
+                                                                       &SpellOrDamageImmuneHandlerHook);
         gUnitCombatLogDispelledDetour = createHook<UnitCombatLogDispelledT>(process, Offsets::UnitCombatLogDispelled,
-                                                                             &UnitCombatLogDispelledHook);
+                                                                            &UnitCombatLogDispelledHook);
         gSpellFailedOtherHandlerDetour = createHook<PacketHandlerT>(process, Offsets::SpellFailedOtherHandler,
                                                                     &SpellFailedOtherHandlerHook);
         gSpellFailedDetour = createHook<Spell_C_SpellFailedT>(process, Offsets::Spell_C_SpellFailed,
@@ -1571,12 +1572,14 @@ namespace Nampower {
             &CGUnit_C_OnAuraStacksChangedHook);
         gUnitCombatLogUnitDeadDetour = createHook<UnitCombatLogUnitDeadT>(process, Offsets::UnitCombatLogUnitDead,
                                                                           &UnitCombatLogUnitDeadHook);
-        gCGBuffBar_UpdateDurationDetour = createHook<CGBuffBar_UpdateDurationT>(process, Offsets::CGBuffBar_UpdateDuration,
-                                                                                &CGBuffBar_UpdateDurationHook);
-        gAttackRoundInfo_ReadPacketDetour = createHook<AttackRoundInfo_ReadPacketT>(process, Offsets::AttackRoundInfo_ReadPacket,
-                                                                                     &AttackRoundInfo_ReadPacketHook);
+        gCGBuffBar_UpdateDurationDetour = createHook<CGBuffBar_UpdateDurationT>(
+            process, Offsets::CGBuffBar_UpdateDuration,
+            &CGBuffBar_UpdateDurationHook);
+        gAttackRoundInfo_ReadPacketDetour = createHook<AttackRoundInfo_ReadPacketT>(
+            process, Offsets::AttackRoundInfo_ReadPacket,
+            &AttackRoundInfo_ReadPacketHook);
         gCSimpleFrame_GetNameDetour = createHook<LuaScriptT>(process, Offsets::CSimpleFrame_GetName,
-                                                                &CSimpleFrame_GetNameHook);
+                                                             &CSimpleFrame_GetNameHook);
         gCGUnit_C_AddChatBubbleDetour = createHook<CGUnit_C_AddChatBubbleT>(
             process, Offsets::CGUnit_C_AddChatBubble, &CGUnit_C_AddChatBubbleHook);
         gCSimpleTop_OnKeyDownDetour = createHook<CSimpleTop_OnKeyDownT>(
