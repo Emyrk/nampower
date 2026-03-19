@@ -107,6 +107,8 @@ enum class Offsets : std::uint32_t {
     CGGameUI_GetPartyMemberPet = 0X004E81D0,
     CGGameUI_GetRaidMember = 0X00491940,
     CGGameUI_GetRaidMemberPet = 0X00491960,
+    CGGameUI_GetPartyOrRaidMember = 0x00496400,
+    CGGameUI_GetPartyOrRaidPet = 0x00496420,
 
     SpellVisualsHandleCastStart = 0X006EC220,
     PlaySpellVisualHandler = 0X006E98D0,

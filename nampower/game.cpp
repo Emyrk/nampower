@@ -65,6 +65,7 @@ namespace game {
         return getObjectPtr(guid);
     }
 
+
     uintptr_t *ClntObjMgrObjectPtr(TypeMask typeMask, std::uint64_t guid) {
         using ClntObjMgrObjectPtrT = uintptr_t* (__fastcall *)(TypeMask typeMask, const char *debugMessage, unsigned __int64 guid, int debugCode);
         auto const clntObjMgrObjectPtr = reinterpret_cast<ClntObjMgrObjectPtrT>(Offsets::ClntObjMgrObjectPtr);

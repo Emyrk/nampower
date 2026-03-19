@@ -5,6 +5,7 @@
 #include "misc_scripts.hpp"
 #include "logging.hpp"
 #include "offsets.hpp"
+#include "unit.hpp"
 #include "items.hpp"
 #include "dbc_fields.hpp"
 #include "unit_fields.hpp"
@@ -384,7 +385,7 @@ namespace Nampower {
         }
 
         // Get unit object pointer
-        auto unit = game::GetObjectPtr(guid);
+        auto unit = GetUnitPtr(guid);
         if (!unit) {
             lua_pushnil(luaState);
             return 1;
@@ -469,7 +470,7 @@ namespace Nampower {
         }
 
         // Get unit object pointer
-        auto unit = game::GetObjectPtr(guid);
+        auto unit = GetUnitPtr(guid);
         if (!unit) {
             lua_pushnil(luaState);
             return 1;

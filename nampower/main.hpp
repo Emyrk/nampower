@@ -27,7 +27,7 @@ namespace Nampower {
 
     constexpr uint32_t MAJOR_VERSION = 4;
     constexpr uint32_t MINOR_VERSION = 1;
-    constexpr uint32_t PATCH_VERSION = 1;
+    constexpr uint32_t PATCH_VERSION = 2;
 
     constexpr int32_t LUA_REGISTRYINDEX = -10000;
     constexpr int32_t LUA_GLOBALSINDEX = -10001;

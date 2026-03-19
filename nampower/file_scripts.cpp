@@ -301,16 +301,42 @@ namespace Nampower {
             return 0;
         }
 
-        std::ofstream out(Utf8ToWide(fullPath), openMode);
-        if (!out) {
-            lua_error(luaState, "Failed to open file for writing.");
-            return 0;
-        }
+        // For truncating writes use a temp file + atomic rename so a crash
+        // during the write doesn't leave the original file empty/corrupt.
+        if (mode == 'w' || mode == 'b') {
+            const std::wstring wideFull = Utf8ToWide(fullPath);
+            const std::wstring wideTemp = wideFull + L".tmp";
 
-        out << content;
-        if (!out) {
-            lua_error(luaState, "Failed to write file.");
-            return 0;
+            {
+                std::ofstream out(wideTemp, openMode);
+                if (!out) {
+                    lua_error(luaState, "Failed to open temp file for writing.");
+                    return 0;
+                }
+                out << content;
+                if (!out) {
+                    lua_error(luaState, "Failed to write temp file.");
+                    DeleteFileW(wideTemp.c_str());
+                    return 0;
+                }
+            }
+
+            if (!MoveFileExW(wideTemp.c_str(), wideFull.c_str(), MOVEFILE_REPLACE_EXISTING)) {
+                lua_error(luaState, "Failed to rename temp file to destination.");
+                DeleteFileW(wideTemp.c_str());
+                return 0;
+            }
+        } else {
+            std::ofstream out(Utf8ToWide(fullPath), openMode);
+            if (!out) {
+                lua_error(luaState, "Failed to open file for writing.");
+                return 0;
+            }
+            out << content;
+            if (!out) {
+                lua_error(luaState, "Failed to write file.");
+                return 0;
+            }
         }
 
         return 0;
