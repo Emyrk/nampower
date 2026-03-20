@@ -2046,6 +2046,45 @@ namespace game {
         float powerCostMultiplier[7]; // Size:7
     } UnitFields;
 
+    // sizeof = 0x148 (328 bytes)
+    struct CGPartyMemberPetInfo {
+        /* 0x000 */ uint64_t guid;                // flag 0x000800
+        /* 0x008 */ char     name[80];            // flag 0x001000 — null-terminated, max 0x50 chars
+        /* 0x058 */ uint8_t  powerType;           // flag 0x010000
+        /* 0x059 */ uint8_t  _pad;
+        /* 0x05A */ uint16_t displayId;           // flag 0x002000
+        /* 0x05C */ uint16_t health;              // flag 0x004000
+        /* 0x05E */ uint16_t maxHealth;           // flag 0x008000
+        /* 0x060 */ uint16_t power;               // flag 0x020000
+        /* 0x062 */ uint16_t maxPower;            // flag 0x040000
+        /* 0x064 */ uint16_t aura[48];            // flags 0x080000/0x100000 — slots 0-31 positive, 32-47 negative
+        /* 0x0C4 */ uint16_t _auraPad[2];         // unused padding
+    };
+
+    struct CGPartyMemberInfo
+    {
+        /* 0x000 */ uint64_t guid;                 // flag 0x000000 — member GUID
+        /* 0x008 */ uint8_t  status;               // flag 0x000001 — MEMBER_STATUS_* bitmask; client ORs 0x20 if map pos visible
+        /* 0x009 */ uint8_t  powerType;            // flag 0x000008
+        /* 0x00A */ uint16_t health;               // flag 0x000002
+        /* 0x00C */ uint16_t maxHealth;            // flag 0x000004
+        /* 0x00E */ uint16_t power;                // flag 0x000010
+        /* 0x010 */ uint16_t maxPower;             // flag 0x000020
+        /* 0x012 */ uint16_t level;                // flag 0x000040
+        /* 0x014 */ uint16_t zoneId;               // flag 0x000080
+        /* 0x016 */ uint16_t posX;                 // flag 0x000100
+        /* 0x018 */ uint16_t posY;                 // flag 0x000100
+        /* 0x01A */ uint16_t aura[48];             // flags 0x000200/0x000400 — spell ID per slot, 0 = empty; slots 0-31 positive, 32-47 negative
+        /* 0x07A */ uint16_t _auraPad[3];          // unused padding
+        /* 0x080 */ CGPartyMemberPetInfo pet;
+    };
+
+    using CGGameUI_GetPartyOrRaidMemberT = CGPartyMemberInfo *(__fastcall *)(uint64_t *guid);
+    using CGGameUI_GetPartyOrRaidPetT    = CGPartyMemberPetInfo *(__fastcall *)(uint64_t *guid);
+
+    CGPartyMemberInfo *GetPartyOrRaidMemberInfo(uint64_t guid);
+    CGPartyMemberPetInfo *GetPartyOrRaidPetInfo(uint64_t guid);
+
     uintptr_t *GetObjectPtr(std::uint64_t guid);
 
     std::uint32_t GetCastTime(void *unit, uint32_t spellId);

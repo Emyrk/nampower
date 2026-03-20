@@ -59,12 +59,10 @@ namespace Nampower {
         }
     };
 
-    using CGGameUI_GetPartyMemberT       = uint64_t   (__fastcall *)(uint32_t index);
-    using CGGameUI_GetPartyMemberPetT    = uint64_t   (__fastcall *)(uint32_t index);
-    using CGGameUI_GetRaidMemberT        = uint64_t   (__fastcall *)(uint32_t index);
-    using CGGameUI_GetRaidMemberPetT     = uint64_t   (__fastcall *)(uint32_t index);
-    using CGGameUI_GetPartyOrRaidMemberT = uintptr_t *(__fastcall *)(uint64_t *guid);
-    using CGGameUI_GetPartyOrRaidPetT    = uintptr_t *(__fastcall *)(uint64_t *guid);
+    using CGGameUI_GetPartyMemberT    = uint64_t (__fastcall *)(uint32_t index);
+    using CGGameUI_GetPartyMemberPetT = uint64_t (__fastcall *)(uint32_t index);
+    using CGGameUI_GetRaidMemberT     = uint64_t (__fastcall *)(uint32_t index);
+    using CGGameUI_GetRaidMemberPetT  = uint64_t (__fastcall *)(uint32_t index);
 
     using CGUnit_C_HandleEnvironmentDamageT = void (__fastcall *)(uintptr_t *unit, void *dummy_edx, int dmgType, int damage, int absorb, int resist);
     using UnitCombatLogDamageShieldT = void (__fastcall *)(uint64_t *victimGuid, uint64_t *unitGuid, uint32_t damage, uint32_t spellSchool);
@@ -74,7 +72,6 @@ namespace Nampower {
     using SignalEventParamGuidT        = int (__cdecl *)(uint32_t eventCode, const char *format, const char *guid, int isPlayer, int isTarget, int isMouseover, int isPet, int partyIndex, int raidIndex);
     using SignalEventParamUnitCombatGuidT = int (__cdecl *)(uint32_t eventCode, const char *format, const char *guid, const char *action, int damage, int school, int hitInfo, int isPet, int partyIndex, int raidIndex);
 
-    uintptr_t *GetUnitPtr(uint64_t guid);
     UnitNames GetUnitNames(uint64_t *guid);
     void FireUnitGuidEvent(const UnitNames &names, uint32_t guidEventCode);
     void TriggerUnitEvents(const UnitNames &names, uint32_t eventCode);

@@ -18,7 +18,9 @@ namespace Nampower {
         FLOAT,
         STRING,
         UINT64,
-        UINT8
+        UINT8,
+        UINT16,
+        INLINE_STRING  // inline char array (not a pointer)
     };
 
     // Field descriptor for simple fields
@@ -93,11 +95,17 @@ namespace Nampower {
                 case FieldType::UINT8:
                     lua_pushnumber(luaState, *reinterpret_cast<const uint8_t*>(fieldPtr));
                     break;
+                case FieldType::UINT16:
+                    lua_pushnumber(luaState, *reinterpret_cast<const uint16_t*>(fieldPtr));
+                    break;
                 case FieldType::STRING: {
                     const char* str = *reinterpret_cast<const char* const*>(fieldPtr);
                     lua_pushstring(luaState, str ? const_cast<char*>(str) : const_cast<char*>(""));
                     break;
                 }
+                case FieldType::INLINE_STRING:
+                    lua_pushstring(luaState, const_cast<char*>(fieldPtr));
+                    break;
             }
             lua_settable(luaState, -3);
         }
@@ -131,11 +139,15 @@ namespace Nampower {
                     case FieldType::UINT8:
                         lua_pushnumber(luaState, reinterpret_cast<const uint8_t*>(fieldPtr)[j]);
                         break;
+                    case FieldType::UINT16:
+                        lua_pushnumber(luaState, reinterpret_cast<const uint16_t*>(fieldPtr)[j]);
+                        break;
                     case FieldType::STRING: {
                         const char* str = reinterpret_cast<const char* const*>(fieldPtr)[j];
                         lua_pushstring(luaState, str ? const_cast<char*>(str) : const_cast<char*>(""));
                         break;
                     }
+                    default: break;
                 }
                 lua_settable(luaState, -3);
             }
@@ -175,11 +187,15 @@ namespace Nampower {
                     case FieldType::UINT8:
                         lua_pushnumber(luaState, reinterpret_cast<const uint8_t*>(fieldPtr)[j]);
                         break;
+                    case FieldType::UINT16:
+                        lua_pushnumber(luaState, reinterpret_cast<const uint16_t*>(fieldPtr)[j]);
+                        break;
                     case FieldType::STRING: {
                         const char* str = reinterpret_cast<const char* const*>(fieldPtr)[j];
                         lua_pushstring(luaState, str ? const_cast<char*>(str) : const_cast<char*>(""));
                         break;
                     }
+                    default: break;
                 }
                 lua_settable(luaState, -3);
             }

@@ -9,23 +9,6 @@
 #include "logging.hpp"
 
 namespace Nampower {
-    uintptr_t *GetUnitPtr(uint64_t guid) {
-        if (auto *unit = game::GetObjectPtr(guid)) {
-            return unit;
-        }
-
-        auto const getPartyOrRaidMember = reinterpret_cast<CGGameUI_GetPartyOrRaidMemberT>(
-                Offsets::CGGameUI_GetPartyOrRaidMember);
-        if (auto *unit = getPartyOrRaidMember(&guid)) {
-            return unit;
-        }
-
-        auto const getPartyOrRaidPet = reinterpret_cast<CGGameUI_GetPartyOrRaidPetT>(
-                Offsets::CGGameUI_GetPartyOrRaidPet);
-        auto *unit = getPartyOrRaidPet(&guid);
-        return unit;
-    }
-
     UnitNames GetUnitNames(uint64_t *guid) {
         UnitNames names;
 

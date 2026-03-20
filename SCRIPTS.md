@@ -744,10 +744,7 @@ Returns a Lua table reference containing all unit fields for the specified unit.
 - A Lua table reference containing all unit fields, or nil if the unit cannot be found
 - Object-reference GUID fields are returned as hex GUID strings (not numbers) to avoid Lua 64-bit precision issues. This includes fields such as `charm`, `summon`, `charmedBy`, `summonedBy`, `createdBy`, `target`, `persuaded`, and `channelObject`.
 
-**Note — raid members not in your immediate party:** For raid members outside your local 5-man group who are not in your object manager (e.g. not nearby or not visible), only a limited subset of fields are available. All other fields will be zero/default.
-- **Player fields:** status flags (online/offline/dead), current and max HP, power type, current and max power, level, zone, auras (up to 32 positive + 16 negative — spell IDs only, no stack count)
-- **Pet fields:** GUID, name, model ID, current and max HP, power type, current and max power, auras (same format as player)
-- No stats, no buff details beyond spell IDs.
+**Note:** `GetUnitData` does not use the `party_member_fields` fallback. If the unit object is not loaded in the object manager, this function returns `nil`.
 
 Full field name lists are in [`UNIT_FIELDS.md`](UNIT_FIELDS.md).
 
@@ -778,10 +775,7 @@ Fast lookup for a single field on a unit. More efficient than GetUnitData when y
 - For array fields (like "aura", "resistances"), returns a Lua table with numeric indices
 - Object-reference GUID fields are returned as hex GUID strings (not numbers) to avoid Lua 64-bit precision issues. This includes fields such as `charm`, `summon`, `charmedBy`, `summonedBy`, `createdBy`, `target`, `persuaded`, and `channelObject`.
 
-**Note — raid members not in your immediate party:** For raid members outside your local 5-man group who are not in your object manager (e.g. not nearby or not visible), only a limited subset of fields are available. All other fields will be zero/default.
-- **Player fields:** status flags (online/offline/dead), current and max HP, power type, current and max power, level, zone, auras (up to 32 positive + 16 negative — spell IDs only, no stack count)
-- **Pet fields:** GUID, name, model ID, current and max HP, power type, current and max power, auras (same format as player)
-- No stats, no buff details beyond spell IDs.
+**Note:** `GetUnitField` falls back to cached `party_member_fields` data when the unit object is not loaded. The overlapping `UnitFields` names available through this fallback are `health`, `maxHealth`, `level`, and `aura` for party/raid members, plus `displayId`, `health`, `maxHealth`, and `aura` for party/raid pets.
 
 Full field name lists are in [`UNIT_FIELDS.md`](UNIT_FIELDS.md).
 

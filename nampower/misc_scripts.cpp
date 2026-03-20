@@ -5,7 +5,7 @@
 #include "misc_scripts.hpp"
 #include "logging.hpp"
 #include "offsets.hpp"
-#include "unit.hpp"
+#include "party_member_fields.hpp"
 #include "items.hpp"
 #include "dbc_fields.hpp"
 #include "unit_fields.hpp"
@@ -385,7 +385,7 @@ namespace Nampower {
         }
 
         // Get unit object pointer
-        auto unit = GetUnitPtr(guid);
+        auto unit = game::GetObjectPtr(guid);
         if (!unit) {
             lua_pushnil(luaState);
             return 1;
@@ -470,8 +470,18 @@ namespace Nampower {
         }
 
         // Get unit object pointer
-        auto unit = GetUnitPtr(guid);
+        auto unit = game::GetObjectPtr(guid);
         if (!unit) {
+            if (auto *info = game::GetPartyOrRaidMemberInfo(guid)) {
+                if (!GetCGPartyMemberField(luaState, info, fieldName, useCopy))
+                    lua_pushnil(luaState);
+                return 1;
+            }
+            if (auto *info = game::GetPartyOrRaidPetInfo(guid)) {
+                if (!GetCGPartyMemberPetField(luaState, info, fieldName, useCopy))
+                    lua_pushnil(luaState);
+                return 1;
+            }
             lua_pushnil(luaState);
             return 1;
         }

@@ -211,6 +211,8 @@ Valid ranges are: `talentPage` = `1-3`, `talentIndex` = `1-32`, `rank` = `1-5`.
 For unit data APIs, object-reference GUID fields are returned as strings (hex format) rather than numbers to avoid Lua 64-bit precision issues.
 This applies to both `GetUnitData` and `GetUnitField` for fields such as: `charm`, `summon`, `charmedBy`, `summonedBy`, `createdBy`, `target`, `persuaded`, and `channelObject`.
 
+`GetUnitField` also has a fallback path for party/raid units when live `UnitFields` are unavailable. If the unit object is not loaded, it will try cached `party_member_fields` data instead. The overlapping `UnitFields` names available through this fallback are `health`, `maxHealth`, `level`, and `aura` for party/raid members, plus `displayId`, `health`, `maxHealth`, and `aura` for party/raid pets. `GetUnitData` does not use this fallback and still returns `nil` when the unit object is unavailable instead of returning a sparse object.
+
 `CancelPlayerAuraSpellId(spellId, [ignoreMissing])` supports an optional second parameter where `1` skips the aura-slot presence check (thought this might work when buff-capped but doesn't seem to work) and `0`/omitted keeps the default check.
 
 Cooldown detail tables now also expose `itemId`, `itemHasActiveSpell`, and `itemActiveSpellId` alongside the existing per-category timing data.

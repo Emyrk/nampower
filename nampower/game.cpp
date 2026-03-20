@@ -65,6 +65,18 @@ namespace game {
         return getObjectPtr(guid);
     }
 
+    CGPartyMemberInfo *GetPartyOrRaidMemberInfo(uint64_t guid) {
+        auto const getPartyOrRaidMember = reinterpret_cast<CGGameUI_GetPartyOrRaidMemberT>(
+                Offsets::CGGameUI_GetPartyOrRaidMember);
+        return getPartyOrRaidMember(&guid);
+    }
+
+    CGPartyMemberPetInfo *GetPartyOrRaidPetInfo(uint64_t guid) {
+        auto const getPartyOrRaidPet = reinterpret_cast<CGGameUI_GetPartyOrRaidPetT>(
+                Offsets::CGGameUI_GetPartyOrRaidPet);
+        return getPartyOrRaidPet(&guid);
+    }
+
 
     uintptr_t *ClntObjMgrObjectPtr(TypeMask typeMask, std::uint64_t guid) {
         using ClntObjMgrObjectPtrT = uintptr_t* (__fastcall *)(TypeMask typeMask, const char *debugMessage, unsigned __int64 guid, int debugCode);

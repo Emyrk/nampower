@@ -41,6 +41,8 @@ set(SOURCE_FILES
         dbc_fields.cpp
         unit_fields.hpp
         unit_fields.cpp
+        party_member_fields.hpp
+        party_member_fields.cpp
         auras.hpp
         auras.cpp
         lua_refs.hpp
