@@ -7,9 +7,11 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
 ## Table of Contents
 - [Performance Optimization - Table References](#performance-optimization---table-references)
 - [Custom Lua Functions](#custom-lua-functions)
-  - [Spell/Item/Unit Information](#spellitemunit-information)
+  - [Inventory and Equipment](#inventory-and-equipment)
     - [GetItemStats](#getitemstatsitemid-copy)
     - [GetItemStatsField](#getitemstatsfielditemid-fieldname-copy)
+    - [GetItemLevel](#getitemlevelitemid)
+    - [GetItemIconTexture](#getitemicontexturedisplayinfoid)
     - [FindPlayerItemSlot](#findplayeritemslotitemid-or-itemname)
     - [UseItemIdOrName](#useitemidornameitemidorname-target)
     - [GetEquippedItems](#getequippeditemsunittoken)
@@ -17,30 +19,29 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
     - [GetBagItems](#getbagitemsbagindex)
     - [GetBagItem](#getbagitembagindex-slot)
     - [GetAmmo](#getammo)
+  - [Auras](#auras)
+    - [GetPlayerAuraDuration](#getplayerauradurationauraslot)
+    - [CancelPlayerAuraSpellId](#cancelplayerauraspellidspellid-ignoremissing)
+    - [CancelPlayerAuraSlot](#cancelplayerauraslotauraslot)
+    - [IsAuraHidden](#isaurahiddenspellid)
+  - [Spell Information](#spell-information)
     - [GetSpellRec](#getspellrecspellid-copy)
     - [GetSpellRecField](#getspellrecfieldspellid-fieldname-copy)
     - [GetSpellModifiers](#getspellmodifiersspellid-modifiertype)
     - [GetSpellPower](#getspellpowermode)
     - [GetSpellDuration](#getspelldurationspellid-ignoremodifiers)
     - [GetSpellRangeData](#getspellrangedatarangeindex)
+    - [GetSpellIdForName](#getspellidfornamespellname)
+    - [GetSpellNameAndRankForId](#getspellnameandrankforidid)
+    - [GetSpellSlotTypeIdForName](#getspellslottypeidfornamespellname)
+    - [GetSpellIconTexture](#getspellicontexturespelliconid)
+  - [Unit Data and Lookup](#unit-data-and-lookup)
     - [GetUnitData](#getunitdataunittoken-copy)
     - [GetUnitField](#getunitfieldunittoken-fieldname-copy)
     - [GetUnitGUID](#getunitguidunittoken)
-    - [GetSpellIdForName](#getspellidfornamenspellname)
-    - [GetSpellNameAndRankForId](#getspellnameandrankforidid)
-    - [GetSpellSlotTypeIdForName](#getspellslottypeidfornamenspellname)
-    - [GetNampowerVersion](#getnampowerversion)
-    - [GetItemLevel](#getitemlevelitemid)
-    - [GetItemIconTexture](#getitemicontexturedisplayinfoid)
-    - [GetSpellIconTexture](#getspellicontexturespelliconid)
-    - [GetPlayerAuraDuration](#getplayerauradurationauraslot)
-    - [CancelPlayerAuraSlot](#cancelplayerauraslotauraslot)
-    - [CancelPlayerAuraSpellId](#cancelplayerauraspellidspellid-ignoremissing)
-    - [IsAuraHidden](#isaurahiddenspellid)
-    - [LearnTalentRank](#learntalentranktalentpage-talentindex-rank)
   - [Spell Casting and Queuing](#spell-casting-and-queuing)
     - [QueueSpellByName](#queuespellbynamespellname)
-    - [CastSpellByNameNoQueue](#castspellbynamenoqueuespellname)
+    - [CastSpellByNameNoQueue](#castspellbynamenoqueuespellname-onselforunit)
     - [CastSpellNoQueue](#castspellnoqueuespellid-spellbook--unit)
     - [QueueScript](#queuescriptscript-priority)
     - [IsSpellInRange](#isspellinrangespellname-target-or-isspellinrangespellid-target)
@@ -52,14 +53,17 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
   - [Cooldown Information](#cooldown-information)
     - [GetSpellIdCooldown](#getspellidcooldownspellid)
     - [GetItemIdCooldown](#getitemidcooldownitemid)
-    - [GetTrinkets](#gettrinketscopy)
-    - [GetTrinketCooldown](#gettrinketcooldownslotitemidorname)
-    - [UseTrinket](#usetrinketslotitemidorname-target)
+    - [Trinkets](#trinkets)
+      - [GetTrinkets](#gettrinketscopy)
+      - [GetTrinketCooldown](#gettrinketcooldownslotitemidorname)
+      - [UseTrinket](#usetrinketslotitemidorname-target)
   - [Player State](#player-state)
     - [PlayerIsMoving](#playerismoving)
     - [PlayerIsRooted](#playerisrooted)
     - [PlayerIsSwimming](#playerisswimming)
   - [Utility Functions](#utility-functions)
+    - [GetNampowerVersion](#getnampowerversion)
+    - [LearnTalentRank](#learntalentranktalentpage-talentindex-rank)
     - [WriteCustomFile(filename, content, [mode])](#writecustomfilefilename-content-mode)
     - [ReadCustomFile(filename)](#readcustomfilefilename)
     - [CustomFileExists(filename)](#customfileexistsfilename)
@@ -87,7 +91,7 @@ The following functions use reusable table references:
 - **`GetEquippedItem(unitToken, slot)`** - Returns item info table
 - **`GetSpellIdCooldown(spellId)`** - Returns cooldown detail table
 - **`GetItemIdCooldown(itemId)`** - Returns cooldown detail table
-- 
+-
 - **`GetItemStats(itemId, [copy])`** - Returns item stats table
 - **`GetUnitData(unitToken, [copy])`** - Returns unit data table
 - **`GetSpellRec(spellId, [copy])`** - Returns spell record table
@@ -170,16 +174,18 @@ local item2Stats = GetItemStatsField(22589, "bonusStat")
 
 ### Custom Lua Functions
 
-### Spell/Item/Unit information
+### Spell/Item/Unit Information
 
-#### GetItemStats(itemId, [copy])
+#### Item Records and Metadata
+
+##### GetItemStats(itemId, [copy])
 Returns a Lua table reference containing all fields for the item's `ItemStats` record (including localized `displayName` and `description`). Returns nil if the item cannot be found or loaded.
 
 **Optional parameter:** Pass `1` for `copy` to get an independent table copy instead of a reusable reference.
 
 Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
 
-#### GetItemStatsField(itemId, fieldName, [copy])
+##### GetItemStatsField(itemId, fieldName, [copy])
 Fast lookup for a single field on an item. Returns the requested field value; returns nil if the item is not found; raises a Lua error if the field name is invalid.
 
 **Optional parameter:** Pass `1` for `copy` to get an independent table copy (for array fields only).
@@ -205,7 +211,39 @@ local delay = GetItemStatsField(19019, "delay")
 print("Weapon speed: " .. (delay / 1000) .. " seconds") -- 1.9 seconds
 ```
 
-#### FindPlayerItemSlot(itemId or itemName)
+##### GetItemLevel(itemId)
+Returns the item level of an item.  Returns an error if the item id is invalid.
+
+Examples:
+```
+/run local itemLevel=GetItemLevel(22589);print(itemLevel)
+should print 90 for atiesh
+```
+
+##### GetItemIconTexture(displayInfoId)
+Returns the texture path for an item given its display info ID. Returns nil if the texture is not found or is the question mark placeholder texture.
+
+**Parameters:**
+- `displayInfoId` (number): The item's display info ID (can be obtained from `GetItemStatsField(itemId, "displayInfoID")`)
+
+**Returns:**
+- The texture path string (e.g., "Interface\\Icons\\INV_Sword_04"), or nil if not found
+
+**Examples:**
+```lua
+-- Get texture for an item
+local displayInfoId = GetItemStatsField(19019, "displayInfoID")
+local texture = GetItemIconTexture(displayInfoId)
+if texture then
+    print("Texture: " .. texture)
+else
+    print("No texture found")
+end
+```
+
+#### Inventory and Equipment
+
+##### FindPlayerItemSlot(itemId or itemName)
 Searches the player's inventory for an item by ID or name and returns its location.
 
 **Parameters:**
@@ -261,7 +299,7 @@ if slot then
 end
 ```
 
-#### UseItemIdOrName(itemIdOrName, [target])
+##### UseItemIdOrName(itemIdOrName, [target])
 Uses the first matching item found in the player's inventory (including equipped items) by item ID or name.
 
 **Parameters:**
@@ -282,7 +320,7 @@ UseItemIdOrName("Hearthstone")
 UseItemIdOrName(13446, "player")
 ```
 
-#### GetEquippedItems(unitToken)
+##### GetEquippedItems(unitToken)
 Returns a table reference containing all equipped items for the specified unit.
 
 **Parameters:**
@@ -331,7 +369,7 @@ if items and items[15] then -- slot 15 is main hand
 end
 ```
 
-#### GetEquippedItem(unitToken, slot)
+##### GetEquippedItem(unitToken, slot)
 Returns item info for a specific equipment slot on the specified unit.
 
 **Parameters:**
@@ -364,7 +402,7 @@ if helm and helm.durability then
 end
 ```
 
-#### GetBagItems([bagIndex])
+##### GetBagItems([bagIndex])
 If no bagIndex is specified, the function returns a nested table reference containing all items in all bags (including bank if open). With specified index, it only returns the contents of that bag
 
 **Returns:**
@@ -417,7 +455,7 @@ local soulShardCount = CountItem(6265)
 print("Soul Shards: " .. soulShardCount)
 ```
 
-#### GetBagItem(bagIndex, slot)
+##### GetBagItem(bagIndex, slot)
 Returns item info for a specific slot in a specific bag.
 
 **Parameters:**
@@ -457,7 +495,7 @@ if bankItem then
 end
 ```
 
-#### GetAmmo()
+##### GetAmmo()
 Returns the player's currently equipped ammo item ID and the total quantity remaining across all bags.
 
 **Parameters:**
@@ -486,7 +524,9 @@ if ammoId and count < 200 then
 end
 ```
 
-#### GetPlayerAuraDuration(auraSlot)
+#### Auras
+
+##### GetPlayerAuraDuration(auraSlot)
 Returns the spell ID, remaining duration, and expiration time for a given aura slot on the active player.
 
 **Parameters:**
@@ -516,7 +556,7 @@ for slot = 32, 47 do
 end
 ```
 
-#### CancelPlayerAuraSpellId(spellId, [ignoreMissing])
+##### CancelPlayerAuraSpellId(spellId, [ignoreMissing])
 Cancels a player aura by spell ID.
 
 **Parameters:**
@@ -527,7 +567,7 @@ Cancels a player aura by spell ID.
 - `1` if cancel was attempted
 - `0` if `spellId` is invalid or (when `ignoreMissing` is `0`/omitted) no matching aura is present
 
-#### CancelPlayerAuraSlot(auraSlot)
+##### CancelPlayerAuraSlot(auraSlot)
 Cancels a player aura by raw aura slot index.
 
 **Parameters:**
@@ -537,7 +577,7 @@ Cancels a player aura by raw aura slot index.
 - `1` if the slot contains an aura and cancel was attempted
 - `0` if the slot is invalid/out of range or no aura is present in that slot
 
-#### IsAuraHidden(spellId)
+##### IsAuraHidden(spellId)
 Returns whether a spell's aura would be hidden from Lua aura APIs (e.g. `GetPlayerBuff`).
 
 An aura is considered hidden if it has the `SPELL_ATTR_HIDDEN_CLIENTSIDE` attribute, the `SPELL_ATTR_EX_NO_AURA_ICON` attribute, or is a tracking aura (track creatures, resources, or stealthed).
@@ -556,26 +596,16 @@ if IsAuraHidden(2458) then
 end
 ```
 
-#### LearnTalentRank(talentPage, talentIndex, rank)
-Learns a specific talent rank directly by tab/index.
+#### Spell Information
 
-**Parameters:**
-- `talentPage` (number): Valid range `1-3`
-- `talentIndex` (number): Valid range `1-32`
-- `rank` (number): Valid range `1-5`
-
-**Returns:**
-- `1` on success
-- Raises a Lua error on invalid parameters or if the talent entry cannot be resolved
-
-#### GetSpellRec(spellId, [copy])
+##### GetSpellRec(spellId, [copy])
 Returns a Lua table reference containing all fields for the spell's `SpellRec` record (including localized `name` and `rank`). Returns nil if the spell cannot be found.
 
 **Optional parameter:** Pass `1` for `copy` to get an independent table copy instead of a reusable reference.
 
 Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
 
-#### GetSpellRecField(spellId, fieldName, [copy])
+##### GetSpellRecField(spellId, fieldName, [copy])
 Fast lookup for a single field on a spell. Returns the requested field value; returns nil if the spell is not found; raises a Lua error if the field name is invalid.
 
 **Optional parameter:** Pass `1` for `copy` to get an independent table copy (for array fields only).
@@ -613,7 +643,7 @@ local spellIconID = GetSpellRecField(116, "spellIconID")
 print("Icon ID: " .. spellIconID)
 ```
 
-#### GetSpellModifiers(spellId, modifierType)
+##### GetSpellModifiers(spellId, modifierType)
 Returns the current spell modifiers applied to a spell for the player. This includes buffs, talents, and other effects that modify spell behavior.
 
 **Parameters:**
@@ -661,7 +691,7 @@ print("Flat damage bonus: " .. flatMod)
 print("Percent damage bonus: " .. percentMod .. "%")
 ```
 
-#### GetSpellPower([mode])
+##### GetSpellPower([mode])
 Returns the player's mod damage done values for all 7 spell schools from the player unit fields (`PLAYER_FIELD_MOD_DAMAGE_DONE_POS` / `PLAYER_FIELD_MOD_DAMAGE_DONE_NEG`).
 
 **Parameters:**
@@ -689,7 +719,7 @@ local physical, holy, fire, nature, frost, shadow, arcane = GetSpellPower("posit
 local physical, holy, fire, nature, frost, shadow, arcane = GetSpellPower("negative")
 ```
 
-#### GetSpellDuration(spellId, [ignoreModifiers])
+##### GetSpellDuration(spellId, [ignoreModifiers])
 Returns the duration of a spell in milliseconds. For channeling spells this is the channel duration, and for non-channeling spells I think this is always the duration of the first aura effect. By default, the active player's spell modifiers (e.g. talents that extend duration) are applied.
 
 **Parameters:**
@@ -709,7 +739,7 @@ local duration = GetSpellDuration(spellId)
 local baseDuration = GetSpellDuration(spellId, 1)
 ```
 
-#### GetSpellRangeData(rangeIndex)
+##### GetSpellRangeData(rangeIndex)
 Returns range data for a SpellRange DBC entry by its index (the `rangeIndex` field from SpellRec).
 
 **Parameters:**
@@ -733,7 +763,65 @@ local minRange, maxRange, flags, name = GetSpellRangeData(rangeIndex)
 local isMelee = flags == 1
 ```
 
-#### GetUnitData(unitToken, [copy])
+##### GetSpellIdForName(spellName)
+Returns:
+
+1st param: the max rank spell id for a spell name if it exists in your spellbook.  Returns 0 if the spell is not in your spellbook.
+
+Examples:
+```
+/run local spellId=GetSpellIdForName("Frostbolt");print(spellId)
+/run local spellId=GetSpellIdForName("Frostbolt(Rank 1)");print(spellId)
+```
+
+##### GetSpellNameAndRankForId(id)
+Returns:
+
+1st param: the spell name for a spell id
+2nd param: the spell rank for a spell id as a string such as "Rank 1"
+
+Examples:
+```
+/run local spellName,spellRank=GetSpellNameAndRankForId(116);print(spellName);print(spellRank)
+prints "Frostbolt" and "Rank 1"
+```
+
+##### GetSpellSlotTypeIdForName(spellName)
+Returns:
+
+1st param: the 1 indexed (lua calls expect this) spell slot number for a spell name if it exists in your spellbook.  Returns 0 if the spell is not in your spellbook.
+2nd param: the book type of the spell, either "spell", "pet" or "unknown".
+3rd param: the spell id of the spell.  Returns 0 if the spell is not in your spellbook.
+
+Examples:
+```
+/run local slot, bookType, spellId=GetSpellSlotTypeIdForName("Frostbolt");print(slot);print(bookType);print(spellId)
+```
+
+##### GetSpellIconTexture(spellIconId)
+Returns the texture path for a spell given its spell icon ID. Returns nil if the texture is not found or is the question mark placeholder texture.
+
+**Parameters:**
+- `spellIconId` (number): The spell's icon ID (can be obtained from `GetSpellRecField(spellId, "spellIconID")`)
+
+**Returns:**
+- The texture path string with `Interface\Icons\` prefix (e.g., "Interface\\Icons\\Spell_Frost_FrostBolt02"), or nil if not found
+
+**Examples:**
+```lua
+-- Get texture for Frostbolt
+local spellIconId = GetSpellRecField(116, "spellIconID")
+local texture = GetSpellIconTexture(spellIconId)
+if texture then
+    print("Texture: " .. texture)
+else
+    print("No texture found")
+end
+```
+
+#### Unit Data and Lookup
+
+##### GetUnitData(unitToken, [copy])
 Returns a Lua table reference containing all unit fields for the specified unit. This provides access to low-level unit data like health, mana, stats, auras, resistances, and more.
 
 **Parameters:**
@@ -762,7 +850,7 @@ end
 local data = GetUnitData("0xF5300000000000A5")
 ```
 
-#### GetUnitField(unitToken, fieldName, [copy])
+##### GetUnitField(unitToken, fieldName, [copy])
 Fast lookup for a single field on a unit. More efficient than GetUnitData when you only need one specific field.
 
 **Parameters:**
@@ -800,7 +888,7 @@ local resistances = GetUnitField("player", "resistances")
 -- resistances[1] = armor, [2] = holy, [3] = fire, [4] = nature, [5] = frost, [6] = shadow, [7] = arcane
 ```
 
-#### GetUnitGUID(unitToken)
+##### GetUnitGUID(unitToken)
 Returns the GUID of the unit identified by the given unit token.
 
 Supports Nampower's extended unit-token formats (see [Unit Token Extensions](README.md#unit-token-extensions-getunitguid--all-unittokentarget-string-params)).
@@ -836,9 +924,11 @@ print(GetUnitGUID("party1pet"))       -- pet of party member 1
 print(GetUnitGUID("0xF5300000000000A5target"))
 ```
 
+### Spell Casting and Queuing
+
 #### QueueSpellByName(spellName)
 Will force queue a spell regardless of the appropriate queue window.  If no spell is currently being cast it will be cast immediately.
-For example can make a macro with 
+For example can make a macro with
 ```
 /run QueueSpellByName("Frostbolt");QueueSpellByName("Frostbolt")
 ```
@@ -892,13 +982,13 @@ Examples:
 ```
 
 #### IsSpellUsable(spellName) or IsSpellUsable(spellId)
-Takes a spell name or spell id.  
+Takes a spell name or spell id.
 
 Usable does not equal castable.  This is most often used to check if a reactive spell is usable.
 
 If using spell name it must be a spell you have in your spellbook.  If using spell id it can be any spell id.
 
-Returns: 
+Returns:
 
 1st param: 1 if the spell is usable, 0 if not usable.
 2nd param: Always 0 if spell is not usable for a different reason other than mana.  1 if out of mana, 0 if not out of mana.
@@ -907,6 +997,8 @@ Examples:
 ```
 /run local result=IsSpellUsable("Frostbolt"); if result == 1 then print("Frostbolt usable") else print("Frostbolt not usable") end
 ```
+
+### Cast Information
 
 #### GetCurrentCastingInfo()
 Returns:
@@ -978,6 +1070,8 @@ if info and info.castDurationMs > 0 then
     print("Cast progress: " .. string.format("%.1f%%", progress))
 end
 ```
+
+### Cooldown Information
 
 #### GetSpellIdCooldown(spellId)
 Returns detailed cooldown information for a spell from the spell history. This provides precise timing data for individual spell cooldowns, category cooldowns, and GCD.
@@ -1065,7 +1159,9 @@ else
 end
 ```
 
-#### GetTrinkets([copy])
+#### Trinkets
+
+##### GetTrinkets([copy])
 Returns a table of trinkets from equipped trinket slots and carried bags.
 
 **Parameters:**
@@ -1083,8 +1179,8 @@ A Lua table where each entry contains:
 **Notes:**
 - Scans only equipped trinket slots and bags 0-4 (backpack + equipped bags). Does not scan bank or keyring.
 - Reuses cached Lua tables unless `copyTable` is truthy; prefer copies if you will mutate the returned tables.
-- 
-#### GetTrinketCooldown(slot|itemIdOrName)
+-
+##### GetTrinketCooldown(slot|itemIdOrName)
 Returns cooldown information for the equipped trinket(s) in slots 13 or 14. Accepts slot shortcuts or item identifiers.
 
 **Parameters:**
@@ -1113,7 +1209,7 @@ if cd ~= -1 then
 end
 ```
 
-#### UseTrinket(slot|itemIdOrName, [target])
+##### UseTrinket(slot|itemIdOrName, [target])
 Uses a trinket from the equipped trinket slots (13 and 14 only).
 
 **Parameters:**
@@ -1139,104 +1235,6 @@ UseTrinket(2, "target")
 UseTrinket(18406)
 -- Use by name
 UseTrinket("Royal Seal of Eldre'Thalas")
-```
-
-#### GetSpellIdForName(spellName)
-Returns:
-
-1st param: the max rank spell id for a spell name if it exists in your spellbook.  Returns 0 if the spell is not in your spellbook.
-
-Examples:
-```
-/run local spellId=GetSpellIdForName("Frostbolt");print(spellId)
-/run local spellId=GetSpellIdForName("Frostbolt(Rank 1)");print(spellId)
-```
-
-#### GetSpellNameAndRankForId(id)
-Returns:
-
-1st param: the spell name for a spell id
-2nd param: the spell rank for a spell id as a string such as "Rank 1"
-
-Examples:
-```
-/run local spellName,spellRank=GetSpellNameAndRankForId(116);print(spellName);print(spellRank)
-prints "Frostbolt" and "Rank 1"
-```
-
-#### GetSpellSlotTypeIdForName(spellName)
-Returns:
-
-1st param: the 1 indexed (lua calls expect this) spell slot number for a spell name if it exists in your spellbook.  Returns 0 if the spell is not in your spellbook.
-2nd param: the book type of the spell, either "spell", "pet" or "unknown".
-3rd param: the spell id of the spell.  Returns 0 if the spell is not in your spellbook.
-
-Examples:
-```
-/run local slot, bookType, spellId=GetSpellSlotTypeIdForName("Frostbolt");print(slot);print(bookType);print(spellId)
-```
-
-#### GetNampowerVersion()
-Returns the current version of Nampower split into major, minor and patch numbers.
-
-So if version was v2.8.6 it would return 2, 8, 6 as integers.
-
-Examples:
-```
-/run local major, minor, patch=GetNampowerVersion();print(major);print(minor);print(patch)
-```
-
-The previous version of this `GetSpellSlotAndTypeForName` was removed as it was returning a 0 indexed slot number which was confusing to use in lua.
-
-#### GetItemLevel(itemId)
-Returns the item level of an item.  Returns an error if the item id is invalid.
-
-Examples:
-```
-/run local itemLevel=GetItemLevel(22589);print(itemLevel)
-should print 90 for atiesh
-```
-
-#### GetItemIconTexture(displayInfoId)
-Returns the texture path for an item given its display info ID. Returns nil if the texture is not found or is the question mark placeholder texture.
-
-**Parameters:**
-- `displayInfoId` (number): The item's display info ID (can be obtained from `GetItemStatsField(itemId, "displayInfoID")`)
-
-**Returns:**
-- The texture path string (e.g., "Interface\\Icons\\INV_Sword_04"), or nil if not found
-
-**Examples:**
-```lua
--- Get texture for an item
-local displayInfoId = GetItemStatsField(19019, "displayInfoID")
-local texture = GetItemIconTexture(displayInfoId)
-if texture then
-    print("Texture: " .. texture)
-else
-    print("No texture found")
-end
-```
-
-#### GetSpellIconTexture(spellIconId)
-Returns the texture path for a spell given its spell icon ID. Returns nil if the texture is not found or is the question mark placeholder texture.
-
-**Parameters:**
-- `spellIconId` (number): The spell's icon ID (can be obtained from `GetSpellRecField(spellId, "spellIconID")`)
-
-**Returns:**
-- The texture path string with `Interface\Icons\` prefix (e.g., "Interface\\Icons\\Spell_Frost_FrostBolt02"), or nil if not found
-
-**Examples:**
-```lua
--- Get texture for Frostbolt
-local spellIconId = GetSpellRecField(116, "spellIconID")
-local texture = GetSpellIconTexture(spellIconId)
-if texture then
-    print("Texture: " .. texture)
-else
-    print("No texture found")
-end
 ```
 
 #### ChannelStopCastingNextTick()
@@ -1296,6 +1294,34 @@ end
 ---
 
 ### Utility Functions
+
+#### GetNampowerVersion()
+Returns the current version of Nampower split into major, minor and patch numbers.
+
+So if version was v2.8.6 it would return 2, 8, 6 as integers.
+
+Examples:
+```
+/run local major, minor, patch=GetNampowerVersion();print(major);print(minor);print(patch)
+```
+
+The previous version of this `GetSpellSlotAndTypeForName` was removed as it was returning a 0 indexed slot number which was confusing to use in lua.
+
+---
+
+#### LearnTalentRank(talentPage, talentIndex, rank)
+Learns a specific talent rank directly by tab/index.
+
+**Parameters:**
+- `talentPage` (number): Valid range `1-3`
+- `talentIndex` (number): Valid range `1-32`
+- `rank` (number): Valid range `1-5`
+
+**Returns:**
+- `1` on success
+- Raises a Lua error on invalid parameters or if the talent entry cannot be resolved
+
+---
 
 #### WriteCustomFile(filename, content, [mode])
 Writes text to a file in the `CustomData` directory.
