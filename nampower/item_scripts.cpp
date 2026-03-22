@@ -42,6 +42,7 @@ namespace Nampower {
     static char tempEnchantIdKey[] = "tempEnchantId";
     static char stackCountKey[] = "stackCount";
     static char durationKey[] = "duration";
+    static char spellChargesRemainingKey[] = "spellChargesRemaining";
     static char flagsKey[] = "flags";
     static char durabilityKey[] = "durability";
     static char maxDurabilityKey[] = "maxDurability";
@@ -52,6 +53,21 @@ namespace Nampower {
     static char trinketNameKey[] = "trinketName";
     static char textureKey[] = "texture";
     static char itemLevelKey[] = "itemLevel";
+
+    int32_t NormalizeSpellChargeValue(int32_t chargeValue) {
+        return chargeValue < 0 ? -chargeValue : chargeValue;
+    }
+
+    int32_t GetMaxSpellChargesRemaining(const int32_t *spellChargesRemaining) {
+        int32_t maxChargesRemaining = 0;
+        for (int i = 0; i < 5; ++i) {
+            int32_t normalizedValue = NormalizeSpellChargeValue(spellChargesRemaining[i]);
+            if (normalizedValue > maxChargesRemaining) {
+                maxChargesRemaining = normalizedValue;
+            }
+        }
+        return maxChargesRemaining;
+    }
 
     void PushItemFoundResult(uintptr_t *luaState, int32_t bagIndex, uint32_t slot) {
         uint32_t adjustedSlot = slot;
@@ -96,6 +112,7 @@ namespace Nampower {
         PushTableValue(luaState, itemIdKey, itemId);
         PushTableValue(luaState, stackCountKey, itemFields->stackCount);
         PushTableValue(luaState, durationKey, itemFields->duration);
+        PushTableValue(luaState, spellChargesRemainingKey, GetMaxSpellChargesRemaining(itemFields->spellChargesRemaining));
         PushTableValue(luaState, flagsKey, itemFields->flags);
         PushTableValue(luaState, permanentEnchantIdKey, itemFields->permEnchantmentSlot.id);
         PushTableValue(luaState, tempEnchantIdKey, itemFields->tempEnchantmentSlot.id);
@@ -162,6 +179,7 @@ namespace Nampower {
         currentData.itemId = itemId;
         currentData.stackCount = itemFields->stackCount;
         currentData.duration = itemFields->duration;
+        currentData.spellChargesRemaining = GetMaxSpellChargesRemaining(itemFields->spellChargesRemaining);
         currentData.flags = itemFields->flags;
         currentData.permanentEnchantId = itemFields->permEnchantmentSlot.id;
         currentData.tempEnchantId = itemFields->tempEnchantmentSlot.id;
@@ -234,6 +252,7 @@ namespace Nampower {
             PushTableValue(luaState, itemIdKey, itemId);
             PushTableValue(luaState, stackCountKey, itemFields->stackCount);
             PushTableValue(luaState, durationKey, itemFields->duration);
+            PushTableValue(luaState, spellChargesRemainingKey, GetMaxSpellChargesRemaining(itemFields->spellChargesRemaining));
             PushTableValue(luaState, flagsKey, itemFields->flags);
             PushTableValue(luaState, permanentEnchantIdKey, itemFields->permEnchantmentSlot.id);
             PushTableValue(luaState, tempEnchantIdKey, itemFields->tempEnchantmentSlot.id);

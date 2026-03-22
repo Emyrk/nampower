@@ -334,7 +334,7 @@ For the player, item info includes:
 - `itemId`: The item's ID
 - `stackCount`: Number of items in the stack
 - `duration`: Item duration in milliseconds
-- `spellCharges`: Table of spell charges (indices 1-5)
+- `spellChargesRemaining`: Remaining spell charges as a single number. It uses the largest absolute value found in the internal 5-slot spell-charge array.
 - `flags`: Item flags
 - `permanentEnchantId`: Permanent enchantment ID
 - `tempEnchantId`: Temporary enchantment ID
@@ -416,7 +416,7 @@ If no bagIndex is specified, the function returns a nested table reference conta
   - -2 = Keyring
 
 Item info table fields (same as GetEquippedItems for player):
-- `itemId`, `stackCount`, `duration`, `spellCharges`, `flags`
+- `itemId`, `stackCount`, `duration`, `spellChargesRemaining`, `flags`
 - `permanentEnchantId`, `tempEnchantId`, `tempEnchantmentTimeLeftMs`, `tempEnchantmentCharges`
 - `durability`, `maxDurability`
 

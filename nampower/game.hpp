@@ -377,7 +377,7 @@ namespace game {
         uint64_t giftCreator;
         uint32_t stackCount;
         uint32_t duration;
-        uint32_t spellCharges[5];
+        int32_t spellChargesRemaining[5]; // for some reason these are stored as negative values
         uint32_t flags;
         ItemEnchantment permEnchantmentSlot;
         ItemEnchantment tempEnchantmentSlot;
