@@ -39,6 +39,7 @@ namespace Nampower {
             int32_t slot;
             uint32_t type;
             std::string cachedNameLower;
+            std::string cachedRankLower;
         };
         static std::unordered_map<std::string, CachedEntry> spellSlotCache;
 
@@ -50,49 +51,43 @@ namespace Nampower {
 
         const std::string key = normalize(spellName);
 
-        auto const spellNameMatchesAtSlot = [&normalize](const char *requestedLower, uint32_t slot,
-                                                         uint32_t type) -> bool {
-            if (!requestedLower) {
-                return false;
-            }
+        struct SlotSpellInfo {
+            std::string nameLower;
+            std::string rankLower;
+        };
 
+        auto const getSpellInfoAtSlot = [&normalize](uint32_t slot, uint32_t type) -> SlotSpellInfo {
             uint32_t spellId = 0;
             if (type == 0) {
                 spellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownSpells) + slot * 4);
             } else if (type == 1) {
                 spellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownPetSpells) + slot * 4);
-            } else {
-                return false;
             }
-
             if (spellId == 0) {
-                return false;
+                return {};
             }
-
             auto const spell = game::GetSpellInfo(spellId);
             if (!spell) {
-                return false;
+                return {};
             }
-
             auto const language = *reinterpret_cast<uint32_t *>(Offsets::Language);
             auto const actualName = reinterpret_cast<const char *>(spell->Name[language]);
-            if (!actualName) {
-                return false;
-            }
-
-            auto const actualLower = normalize(actualName);
-            return _stricmp(actualLower.c_str(), requestedLower) == 0;
+            auto const actualRank = reinterpret_cast<const char *>(spell->Rank[language]);
+            return {normalize(actualName), normalize(actualRank ? actualRank : "")};
         };
 
         if (!key.empty()) {
             auto cacheIt = spellSlotCache.find(key);
             if (cacheIt != spellSlotCache.end()) {
                 auto const &entry = cacheIt->second;
-                if (entry.slot < 1024 && spellNameMatchesAtSlot(key.c_str(), entry.slot, entry.type)) {
-                    if (spellType) {
-                        *spellType = entry.type;
+                if (entry.slot < 1024) {
+                    auto const info = getSpellInfoAtSlot(entry.slot, entry.type);
+                    if (info.nameLower == entry.cachedNameLower && info.rankLower == entry.cachedRankLower) {
+                        if (spellType) {
+                            *spellType = entry.type;
+                        }
+                        return entry.slot;
                     }
-                    return entry.slot;
                 }
             }
         }
@@ -101,7 +96,8 @@ namespace Nampower {
         auto const slot = getSpellSlotAndType(spellName, spellType);
 
         if (slot < 1024 && spellType && !key.empty()) {
-            spellSlotCache[key] = {slot, *spellType, key};
+            auto const info = getSpellInfoAtSlot(slot, *spellType);
+            spellSlotCache[key] = {slot, *spellType, info.nameLower, info.rankLower};
         }
 
         return slot;

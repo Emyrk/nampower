@@ -775,7 +775,7 @@ Fast lookup for a single field on a unit. More efficient than GetUnitData when y
 - For array fields (like "aura", "resistances"), returns a Lua table with numeric indices
 - Object-reference GUID fields are returned as hex GUID strings (not numbers) to avoid Lua 64-bit precision issues. This includes fields such as `charm`, `summon`, `charmedBy`, `summonedBy`, `createdBy`, `target`, `persuaded`, and `channelObject`.
 
-**Note:** `GetUnitField` falls back to cached `party_member_fields` data when the unit object is not loaded. The overlapping `UnitFields` names available through this fallback are `health`, `maxHealth`, `level`, and `aura` for party/raid members, plus `displayId`, `health`, `maxHealth`, and `aura` for party/raid pets.
+**Note:** `GetUnitField` falls back to using `party_member_fields` data if available when the unit object is not loaded (invisible or out of range). The overlapping `UnitFields` names available through this fallback are `health`, `maxHealth`, `level`, and `aura` for party/raid members, plus `displayId`, `health`, `maxHealth`, and `aura` for party/raid pets.
 
 Full field name lists are in [`UNIT_FIELDS.md`](UNIT_FIELDS.md).
 
