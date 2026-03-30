@@ -59,9 +59,11 @@ namespace Nampower {
         auto const getSpellInfoAtSlot = [&normalize](uint32_t slot, uint32_t type) -> SlotSpellInfo {
             uint32_t spellId = 0;
             if (type == 0) {
-                spellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownSpells) + slot * 4);
+                spellId = *reinterpret_cast<uint32_t *>(
+                    static_cast<uint32_t>(Offsets::CGSpellBook_mKnownSpells) + slot * 4);
             } else if (type == 1) {
-                spellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownPetSpells) + slot * 4);
+                spellId = *reinterpret_cast<uint32_t *>(
+                    static_cast<uint32_t>(Offsets::CGSpellBook_mKnownPetSpells) + slot * 4);
             }
             if (spellId == 0) {
                 return {};
@@ -131,9 +133,11 @@ namespace Nampower {
             }
             uint32_t slotSpellId = 0;
             if (bookType == 0) {
-                slotSpellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownSpells) + slot * 4);
+                slotSpellId = *reinterpret_cast<uint32_t *>(
+                    static_cast<uint32_t>(Offsets::CGSpellBook_mKnownSpells) + slot * 4);
             } else {
-                slotSpellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownPetSpells) + slot * 4);
+                slotSpellId = *reinterpret_cast<uint32_t *>(
+                    static_cast<uint32_t>(Offsets::CGSpellBook_mKnownPetSpells) + slot * 4);
             }
             return slotSpellId == expectedId;
         };
@@ -196,15 +200,16 @@ namespace Nampower {
 
     bool SpellIsAttackTradeskillOrEnchant(const game::SpellRec *spell) {
         return (
-                spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_ATTACK ||
-                spell->Attributes & game::SpellAttributes::SPELL_ATTR_TRADESPELL ||
-                spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_TRADE_SKILL ||
-                spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_TRANS_DOOR ||
-                spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_ENCHANT_ITEM ||
-                spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_ENCHANT_ITEM_TEMPORARY ||
-                spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_CREATE_ITEM ||
-                spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_OPEN_LOCK ||
-                spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_OPEN_LOCK_ITEM);
+            spell->Id == 75 || // hunter abilities will queue autoshot early
+            spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_ATTACK ||
+            spell->Attributes & game::SpellAttributes::SPELL_ATTR_TRADESPELL ||
+            spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_TRADE_SKILL ||
+            spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_TRANS_DOOR ||
+            spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_ENCHANT_ITEM ||
+            spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_ENCHANT_ITEM_TEMPORARY ||
+            spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_CREATE_ITEM ||
+            spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_OPEN_LOCK ||
+            spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_OPEN_LOCK_ITEM);
     }
 
     bool SpellIsMounting(const game::SpellRec *spell) {

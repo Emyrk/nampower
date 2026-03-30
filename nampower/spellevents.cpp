@@ -219,6 +219,12 @@ namespace Nampower {
             return;
         }
 
+        // ignore autoshot errors
+        if (spellId == 75) {
+            DEBUG_LOG("Ignoring autoshot failure with result " << int(spellResult));
+            return;
+        }
+
         // Check for Disenchant (13262) failure and stop the disenchant loop
         if (spellId == 13262) {
             DEBUG_LOG("Disenchant spell failed with result " << int(spellResult) << ", stopping disenchant loop");
