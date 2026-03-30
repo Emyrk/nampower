@@ -200,7 +200,7 @@ namespace Nampower {
 
     bool SpellIsAttackTradeskillOrEnchant(const game::SpellRec *spell) {
         return (
-            spell->Id == 75 || // hunter abilities will queue autoshot early
+            spell->Id == 75 || // treat autoshot as a special spell to avoid trying to queue or failing to cast
             spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_ATTACK ||
             spell->Attributes & game::SpellAttributes::SPELL_ATTR_TRADESPELL ||
             spell->Effect[0] == game::SpellEffects::SPELL_EFFECT_TRADE_SKILL ||
