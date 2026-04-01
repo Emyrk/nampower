@@ -44,6 +44,7 @@ struct UserSettings {
     bool enableSpellHealEvents = false;
     bool enableSpellEnergizeEvents = false;
     bool preventMountingWhenBuffCapped = true;
+    bool enableEnhancedTooltips = true;
 
     uint32_t spellQueueWindowMs = 500;
     uint32_t onSwingBufferCooldownMs = 500;

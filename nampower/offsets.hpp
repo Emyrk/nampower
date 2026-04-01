@@ -289,6 +289,8 @@ enum class Offsets : std::uint32_t {
     TogglePetSlotAutocast = 0x004bcbb0,
     CGPetInfo_GetPetSpellAction = 0x004bd190,
     CGPetInfo_SendPetAction = 0x004bd1d0,
+    CGTooltip_SetItem = 0x0052B650,
+    SpellParserParseText = 0x005075F0,
     PetActionBarSlots = 0x00b71438,
     PetReactionMode = 0x00b71468,
     ActivePetGuid = 0x00b714a0,

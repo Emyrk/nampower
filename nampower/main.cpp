@@ -49,6 +49,7 @@
 #include "autoattack.hpp"
 #include "unit.hpp"
 #include "pet.hpp"
+#include "tooltip.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -175,6 +176,8 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<CGUnit_C_HandleEnvironmentDamageT> > gCGUnit_C_HandleEnvironmentDamageDetour;
     std::unique_ptr<hadesmem::PatchDetour<UnitCombatLogDamageShieldT> > gUnitCombatLogDamageShieldDetour;
     std::unique_ptr<hadesmem::PatchDetour<LoadScriptFunctionsT> > gGlueLoadScriptFunctionsDetour;
+    std::unique_ptr<hadesmem::PatchDetour<CGTooltip_SetItemT> > gCGTooltip_SetItemDetour;
+    std::unique_ptr<hadesmem::PatchDetour<SpellParserParseTextT> > gSpellParserParseTextDetour;
 
     // Flags for one-time initialization
     std::once_flag loadFlag;
@@ -743,6 +746,9 @@ namespace Nampower {
         } else if (strcmp(cvar, "NP_PreventMountingWhenBuffCapped") == 0) {
             gUserSettings.preventMountingWhenBuffCapped = atoi(value) != 0;
             DEBUG_LOG("Set NP_PreventMountingWhenBuffCapped to " << gUserSettings.preventMountingWhenBuffCapped);
+        } else if (strcmp(cvar, "NP_EnableEnhancedTooltips") == 0) {
+            gUserSettings.enableEnhancedTooltips = atoi(value) != 0;
+            DEBUG_LOG("Set NP_EnableEnhancedTooltips to " << gUserSettings.enableEnhancedTooltips);
         } else if (strcmp(cvar, "NP_MinBufferTimeMs") == 0) {
             gUserSettings.minBufferTimeMs = atoi(value);
             DEBUG_LOG("Set NP_MinBufferTimeMs and current buffer to " << gUserSettings.minBufferTimeMs);
@@ -1164,6 +1170,16 @@ namespace Nampower {
                      0, // unk2
                      0); // unk3
 
+        char NP_EnableEnhancedTooltips[] = "NP_EnableEnhancedTooltips";
+        CVarRegister(NP_EnableEnhancedTooltips, // name
+                     nullptr, // help
+                     0, // unk1
+                     gUserSettings.enableEnhancedTooltips ? defaultTrue : defaultFalse, // default value address
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
         char NP_OnSwingBufferCooldownMs[] = "NP_OnSwingBufferCooldownMs";
         CVarRegister(NP_OnSwingBufferCooldownMs, // name
                      nullptr, // help
@@ -1385,6 +1401,7 @@ namespace Nampower {
         loadUserVar("NP_EnableSpellHealEvents");
         loadUserVar("NP_EnableSpellEnergizeEvents");
         loadUserVar("NP_PreventMountingWhenBuffCapped");
+        loadUserVar("NP_EnableEnhancedTooltips");
 
         loadUserVar("NP_MinBufferTimeMs");
         loadUserVar("NP_NonGcdBufferTimeMs");
@@ -1602,6 +1619,10 @@ namespace Nampower {
             process, Offsets::CGUnit_C_HandleEnvironmentDamage, &CGUnit_C_HandleEnvironmentDamageHook);
         gUnitCombatLogDamageShieldDetour = createHook<UnitCombatLogDamageShieldT>(
             process, Offsets::UnitCombatLogDamageShield, &UnitCombatLogDamageShieldHook);
+        gCGTooltip_SetItemDetour = createHook<CGTooltip_SetItemT>(
+            process, Offsets::CGTooltip_SetItem, &CGTooltip_SetItemHook);
+        gSpellParserParseTextDetour = createHook<SpellParserParseTextT>(
+            process, Offsets::SpellParserParseText, &SpellParserParseTextHook);
         gLoadScriptFunctionsDetour = createHook<LoadScriptFunctionsT>(process, Offsets::Player_LoadScriptFunctions,
                                                                       &Player_LoadScriptFunctionsHook);
         gGlueLoadScriptFunctionsDetour = createHook<LoadScriptFunctionsT>(process, Offsets::Glue_LoadScriptFunctions,

@@ -33,5 +33,6 @@ namespace Nampower {
         bool isOnGcdCategoryCooldown = false;
     };
 
+    CooldownDetail GetItemSpellCooldownDetail(uint32_t itemId, uint32_t spellId);
     CooldownDetail GetItemCooldownDetail(uint32_t itemId);
 }

@@ -66,7 +66,7 @@ namespace Nampower {
         {"maxDamage", offsetof(game::ItemStats_C, m_maxDamage), FieldType::FLOAT, 5},
         {"damageType", offsetof(game::ItemStats_C, m_damageType), FieldType::INT32, 5},
         {"resistances", offsetof(game::ItemStats_C, m_resistances), FieldType::INT32, 7},
-        {"spellID", offsetof(game::ItemStats_C, m_spellID), FieldType::INT32, 5},
+        {"spellID", offsetof(game::ItemStats_C, m_spellID), FieldType::UINT32, 5},
         {"spellTrigger", offsetof(game::ItemStats_C, m_spellTrigger), FieldType::INT32, 5},
         {"spellCharges", offsetof(game::ItemStats_C, m_spellCharges), FieldType::INT32, 5},
         {"spellCooldown", offsetof(game::ItemStats_C, m_spellCooldown), FieldType::INT32, 5},

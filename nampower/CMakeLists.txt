@@ -55,6 +55,8 @@ set(SOURCE_FILES
         pet.cpp
         unit.hpp
         unit.cpp
+        tooltip.hpp
+        tooltip.cpp
 )
 
 add_library(${DLL_NAME} SHARED ${SOURCE_FILES})

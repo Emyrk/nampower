@@ -497,7 +497,7 @@ namespace game {
         int m_delay;
         int m_ammoType;
         int m_rangedModRange;
-        int m_spellID[5];
+        uint32_t m_spellID[5];
         int m_spellTrigger[5];
         int m_spellCharges[5];
         int m_spellCooldown[5];
@@ -1011,6 +1011,21 @@ namespace game {
         SPELL_CUSTOM_SEND_CHANNEL_VISUAL = 0x800, // Will periodically send the channeling spell visual kit
         SPELL_CUSTOM_SEPARATE_AURA_PER_CASTER = 0x1000,
         // Each caster has his own aura slot, instead of replacing others
+    };
+
+    enum ItemSpelltriggerType
+    {
+        ITEM_SPELLTRIGGER_ON_USE          = 0,                  // use after equip cooldown
+        ITEM_SPELLTRIGGER_ON_EQUIP        = 1,
+        ITEM_SPELLTRIGGER_CHANCE_ON_HIT   = 2,
+        ITEM_SPELLTRIGGER_SOULSTONE       = 4,
+        /*
+         * ItemSpelltriggerType 5 might have changed on 2.4.3/3.0.3: Such auras
+         * will be applied on item pickup and removed on item loss - maybe on the
+         * other hand the item is destroyed if the aura is removed ("removed on
+         * death" of spell 57348 makes me think so)
+         */
+        ITEM_SPELLTRIGGER_ON_NO_DELAY_USE = 5,                  // no equip cooldown
     };
 
     enum SpellTarget {

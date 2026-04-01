@@ -14,6 +14,10 @@ namespace Nampower {
     // Reusable table reference to reduce memory allocations
     static int cooldownDetailTableRef = LUA_REFNIL;
 
+    static uint32_t GetNonNegativeItemCooldownMs(int32_t durationMs) {
+        return durationMs > 0 ? static_cast<uint32_t>(durationMs) : 0;
+    }
+
     game::SpellHistoryEntry *GetSpellHistoryHead() {
         auto const spellHistoryAddr = static_cast<uintptr_t>(Offsets::SpellHistories);
 
@@ -127,11 +131,13 @@ namespace Nampower {
             auto *itemStats = GetItemStats(itemId);
             if (itemStats) {
                 for (int i = 0; i < 5; ++i) {
-                    if (itemStats->m_spellCooldown[i] > 0 || itemStats->m_spellCategoryCooldown[i] > 0) {
+                    auto const spellCooldownMs = GetNonNegativeItemCooldownMs(itemStats->m_spellCooldown[i]);
+                    auto const spellCategoryCooldownMs = GetNonNegativeItemCooldownMs(itemStats->m_spellCategoryCooldown[i]);
+                    if (spellCooldownMs > 0 || spellCategoryCooldownMs > 0) {
                         detail.itemHasActiveSpell = true;
                         detail.itemActiveSpellId = itemStats->m_spellID[i];
-                        detail.individualDurationMs = itemStats->m_spellCooldown[i];
-                        detail.categoryDurationMs = itemStats->m_spellCategoryCooldown[i];
+                        detail.individualDurationMs = spellCooldownMs;
+                        detail.categoryDurationMs = spellCategoryCooldownMs;
                         return detail;
                     }
                 }
@@ -199,6 +205,40 @@ namespace Nampower {
         PushTableValue(luaState, isOnGcdCategoryCooldownKey, detail.isOnGcdCategoryCooldown ? 1 : 0);
     }
 
+    CooldownDetail GetItemSpellCooldownDetail(uint32_t itemId, uint32_t spellId) {
+        auto *itemStats = GetItemStats(itemId);
+
+        if (!itemStats || spellId == 0) {
+            return CooldownDetail{};
+        }
+
+        for (int i = 0; i < 5; ++i) {
+            if (itemStats->m_spellID[i] != spellId) {
+                continue;
+            }
+
+            auto const categoryOverride = static_cast<uint32_t>(itemStats->m_spellCategory[i]);
+            auto detail = GetCooldownFromSpellHistory(spellId, itemId, categoryOverride);
+            auto const spellCooldownMs = GetNonNegativeItemCooldownMs(itemStats->m_spellCooldown[i]);
+            auto const spellCategoryCooldownMs = GetNonNegativeItemCooldownMs(itemStats->m_spellCategoryCooldown[i]);
+
+            if (spellCooldownMs > 0 || spellCategoryCooldownMs > 0) {
+                detail.itemHasActiveSpell = true;
+                detail.itemActiveSpellId = spellId;
+                detail.individualDurationMs = spellCooldownMs;
+                detail.categoryDurationMs = spellCategoryCooldownMs;
+            } else {
+                // Passive/on-equip effects can share a spell record but don't expose an item-use cooldown.
+                detail.gcdCategoryDurationMs = 0;
+                detail.gcdCategoryId = 0;
+            }
+
+            return detail;
+        }
+
+        return CooldownDetail{};
+    }
+
     CooldownDetail GetItemCooldownDetail(uint32_t itemId) {
         auto *itemStats = GetItemStats(itemId);
 
@@ -212,8 +252,7 @@ namespace Nampower {
                     continue;
                 }
 
-                auto const categoryOverride = static_cast<uint32_t>(itemStats->m_spellCategory[i]);
-                auto const detail = GetCooldownFromSpellHistory(spellId, itemId, categoryOverride);
+                auto const detail = GetItemSpellCooldownDetail(itemId, spellId);
 
                 if (detail.cooldownRemainingMs >= longestCooldownMs) {
                     activeCooldownDetail = detail;

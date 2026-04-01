@@ -111,6 +111,8 @@ SET NP_TargetingQueueWindowMs "1000"
 
 - `NP_EnableSpellEnergizeEvents` - Whether to enable SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_OTHER, and SPELL_ENERGIZE_ON_SELF events. 0 to disable, 1 to enable. Default is 0.
 
+- `NP_EnableEnhancedTooltips` - Whether to enable nampower's tooltip additions such as spell proc chance, ICD, and item cooldown text. 0 to disable, 1 to enable. Default is 1.
+
 - `NP_EnableUnitEventsPet` - Whether to fire unit state events for the `pet` and `partypet1`–`partypet4` unit tokens. 0 to disable, 1 to enable. Default is 1.
 
 - `NP_EnableUnitEventsParty` - Whether to fire unit state events for the `party1`–`party4` unit tokens. 0 to disable, 1 to enable. Default is 1.
