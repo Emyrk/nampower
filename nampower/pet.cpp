@@ -252,6 +252,7 @@ namespace Nampower {
 
         uint64_t newPetGuid = *reinterpret_cast<uint64_t *>(Offsets::ActivePetGuid);
         if (activePetGuid != newPetGuid) {
+            ClearSpellSlotCaches();
             DEBUG_LOG("Active pet guid changed from " << activePetGuid << " to " << newPetGuid);
 
             if (gUserSettings.preserveGreaterDemonAutocast && newPetGuid != 0) {

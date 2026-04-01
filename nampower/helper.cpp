@@ -12,6 +12,9 @@
 #include <string>
 
 namespace Nampower {
+    std::unordered_map<std::string, SpellSlotCacheEntry> gSpellSlotCache;
+    std::unordered_map<uint64_t, uint32_t> gSpellIdToSlotCache;
+
     // Lua function pointers
     lua_errorT lua_error = reinterpret_cast<lua_errorT>(Offsets::lua_error);
     lua_gettopT lua_gettop = reinterpret_cast<lua_gettopT>(Offsets::lua_gettop);
@@ -35,14 +38,6 @@ namespace Nampower {
 
 
     int32_t GetSpellSlotAndTypeForName(const char *spellName, uint32_t *spellType) {
-        struct CachedEntry {
-            int32_t slot;
-            uint32_t type;
-            std::string cachedNameLower;
-            std::string cachedRankLower;
-        };
-        static std::unordered_map<std::string, CachedEntry> spellSlotCache;
-
         auto const normalize = [](const char *name) -> std::string {
             std::string out = name ? name : "";
             std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c) { return char(std::tolower(c)); });
@@ -79,8 +74,8 @@ namespace Nampower {
         };
 
         if (!key.empty()) {
-            auto cacheIt = spellSlotCache.find(key);
-            if (cacheIt != spellSlotCache.end()) {
+            auto cacheIt = gSpellSlotCache.find(key);
+            if (cacheIt != gSpellSlotCache.end()) {
                 auto const &entry = cacheIt->second;
                 if (entry.slot < 1024) {
                     auto const info = getSpellInfoAtSlot(entry.slot, entry.type);
@@ -99,7 +94,7 @@ namespace Nampower {
 
         if (slot < 1024 && spellType && !key.empty()) {
             auto const info = getSpellInfoAtSlot(slot, *spellType);
-            spellSlotCache[key] = {slot, *spellType, info.nameLower, info.rankLower};
+            gSpellSlotCache[key] = {slot, *spellType, info.nameLower, info.rankLower};
         }
 
         return slot;
@@ -124,7 +119,6 @@ namespace Nampower {
     }
 
     uint32_t ConvertSpellIdToSpellSlot(uint32_t spellId, uint32_t bookType) {
-        static std::unordered_map<uint64_t, uint32_t> spellIdToSlotCache;
         auto const cacheKey = (uint64_t(spellId) << 1) | (bookType & 0x1);
 
         auto const slotHasSpellId = [bookType](uint32_t slot, uint32_t expectedId) -> bool {
@@ -142,8 +136,8 @@ namespace Nampower {
             return slotSpellId == expectedId;
         };
 
-        auto cacheIt = spellIdToSlotCache.find(cacheKey);
-        if (cacheIt != spellIdToSlotCache.end()) {
+        auto cacheIt = gSpellIdToSlotCache.find(cacheKey);
+        if (cacheIt != gSpellIdToSlotCache.end()) {
             if (slotHasSpellId(cacheIt->second, spellId)) {
                 return cacheIt->second;
             }
@@ -155,7 +149,7 @@ namespace Nampower {
                 uint32_t slotSpellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownSpells) +
                                                                      spellSlot * 4);
                 if (slotSpellId == spellId) {
-                    spellIdToSlotCache[cacheKey] = spellSlot;
+                    gSpellIdToSlotCache[cacheKey] = spellSlot;
                     return spellSlot;
                 }
             }
@@ -165,13 +159,19 @@ namespace Nampower {
                 uint32_t slotSpellId = *reinterpret_cast<uint32_t *>(uint32_t(Offsets::CGSpellBook_mKnownPetSpells) +
                                                                      spellSlot * 4);
                 if (slotSpellId == spellId) {
-                    spellIdToSlotCache[cacheKey] = spellSlot;
+                    gSpellIdToSlotCache[cacheKey] = spellSlot;
                     return spellSlot;
                 }
             }
         }
 
         return 0;
+    }
+
+    void ClearSpellSlotCaches() {
+        DEBUG_LOG("Clearing spell slot and spellId -> spell slot caches");
+        gSpellSlotCache.clear();
+        gSpellIdToSlotCache.clear();
     }
 
 

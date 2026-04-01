@@ -49,6 +49,8 @@ namespace Nampower {
 
     uint32_t ConvertSpellIdToSpellSlot(uint32_t spellId, uint32_t bookType);
 
+    void ClearSpellSlotCaches();
+
     bool SpellIsOnGcd(const game::SpellRec *spell);
 
     bool SpellIsChanneling(const game::SpellRec *spell);

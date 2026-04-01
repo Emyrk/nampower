@@ -166,3 +166,10 @@ struct EVENT_DATA_KEY {
     uint32_t repeat;
     uint32_t time;
 };
+
+struct SpellSlotCacheEntry {
+    int32_t slot;
+    uint32_t type;
+    std::string cachedNameLower;
+    std::string cachedRankLower;
+};
