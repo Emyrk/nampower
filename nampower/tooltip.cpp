@@ -19,7 +19,8 @@ namespace Nampower {
         {52864, 1}, // Midnight Comet
         {52987, 8}, // Command Whelp Passive
         {52998, 5}, // Decayed Heart Passive
-
+        {58182, 20}, // Parasite of Aln Passive
+        {58226, 4}, // Nordrassil's Reprieve Passive
     };
     uint32_t gActiveTooltipItemId = 0;
 
