@@ -150,9 +150,23 @@ namespace Nampower {
 
             auto spell = game::GetSpellInfo(spellId);
             if (spell) {
-                std::set<uint32_t> validTargetTypes = {5, 6, 21, 25};
-                if (sizeof spell->EffectImplicitTargetA == 0 ||
-                    validTargetTypes.count(spell->EffectImplicitTargetA[0]) == 0) {
+                std::set<uint32_t> validTargetTypes = {
+                    game::TARGET_UNIT_CASTER,
+                    game::TARGET_UNIT_CASTER_PET,
+                    game::TARGET_UNIT_ENEMY,
+                    game::TARGET_UNIT_FRIEND,
+                    game::TARGET_GAMEOBJECT,
+                    game::TARGET_UNIT,
+                    game::TARGET_LOCKED,
+                    game::TARGET_UNIT_PARTY,
+                    game::TARGET_UNIT_FRIEND_CHAIN_HEAL,
+                    game::TARGET_LOCATION_CASTER_TARGET_POSITION,
+                    game::TARGET_UNIT_RAID,
+                    game::TARGET_UNIT_RAID_AND_CLASS,
+                    game::TARGET_LOCATION_UNIT_POSITION};
+
+                if (validTargetTypes.count(spell->EffectImplicitTargetA[0]) == 0) {
+                    DEBUG_LOG("Invalid target type " << spell->EffectImplicitTargetA[0] << " for IsSpellInRange spellId:" << spellId);
                     lua_pushnumber(luaState, -1.0);
                     return 1;
                 }
