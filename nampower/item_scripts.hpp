@@ -7,6 +7,7 @@
 #include "main.hpp"
 
 namespace Nampower {
+    uint32_t Script_GetItemIconTexture(uintptr_t *luaState);
     uint32_t Script_GetItemLevel(uintptr_t *luaState);
     uint32_t Script_GetItemStats(uintptr_t *luaState);
     uint32_t Script_GetItemStatsField(uintptr_t *luaState);

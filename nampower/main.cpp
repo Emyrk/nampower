@@ -38,6 +38,7 @@
 #include "file_scripts.hpp"
 #include "spell_scripts.hpp"
 #include "player_scripts.hpp"
+#include "unit_scripts.hpp"
 #include "spellchannel.hpp"
 #include "helper.hpp"
 #include "items.hpp"
@@ -1920,6 +1921,9 @@ namespace Nampower {
         char getSpellRecField[] = "GetSpellRecField";
         RegisterLuaFunction(getSpellRecField, reinterpret_cast<uintptr_t *>(Script_GetSpellRecField));
 
+        char getRaidTargets[] = "GetRaidTargets";
+        RegisterLuaFunction(getRaidTargets, reinterpret_cast<uintptr_t *>(Script_GetRaidTargets));
+
         char getUnitData[] = "GetUnitData";
         RegisterLuaFunction(getUnitData, reinterpret_cast<uintptr_t *>(Script_GetUnitData));
 
@@ -2012,6 +2016,9 @@ namespace Nampower {
 
         char setMouseoverUnit[] = "SetMouseoverUnit";
         RegisterLuaFunction(setMouseoverUnit, reinterpret_cast<uintptr_t *>(Script_SetMouseoverUnit));
+
+        char setLocalRaidTargetIndex[] = "SetLocalRaidTargetIndex";
+        RegisterLuaFunction(setLocalRaidTargetIndex, reinterpret_cast<uintptr_t *>(Script_SetLocalRaidTargetIndex));
 
         char getUnitGUID[] = "GetUnitGUID";
         RegisterLuaFunction(getUnitGUID, reinterpret_cast<uintptr_t *>(Script_GetUnitGUID));

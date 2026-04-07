@@ -10,7 +10,21 @@
 #include <cstring>
 
 namespace Nampower {
+    namespace LuaFields {
+        static char castId[] = "castId";
+        static char spellId[] = "spellId";
+        static char guid[] = "guid";
+        static char castType[] = "castType";
+        static char castStartS[] = "castStartS";
+        static char castEndS[] = "castEndS";
+        static char castRemainingMs[] = "castRemainingMs";
+        static char castDurationMs[] = "castDurationMs";
+        static char gcdEndS[] = "gcdEndS";
+        static char gcdRemainingMs[] = "gcdRemainingMs";
+    }
+
     // Reusable table references to reduce memory allocations
+    static int castInfoTableRef = LUA_REFNIL;
     static int spellRecTableRef = LUA_REFNIL;
 
     // Map to store separate references for each array field name (for Field function)
@@ -18,6 +32,154 @@ namespace Nampower {
 
     // Map to store separate references for nested array fields (for main table function)
     static std::unordered_map<std::string, int> spellRecNestedArrayRefs;
+
+    uint32_t Script_GetCurrentCastingInfo(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        auto const castingSpellId = reinterpret_cast<uint32_t *>(Offsets::CastingSpellId);
+        lua_pushnumber(luaState, *castingSpellId);
+
+        auto const isCasting = gCastData.castEndMs > GetTime();
+        auto const isChanneling = gCastData.channeling;
+
+        auto const visualSpellId = reinterpret_cast<uint32_t *>(Offsets::VisualSpellId);
+        lua_pushnumber(luaState, *visualSpellId);
+
+        auto const autoRepeatingSpellId = reinterpret_cast<uint32_t *>(Offsets::AutoRepeatingSpellId);
+        lua_pushnumber(luaState, *autoRepeatingSpellId);
+
+        auto playerUnit = game::GetObjectPtr(game::ClntObjMgrGetActivePlayerGuid());
+        if (isCasting) {
+            lua_pushnumber(luaState, 1);
+        } else {
+            lua_pushnumber(luaState, 0);
+        }
+
+        if (isChanneling) {
+            lua_pushnumber(luaState, 1);
+        } else {
+            lua_pushnumber(luaState, 0);
+        }
+
+        if (gCastData.pendingOnSwingCast) {
+            lua_pushnumber(luaState, 1);
+        } else {
+            lua_pushnumber(luaState, 0);
+        }
+
+        auto const attackPtr = playerUnit + 0x312; // auto attacking
+        if (attackPtr && *reinterpret_cast<uint32_t *>(attackPtr) > 0) {
+            lua_pushnumber(luaState, 1);
+        } else {
+            lua_pushnumber(luaState, 0);
+        }
+
+        return 7;
+    }
+
+    uint32_t Script_GetCastInfo(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        uint32_t activeSpellId = 0;
+        uint32_t castEndTime = 0;
+
+        CastSpellParams *castParams = nullptr;
+
+        if (gCastData.channeling && gCastData.channelSpellId != 0) {
+            activeSpellId = gCastData.channelSpellId;
+            castEndTime = gCastData.channelEndMs;
+            castParams = gCastHistory.findNewestSuccessfulSpellId(activeSpellId);
+        } else if (gCastData.castSpellId != 0) {
+            activeSpellId = gCastData.castSpellId;
+            castEndTime = (gCastData.castEndMs > gCastData.gcdEndMs) ? gCastData.castEndMs : gCastData.gcdEndMs;
+            castParams = gCastHistory.findNewestWaitingForServerSpellId(activeSpellId);
+        }
+
+        if (activeSpellId == 0) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        if (castParams == nullptr || castParams->castId == 0) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        GetTableRef(luaState, castInfoTableRef);
+
+        uint32_t currentTime = GetTime();
+        uint64_t currentWowTime = GetWowTimeMs();
+        int64_t timeOffset = static_cast<int64_t>(currentWowTime) - static_cast<int64_t>(currentTime);
+
+        double castStartTimeWow = (castParams->castStartTimeMs + timeOffset) / 1000.0;
+        double castEndTimeWow = (castEndTime + timeOffset) / 1000.0;
+        double gcdEndTimeWow = (gCastData.gcdEndMs + timeOffset) / 1000.0;
+
+        PushTableValue(luaState, LuaFields::castId, castParams->castId);
+        PushTableValue(luaState, LuaFields::spellId, castParams->spellId);
+        PushTableValue(luaState, LuaFields::guid, ConvertGuidToString(castParams->guid));
+        PushTableValue(luaState, LuaFields::castType, static_cast<uint32_t>(castParams->castType));
+        PushTableValue(luaState, LuaFields::castStartS, castStartTimeWow);
+        PushTableValue(luaState, LuaFields::castEndS, castEndTimeWow);
+
+        uint32_t timeRemaining = (castEndTime > currentTime) ? (castEndTime - currentTime) : 0;
+        PushTableValue(luaState, LuaFields::castRemainingMs, timeRemaining);
+
+        uint32_t duration = (castEndTime > castParams->castStartTimeMs) ?
+                            (castEndTime - castParams->castStartTimeMs) : 0;
+        PushTableValue(luaState, LuaFields::castDurationMs, duration);
+
+        PushTableValue(luaState, LuaFields::gcdEndS, gcdEndTimeWow);
+        uint32_t gcdRemaining = (gCastData.gcdEndMs > currentTime) ? (gCastData.gcdEndMs - currentTime) : 0;
+        PushTableValue(luaState, LuaFields::gcdRemainingMs, gcdRemaining);
+
+        return 1;
+    }
+
+    uint32_t Script_ChannelStopCastingNextTick(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        if (gCastData.channeling) {
+            DEBUG_LOG("ChannelStopCastingNextTick activated, canceling next tick");
+            gCastData.cancelChannelNextTick = true;
+        }
+
+        return 0;
+    }
+
+    uint32_t Script_GetSpellIconTexture(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        if (!lua_isnumber(luaState, 1)) {
+            lua_error(luaState, "Usage: GetSpellIconTexture(spellIconId)");
+            return 0;
+        }
+
+        int32_t iconId = static_cast<int32_t>(lua_tonumber(luaState, 1));
+
+        int32_t maxIconId = *reinterpret_cast<int32_t *>(Offsets::SpellIconDBMaxId);
+        uintptr_t *iconArray = *reinterpret_cast<uintptr_t **>(Offsets::SpellIconDBArray);
+
+        if (iconId < 0 || iconId > maxIconId) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        uintptr_t iconEntry = reinterpret_cast<uintptr_t *>(iconArray)[iconId];
+        if (iconEntry == 0) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        char *texturePath = *reinterpret_cast<char **>(iconEntry + 4);
+        if (texturePath && texturePath[0] != '\0' && !strstr(texturePath, "QuestionMark")) {
+            lua_pushstring(luaState, texturePath);
+        } else {
+            lua_pushnil(luaState);
+        }
+
+        return 1;
+    }
 
     uint32_t Script_CastSpellByNameNoQueue(uintptr_t *luaState) {
         luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why

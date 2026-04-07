@@ -244,6 +244,8 @@ enum class Offsets : std::uint32_t {
     CGBag_C_GetItemAtSlot = 0x006228a0,
     GetContainerGuid = 0x004f93e0,
     CanInspectUnit = 0x004944a0,
+    CGUnit_C_CanInteract = 0x00606ba0,
+    CGUnit_C_NamePlateUpdateRaidTarget = 0x00608a90,
     CGUnit_C_OnAuraRemoved = 0x00612320,
     CGUnit_C_OnAuraAdded = 0x006123f0,
     CGUnit_C_OnAuraStacksChanged = 0x00612450,
@@ -283,7 +285,7 @@ enum class Offsets : std::uint32_t {
 
     XMLNode_GetAttributeByName = 0x006f2cf0,
 
-    RaidTargetMarkGuidBase = 0xB71368,
+    CGRaidInfo_m_raidtargets = 0xB71368,
 
     CGPetInfo_SetPet = 0x004bc7e0,
     TogglePetSlotAutocast = 0x004bcbb0,

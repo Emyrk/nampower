@@ -176,6 +176,18 @@ Examples:
 /run print(GetUnitGUID("0xF5300000000000A5target"))
 ```
 
+### Local Raid Marker Helpers
+Nampower adds Lua helpers for reading and updating the client's local raid-marker table without requiring a server-side raid marker update.
+
+- `GetRaidTargets()` - Returns a table indexed `1..8` containing GUID strings for the current local raid markers. Empty slots return `nil`.
+- `SetLocalRaidTargetIndex(unitToken, raidTargetIndex)` - Sets a local raid marker slot using any supported unit token / GUID string accepted by `GetUnitGUID`. `raidTargetIndex` must be in the `0..8` range, matching the current client-side helper implementation.
+
+Examples:
+```
+/run local marks = GetRaidTargets(); print(marks[1])
+/run SetLocalRaidTargetIndex("target", 0)
+/run SetLocalRaidTargetIndex("mark1target", 7)
+```
 
 ### CSimpleFrame:GetName() Enhancement
 The built-in `CSimpleFrame:GetName()` method is hooked to support an optional argument for retrieving the GUID of the unit associated with a nameplate frame.
@@ -202,6 +214,7 @@ This includes functions for:
 - Spell duration lookup (GetSpellDuration) - returns channel duration for channeling spells and the first aura effect duration for non-channeling spells
 - Spell range lookup (GetSpellRangeData) - returns minRange, maxRange, flags, name for a SpellRange DBC entry by rangeIndex
 - Player movement state queries (PlayerIsMoving, PlayerIsRooted, PlayerIsSwimming)
+- Local raid marker helpers (GetRaidTargets, SetLocalRaidTargetIndex)
 - File and script helpers (WriteCustomFile, ReadCustomFile, CustomFileExists, ImportFile, ExportFile, ExecuteCustomLuaFile)
 - Encrypted login helpers (EncryptPassword, EncryptedServerLogin)
 - Talent helpers (LearnTalentRank)

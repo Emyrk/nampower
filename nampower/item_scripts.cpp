@@ -54,6 +54,28 @@ namespace Nampower {
     static char textureKey[] = "texture";
     static char itemLevelKey[] = "itemLevel";
 
+    uint32_t Script_GetItemIconTexture(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        if (!lua_isnumber(luaState, 1)) {
+            lua_error(luaState, "Usage: GetItemIconTexture(displayInfoId)");
+            return 0;
+        }
+
+        uint32_t displayInfoId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+
+        auto const getInventoryArt = reinterpret_cast<GetInventoryArtT>(Offsets::CGItem_C_GetInventoryArt);
+        char *texturePath = getInventoryArt(displayInfoId);
+
+        if (texturePath && texturePath[0] != '\0' && !strstr(texturePath, "QuestionMark")) {
+            lua_pushstring(luaState, texturePath);
+        } else {
+            lua_pushnil(luaState);
+        }
+
+        return 1;
+    }
+
     int32_t NormalizeSpellChargeValue(int32_t chargeValue) {
         return chargeValue < 0 ? -chargeValue : chargeValue;
     }

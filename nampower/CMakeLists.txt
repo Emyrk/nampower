@@ -51,6 +51,8 @@ set(SOURCE_FILES
         autoattack.cpp
         player_scripts.hpp
         player_scripts.cpp
+        unit_scripts.hpp
+        unit_scripts.cpp
         pet.hpp
         pet.cpp
         unit.hpp

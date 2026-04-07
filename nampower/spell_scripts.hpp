@@ -8,6 +8,12 @@
 #include "main.hpp"
 
 namespace Nampower {
+    uint32_t Script_GetCurrentCastingInfo(uintptr_t *luaState);
+
+    uint32_t Script_GetCastInfo(uintptr_t *luaState);
+
+    uint32_t Script_ChannelStopCastingNextTick(uintptr_t *luaState);
+
     uint32_t Script_CastSpellByNameNoQueue(uintptr_t *luaState);
 
     uint32_t Script_CastSpellNoQueue(uintptr_t *luaState);
@@ -35,6 +41,8 @@ namespace Nampower {
     uint32_t Script_GetSpellModifiers(uintptr_t *luaState);
 
     uint32_t Script_GetSpellPower(uintptr_t *luaState);
+
+    uint32_t Script_GetSpellIconTexture(uintptr_t *luaState);
 
     uint32_t Script_GetSpellDuration(uintptr_t *luaState);
 
