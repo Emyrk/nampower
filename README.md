@@ -220,19 +220,7 @@ This includes functions for:
 - Talent helpers (LearnTalentRank)
 - Spell lookups and utilities (GetUnitGUID, CombatLogFlush, etc.)
 
-`LearnTalentRank(talentPage, talentIndex, rank)` learns a specific talent rank directly by tab/index.
-Valid ranges are: `talentPage` = `1-3`, `talentIndex` = `1-32`, `rank` = `1-5`.
-
-For unit data APIs, object-reference GUID fields are returned as strings (hex format) rather than numbers to avoid Lua 64-bit precision issues.
-This applies to both `GetUnitData` and `GetUnitField` for fields such as: `charm`, `summon`, `charmedBy`, `summonedBy`, `createdBy`, `target`, `persuaded`, and `channelObject`.
-
-`GetUnitField` also has a fallback path for party/raid units when live `UnitFields` are unavailable. If the unit object is not loaded, it will try cached `party_member_fields` data instead. The overlapping `UnitFields` names available through this fallback are `health`, `maxHealth`, `level`, and `aura` for party/raid members, plus `displayId`, `health`, `maxHealth`, and `aura` for party/raid pets. `GetUnitData` does not use this fallback and still returns `nil` when the unit object is unavailable instead of returning a sparse object.
-
-`CancelPlayerAuraSpellId(spellId, [ignoreMissing])` supports an optional second parameter where `1` skips the aura-slot presence check (thought this might work when buff-capped but doesn't seem to work) and `0`/omitted keeps the default check.
-
-Cooldown detail tables now also expose `itemId`, `itemHasActiveSpell`, and `itemActiveSpellId` alongside the existing per-category timing data.
-
-Use `GetTrinkets([copy])` to enumerate equipped trinkets and bagged trinkets (backpack/bags 1-4) with `itemId`, `trinketName`, `texture`, `itemLevel`, `bagIndex` (nil when equipped), and 1-based `slotIndex`. It reuses cached tables by default; pass `1` (or any truthy value) to force a fresh copy.
+Detailed parameter, return-value, and behavior notes for individual functions are documented in [SCRIPTS.md](SCRIPTS.md).
 
 ## Custom Events
 
@@ -256,6 +244,9 @@ Available events:
 If you encounter any bugs please report them in the issues tab.  Please include the nampower_debug.txt file in the same directory as your WoW.exe to help me diagnose the issue.  If you are able to reproduce the bug please include the steps to reproduce it.  In a future version once bugs are ironed out I'll make logging optional.
 
 ## FAQ & Additional Info
+
+### Why are some GUID values returned as hex strings?
+Lua in the vanilla client does not safely preserve full 64-bit integer precision. To avoid truncated or rounded GUID values, Nampower returns object-reference GUIDs as hex strings (for example, `"0xF5300000000000A5"`) instead of Lua numbers in APIs that expose those fields.
 
 ### OnChatMessage Patch
 Nampower applies an in-memory patch at `0x0049DB9F` to pass the appropriate unit guid needed by the client to display chat bubbles for following message types:

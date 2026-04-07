@@ -39,6 +39,8 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
     - [GetUnitData](#getunitdataunittoken-copy)
     - [GetUnitField](#getunitfieldunittoken-fieldname-copy)
     - [GetUnitGUID](#getunitguidunittoken)
+    - [GetRaidTargets](#getraidtargets)
+    - [SetLocalRaidTargetIndex](#setlocalraidtargetindexunittoken-raidtargetindex)
   - [Spell Casting and Queuing](#spell-casting-and-queuing)
     - [QueueSpellByName](#queuespellbynamespellname)
     - [CastSpellByNameNoQueue](#castspellbynamenoqueuespellname-onselforunit)
@@ -922,6 +924,45 @@ print(GetUnitGUID("party1pet"))       -- pet of party member 1
 
 -- Raw hex GUID with suffix
 print(GetUnitGUID("0xF5300000000000A5target"))
+```
+
+##### GetRaidTargets()
+Returns the current local raid-target assignments as a table of GUID strings.
+
+**Returns:**
+- A table indexed `1..8`
+- Each value is a GUID string for the unit currently assigned to that local raid marker slot
+- Empty slots return `nil`
+
+**Examples:**
+```lua
+local marks = GetRaidTargets()
+print(marks[1]) -- GUID for local mark 1, or nil
+print(marks[8]) -- GUID for local mark 8, or nil
+```
+
+##### SetLocalRaidTargetIndex(unitToken, raidTargetIndex)
+Assigns a unit to a local raid-target slot.
+
+This uses the same extended unit-token parsing as `GetUnitGUID`, so standard unit tokens, `markN` tokens, suffix forms, and raw GUID strings are all supported.
+
+If the selected slot already has a unit assigned, that slot is cleared first and the previous unit's nameplate raid-target state is refreshed before the new unit is assigned.
+
+**Parameters:**
+- `unitToken` (string): The unit to assign
+- `raidTargetIndex` (number): Local raid-target slot index in the `0..8` range
+
+**Returns:**
+- `1` on success
+- `0` if the unit cannot be resolved or the underlying objects are unavailable
+- Raises a Lua error if the parameters are invalid
+
+**Examples:**
+```lua
+SetLocalRaidTargetIndex("target", 0)
+SetLocalRaidTargetIndex("mouseover", 3)
+SetLocalRaidTargetIndex("mark1target", 7)
+SetLocalRaidTargetIndex("0xF5300000000000A5", 1)
 ```
 
 ### Spell Casting and Queuing
