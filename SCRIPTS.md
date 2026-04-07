@@ -39,6 +39,7 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
     - [GetUnitData](#getunitdataunittoken-copy)
     - [GetUnitField](#getunitfieldunittoken-fieldname-copy)
     - [GetUnitGUID](#getunitguidunittoken)
+    - [SetMouseoverUnit](#setmouseoverunitunittoken)
     - [GetRaidTargets](#getraidtargets)
     - [SetLocalRaidTargetIndex](#setlocalraidtargetindexunittoken-raidtargetindex)
   - [Spell Casting and Queuing](#spell-casting-and-queuing)
@@ -924,6 +925,25 @@ print(GetUnitGUID("party1pet"))       -- pet of party member 1
 
 -- Raw hex GUID with suffix
 print(GetUnitGUID("0xF5300000000000A5target"))
+```
+
+##### SetMouseoverUnit(unitToken)
+Sets the client's current mouseover unit from a unit token string.
+
+This uses the same client object-tracking path as normal UI mouseover updates. If `unitToken` resolves to a GUID, the mouseover is updated to that unit. If it does not resolve, the mouseover is cleared.
+
+**Parameters:**
+- `unitToken` (string): A standard unit token string such as `"target"`, `"party1"`, or `"mouseover"`
+
+**Returns:**
+- `1` if the client has a non-empty mouseover GUID after the update
+- `nil` if the mouseover GUID is empty after the update
+
+**Examples:**
+```lua
+SetMouseoverUnit("target")
+SetMouseoverUnit("party1")
+SetMouseoverUnit("mouseover")
 ```
 
 ##### GetRaidTargets()

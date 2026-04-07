@@ -1909,6 +1909,7 @@ namespace Nampower {
         char getItemStats[] = "GetItemStats";
         RegisterLuaFunction(getItemStats, reinterpret_cast<uintptr_t *>(Script_GetItemStats));
 
+        // for private use only
         char startItemExport[] = "StartItemExport";
         RegisterLuaFunction(startItemExport, reinterpret_cast<uintptr_t *>(Script_StartItemExport));
 
