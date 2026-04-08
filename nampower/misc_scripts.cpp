@@ -124,7 +124,7 @@ namespace Nampower {
 
     void EmitKeyEvent(uint32_t eventCode, EVENT_DATA_KEY *keyData) {
         // don't trigger events until player exists as event won't be registered
-        if (keyData == nullptr || game::ClntObjMgrGetActivePlayerGuid() == 0) {
+        if (!gUserSettings.enableKeyPressEvents || keyData == nullptr || game::ClntObjMgrGetActivePlayerGuid() == 0) {
             return;
         }
 

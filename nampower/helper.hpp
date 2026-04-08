@@ -77,6 +77,8 @@ namespace Nampower {
     char *ConvertGuidToString(uint64_t guid);
     void FreeGuidString(char *str);
     void PushGuidString(uintptr_t *luaState, uint64_t guid);
+    bool IsValidAsciiString(const char *str);
+    std::string GetAddonOrFrameName(void *frame);
     bool IsReadableMemory(const void *ptr, size_t size);
     bool SafeReadMemory(const void *address, void *out, size_t size);
 

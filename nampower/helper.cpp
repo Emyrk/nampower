@@ -36,6 +36,58 @@ namespace Nampower {
     lua_rawgetiT lua_rawgeti = reinterpret_cast<lua_rawgetiT>(Offsets::lua_rawgeti);
     luaL_unrefT luaL_unref = reinterpret_cast<luaL_unrefT>(Offsets::luaL_unref);
 
+    bool IsValidAsciiString(const char *str) {
+        if (str == nullptr || IsBadReadPtr(str, 1) != 0) {
+            return false;
+        }
+
+        for (size_t i = 0; i < 256; ++i) {
+            if (IsBadReadPtr(str + i, 1) != 0) {
+                return false;
+            }
+
+            auto const ch = static_cast<unsigned char>(str[i]);
+            if (ch == '\0') {
+                return i > 0;
+            }
+
+            if (ch < 32 || ch > 126) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    std::string GetAddonOrFrameName(void *frame) {
+        auto addonOrFrameName = std::string{"<unnamed>"};
+        auto const framescriptObj = reinterpret_cast<uintptr_t *>(frame);
+
+        if (framescriptObj == nullptr) {
+            return addonOrFrameName;
+        }
+
+        if (IsBadReadPtr(framescriptObj, sizeof(uintptr_t) * 76) == 0) {
+            auto const addonNamePtr = framescriptObj + 74;
+
+            if (addonNamePtr != nullptr && addonNamePtr[1] != 0) {
+                auto const namePtr = reinterpret_cast<const char *>(addonNamePtr[1]);
+                if (namePtr != nullptr && IsBadReadPtr(namePtr, 1) == 0) {
+                    addonOrFrameName = std::string(namePtr);
+                }
+            }
+        }
+
+        if (IsBadReadPtr(framescriptObj, sizeof(uintptr_t) * 39) == 0 && framescriptObj[38] != 0) {
+            auto const frameName = reinterpret_cast<char *>(framescriptObj[38]);
+            if (frameName != nullptr && IsValidAsciiString(frameName)) {
+                addonOrFrameName = std::string(frameName);
+            }
+        }
+
+        return addonOrFrameName;
+    }
+
 
     int32_t GetSpellSlotAndTypeForName(const char *spellName, uint32_t *spellType) {
         auto const normalize = [](const char *name) -> std::string {

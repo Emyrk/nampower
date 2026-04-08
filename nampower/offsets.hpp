@@ -160,6 +160,7 @@ enum class Offsets : std::uint32_t {
     Player_LoadScriptFunctions = 0x00490250,
     Glue_LoadScriptFunctions = 0x0046ABB0,
     FrameScript_RegisterFunction = 0x00704120,
+    FrameScript_Object_RegisterScriptEvent = 0x00702140,
     FrameScript_CreateEvents = 0X00703D90,
     Framescript_SetEventCount = 0X007053B0,
     Framescript_EventObject_Data = 0x00CEEF68,
@@ -171,6 +172,7 @@ enum class Offsets : std::uint32_t {
     GetGUIDFromName = 0X00515970,
     Script_CastSpell = 0x004B42F0,
     Script_CastSpellByName = 0x004B4AB0,
+    Script_SetRaidTarget = 0x004BBEC0,
     Script_SpellTargetUnit = 0x006E6D90,
     Script_SetCVar = 0x00488C10,
     Script_RunScript = 0x0048B980,
@@ -286,6 +288,9 @@ enum class Offsets : std::uint32_t {
     XMLNode_GetAttributeByName = 0x006f2cf0,
 
     CGRaidInfo_m_raidtargets = 0xB71368,
+    CGRaidInfo_m_numRaidMembers = 0x00B713E0,
+    CGGameUI_IsPartyMember = 0x004E7F70,
+    CGPartyInfo_NumMembers = 0x004E86D0,
 
     CGPetInfo_SetPet = 0x004bc7e0,
     TogglePetSlotAutocast = 0x004bcbb0,

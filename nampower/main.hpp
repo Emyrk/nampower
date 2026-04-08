@@ -128,6 +128,7 @@ namespace Nampower {
 
     using LoadScriptFunctionsT = void (__stdcall *)();
     using FrameScript_RegisterFunctionT = void (__fastcall *)(char *name, uintptr_t *func);
+    using FrameScript_Object_RegisterScriptEventT = uint32_t (__fastcall *)(void *thisPtr, void *dummy_edx, char *param_1);
     using FrameScript_CreateEventsT = void (__fastcall *)(int param_1, uint32_t maxEventId);
     using FramescriptSetEventCountT = void (__fastcall *)(void *thisPtr, void *dummy_edx, uint32_t count);
 

@@ -54,13 +54,13 @@
 
 #include <cstdint>
 #include <memory>
-#include <atomic>
 
 #include <chrono>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <cstdio>
+#include <cstring>
 #include <windows.h>
 #include <sys/stat.h>
 
@@ -108,6 +108,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<LoadScriptFunctionsT> > gLoadScriptFunctionsDetour;
     std::unique_ptr<hadesmem::PatchDetour<FrameScript_CreateEventsT> > gCreateEventsDetour;
     std::unique_ptr<hadesmem::PatchDetour<FramescriptSetEventCountT> > gSetEventCountDetour;
+    std::unique_ptr<hadesmem::PatchDetour<FrameScript_Object_RegisterScriptEventT> > gRegisterScriptEventDetour;
 
     std::unique_ptr<hadesmem::PatchDetour<SetCVarT> > gSetCVarDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGSpellBook_CastSpellT> > gCGSpellBook_CastSpellDetour;
@@ -168,6 +169,7 @@ namespace Nampower {
     std::unique_ptr<hadesmem::PatchDetour<CSimpleTop_OnKeyUpT> > gCSimpleTop_OnKeyUpDetour;
     std::unique_ptr<hadesmem::PatchDetour<GetGUIDFromNameT> > gGetGUIDFromNameDetour;
     std::unique_ptr<hadesmem::PatchDetour<LuaScriptT> > gCastSpellByNameDetour;
+    std::unique_ptr<hadesmem::PatchDetour<LuaScriptT> > gSetRaidTargetDetour;
     std::unique_ptr<hadesmem::PatchDetour<SendUnitSignalT> > gSendUnitSignalDetour;
     std::unique_ptr<hadesmem::PatchDetour<CGPetInfo_SetPetT> > gCGPetInfo_SetPetDetour;
     std::unique_ptr<hadesmem::PatchDetour<TogglePetSlotAutocastT> > gTogglePetSlotAutocastDetour;
@@ -190,6 +192,13 @@ namespace Nampower {
     void Glue_LoadScriptFunctionsHook(hadesmem::PatchDetourBase *detour);
 
     void FrameScript_CreateEventsHook(hadesmem::PatchDetourBase *detour, int param_1, uint32_t maxEventId);
+
+    uint32_t FrameScript_Object_RegisterScriptEventHook(hadesmem::PatchDetourBase *detour, void *thisPtr,
+                                                        void *dummy_edx, char *eventName);
+
+    bool CSimpleTop_OnKeyDownHook(hadesmem::PatchDetourBase *detour, EVENT_DATA_KEY *keyData, int param_2);
+
+    bool CSimpleTop_OnKeyUpHook(hadesmem::PatchDetourBase *detour, EVENT_DATA_KEY *keyData, int param_2);
 
     void Framescript_SetEventCountHook(hadesmem::PatchDetourBase *detour, void *thisPtr, void *dummy_edx,
                                        uint32_t count);
@@ -222,7 +231,6 @@ namespace Nampower {
         auto function = (LuaCallT) Offsets::lua_call;
         function(code, "Unused");
     }
-
     uintptr_t *GetLuaStatePtr() {
         typedef uintptr_t *(__fastcall *GETCONTEXT)(void);
         static auto p_GetContext = reinterpret_cast<GETCONTEXT>(Offsets::lua_state_ptr);
@@ -750,6 +758,9 @@ namespace Nampower {
         } else if (strcmp(cvar, "NP_EnableEnhancedTooltips") == 0) {
             gUserSettings.enableEnhancedTooltips = atoi(value) != 0;
             DEBUG_LOG("Set NP_EnableEnhancedTooltips to " << gUserSettings.enableEnhancedTooltips);
+        } else if (strcmp(cvar, "NP_EnableLocalSetRaidTarget") == 0) {
+            gUserSettings.enableLocalSetRaidTarget = atoi(value) != 0;
+            DEBUG_LOG("Set NP_EnableLocalSetRaidTarget to " << gUserSettings.enableLocalSetRaidTarget);
         } else if (strcmp(cvar, "NP_MinBufferTimeMs") == 0) {
             gUserSettings.minBufferTimeMs = atoi(value);
             DEBUG_LOG("Set NP_MinBufferTimeMs and current buffer to " << gUserSettings.minBufferTimeMs);
@@ -1363,6 +1374,16 @@ namespace Nampower {
                      0, // unk2
                      0); // unk3
 
+        char NP_EnableLocalSetRaidTarget[] = "NP_EnableLocalSetRaidTarget";
+        CVarRegister(NP_EnableLocalSetRaidTarget, // name
+                     nullptr, // help
+                     0, // unk1
+                     gUserSettings.enableLocalSetRaidTarget ? defaultTrue : defaultFalse, // default value address
+                     nullptr, // callback
+                     1, // category
+                     0, // unk2
+                     0); // unk3
+
         // update from cvars
         loadUserVar("NP_QueueCastTimeSpells");
         loadUserVar("NP_QueueInstantSpells");
@@ -1378,6 +1399,7 @@ namespace Nampower {
         loadUserVar("NP_QuickcastOnDoubleCast");
         loadUserVar("NP_ReplaceMatchingNonGcdCategory");
         loadUserVar("NP_OptimizeBufferUsingPacketTimings");
+        loadUserVar("NP_EnableLocalSetRaidTarget");
 
         loadUserVar("NP_PreventRightClickTargetChange");
 
@@ -1418,6 +1440,7 @@ namespace Nampower {
 
         loadUserVar("NP_NameplateDistance");
         loadUserVar("NP_ChatBubbleDistance");
+        loadUserVar("EnableLocalSetRaidTarget");
         loadUserVar("NP_ChatBubblesBattleground");
 
         gBufferTimeMs = gUserSettings.minBufferTimeMs;
@@ -1562,6 +1585,8 @@ namespace Nampower {
                                                               &GetGUIDFromNameHook);
         gCastSpellByNameDetour = createHook<LuaScriptT>(process, Offsets::Script_CastSpellByName,
                                                         &Script_CastSpellByNameHook);
+        gSetRaidTargetDetour = createHook<LuaScriptT>(process, Offsets::Script_SetRaidTarget,
+                                                      &Script_SetRaidTargetHook);
         gSpellTargetUnitDetour = createHook<LuaScriptT>(process, Offsets::Script_SpellTargetUnit,
                                                         &Script_SpellTargetUnitHook);
         gSpellStopCastingDetour = createHook<LuaScriptT>(process, Offsets::Script_SpellStopCasting,
@@ -1630,6 +1655,8 @@ namespace Nampower {
                                                                           &Glue_LoadScriptFunctionsHook);
         gCreateEventsDetour = createHook<FrameScript_CreateEventsT>(process, Offsets::FrameScript_CreateEvents,
                                                                     &FrameScript_CreateEventsHook);
+        gRegisterScriptEventDetour = createHook<FrameScript_Object_RegisterScriptEventT>(
+            process, Offsets::FrameScript_Object_RegisterScriptEvent, &FrameScript_Object_RegisterScriptEventHook);
         gSetEventCountDetour = createHook<FramescriptSetEventCountT>(process, Offsets::Framescript_SetEventCount,
                                                                      &Framescript_SetEventCountHook);
         ApplyOnChatMessagePatch();
@@ -1842,6 +1869,64 @@ namespace Nampower {
         if (maxEventId > 200) {
             initCustomEvents();
         }
+    }
+
+    void EnableEvents(void *thisPtr, const char *eventName) {
+        if (!eventName || !*eventName) {
+            return;
+        }
+
+        auto const addonOrFrameName = GetAddonOrFrameName(thisPtr);
+
+        if (_stricmp(eventName, "AURA_CAST_ON_SELF") == 0 || _stricmp(eventName, "AURA_CAST_ON_OTHER") == 0) {
+            if (!gUserSettings.enableAuraCastEvents) {
+                gUserSettings.enableAuraCastEvents = true;
+                DEBUG_LOG("RegisterScriptEvent enabled " << eventName << " for " << addonOrFrameName);
+            }
+        } else if (_stricmp(eventName, "AUTO_ATTACK_SELF") == 0 || _stricmp(eventName, "AUTO_ATTACK_OTHER") == 0) {
+            if (!gUserSettings.enableAutoAttackEvents) {
+                gUserSettings.enableAutoAttackEvents = true;
+                DEBUG_LOG("RegisterScriptEvent enabled " << eventName << " for " << addonOrFrameName);
+            }
+        } else if (_stricmp(eventName, "SPELL_START_SELF") == 0 || _stricmp(eventName, "SPELL_START_OTHER") == 0) {
+            if (!gUserSettings.enableSpellStartEvents) {
+                gUserSettings.enableSpellStartEvents = true;
+                DEBUG_LOG("RegisterScriptEvent enabled " << eventName << " for " << addonOrFrameName);
+            }
+        } else if (_stricmp(eventName, "SPELL_GO_SELF") == 0 || _stricmp(eventName, "SPELL_GO_OTHER") == 0) {
+            if (!gUserSettings.enableSpellGoEvents) {
+                gUserSettings.enableSpellGoEvents = true;
+                DEBUG_LOG("RegisterScriptEvent enabled " << eventName << " for " << addonOrFrameName);
+            }
+        } else if (_stricmp(eventName, "SPELL_HEAL_BY_SELF") == 0 ||
+                   _stricmp(eventName, "SPELL_HEAL_BY_OTHER") == 0 ||
+                   _stricmp(eventName, "SPELL_HEAL_ON_SELF") == 0) {
+            if (!gUserSettings.enableSpellHealEvents) {
+                gUserSettings.enableSpellHealEvents = true;
+                DEBUG_LOG("RegisterScriptEvent enabled " << eventName << " for " << addonOrFrameName);
+            }
+        } else if (_stricmp(eventName, "SPELL_ENERGIZE_BY_SELF") == 0 ||
+                   _stricmp(eventName, "SPELL_ENERGIZE_BY_OTHER") == 0 ||
+                   _stricmp(eventName, "SPELL_ENERGIZE_ON_SELF") == 0) {
+            if (!gUserSettings.enableSpellEnergizeEvents) {
+                gUserSettings.enableSpellEnergizeEvents = true;
+                DEBUG_LOG("RegisterScriptEvent enabled " << eventName << " for " << addonOrFrameName);
+            }
+        } else if (_stricmp(eventName, "KEY_DOWN") == 0 || _stricmp(eventName, "KEY_UP") == 0) {
+            if (!gUserSettings.enableKeyPressEvents) {
+                gUserSettings.enableKeyPressEvents = true;
+                DEBUG_LOG("RegisterScriptEvent enabled " << eventName << " for " << addonOrFrameName);
+            }
+        }
+    }
+
+
+    uint32_t FrameScript_Object_RegisterScriptEventHook(hadesmem::PatchDetourBase *detour, void *thisPtr,
+                                                        void *dummy_edx, char *eventName) {
+        auto const registerScriptEvent = detour->GetTrampolineT<FrameScript_Object_RegisterScriptEventT>();
+        auto const result = registerScriptEvent(thisPtr, dummy_edx, eventName);
+        EnableEvents(thisPtr, eventName);
+        return result;
     }
 
     void Framescript_SetEventCountHook(hadesmem::PatchDetourBase *detour, void *thisPtr, void *dummy_edx,

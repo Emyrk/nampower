@@ -263,7 +263,7 @@ namespace Nampower {
         }
 
         const char *unitStr = lua_tostring(luaState, 1);
-        uint32_t raidTargetIndex = static_cast<uint32_t>(lua_tonumber(luaState, 2));
+        int32_t raidTargetIndex = static_cast<int32_t>(lua_tonumber(luaState, 2)) - 1;
 
         uint64_t targetGuid = GetUnitGuidFromString(unitStr);
         if (targetGuid == 0) {
@@ -291,7 +291,7 @@ namespace Nampower {
             }
         }
 
-        if (raidTargetIndex > 8) {
+        if (raidTargetIndex >= 8) {
             lua_error(luaState, "SetLocalRaidTargetIndex: raidTargetIndex must be in range 0-8");
             return 0;
         }
@@ -303,7 +303,23 @@ namespace Nampower {
 
         auto raidTargets =
             reinterpret_cast<uint64_t *>(static_cast<uint32_t>(Offsets::CGRaidInfo_m_raidtargets));
+
+        // if raidTargetIndex is valid and already has the targetGuid, do nothing
+        if (raidTargetIndex >= 0 && raidTargets[raidTargetIndex] == targetGuid) {
+            return 1;
+        }
+
+        // Clear out previous mark for this guid if there was one
+        for (uint32_t i = 0; i < 8; ++i) {
+            if (i == static_cast<uint32_t>(raidTargetIndex) || raidTargets[i] != targetGuid) {
+                continue;
+            }
+
+            raidTargets[i] = 0;
+        }
+
         auto const previousTargetGuid = raidTargets[raidTargetIndex];
+        // Update the nameplate for the previous guid for the mark we are going to use
         if (previousTargetGuid != 0) {
             raidTargets[raidTargetIndex] = 0;
 
@@ -313,11 +329,35 @@ namespace Nampower {
             }
         }
 
-        raidTargets[raidTargetIndex] = targetGuid;
+        // Store new mark if >= 0, -1 means clear
+        if (raidTargetIndex >= 0) {
+            raidTargets[raidTargetIndex] = targetGuid;
+        }
 
+        // Update the nameplate for the new guid for the mark we are going to use
         namePlateUpdateRaidTarget(targetUnit);
 
         return 1;
+    }
+
+    uint32_t Script_SetRaidTargetHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState) {
+        auto activePlayerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto const numRaidMembers =
+            *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGRaidInfo_m_numRaidMembers));
+
+        using CGPartyInfo_NumMembersT = int (__fastcall *)();
+        auto const numPartyMembers =
+            reinterpret_cast<CGPartyInfo_NumMembersT>(static_cast<uint32_t>(Offsets::CGPartyInfo_NumMembers));
+        auto const partyMemberCount = numPartyMembers ? numPartyMembers() : 0;
+
+        // if not in party or raid use local version
+        if (gUserSettings.enableLocalSetRaidTarget &&
+            (activePlayerGuid == 0 || (numRaidMembers == 0 && partyMemberCount == 0))) {
+            return Script_SetLocalRaidTargetIndex(luaState);
+        }
+
+        auto const original = detour->GetTrampolineT<LuaScriptT>();
+        return original(luaState);
     }
 
     uint32_t Script_GetUnitGUID(uintptr_t *luaState) {

@@ -99,19 +99,21 @@ SET NP_TargetingQueueWindowMs "1000"
 
 - `NP_PreventMountingWhenBuffCapped` - Whether to prevent mounting when you have 32 buffs (buff capped) and are not already mounted. This prevents the issue where you mount but cannot dismount because the mount aura fails to apply due to the buff cap. When blocked, displays an error message. 0 to disable, 1 to enable. Default is 1.
 
-- `NP_EnableAuraCastEvents` - Whether to enable AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER events. 0 to disable, 1 to enable. Default is 0.
+- `NP_EnableAuraCastEvents` - Deprecated compatibility toggle for AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER. In version 4.5.0 and later can just register the event to enable them. 0 to disable, 1 to enable. Default is 0.
 
-- `NP_EnableAutoAttackEvents` - Whether to enable AUTO_ATTACK_SELF and AUTO_ATTACK_OTHER events. 0 to disable, 1 to enable. Default is 0.
+- `NP_EnableAutoAttackEvents` - Deprecated compatibility toggle for AUTO_ATTACK_SELF and AUTO_ATTACK_OTHER. In version 4.5.0 and later can just register the event to enable them. 0 to disable, 1 to enable. Default is 0.
 
-- `NP_EnableSpellStartEvents` - Whether to enable SPELL_START_SELF and SPELL_START_OTHER events. 0 to disable, 1 to enable. Default is 0.
+- `NP_EnableSpellStartEvents` - Deprecated compatibility toggle for SPELL_START_SELF and SPELL_START_OTHER. In version 4.5.0 and later can just register the event to enable them. 0 to disable, 1 to enable. Default is 0.
 
-- `NP_EnableSpellGoEvents` - Whether to enable SPELL_GO_SELF and SPELL_GO_OTHER events. 0 to disable, 1 to enable. Default is 0.
+- `NP_EnableSpellGoEvents` - Deprecated compatibility toggle for SPELL_GO_SELF and SPELL_GO_OTHER. In version 4.5.0 and later can just register the event to enable them. 0 to disable, 1 to enable. Default is 0.
 
-- `NP_EnableSpellHealEvents` - Whether to enable SPELL_HEAL_BY_SELF, SPELL_HEAL_BY_OTHER, and SPELL_HEAL_ON_SELF events. 0 to disable, 1 to enable. Default is 0.
+- `NP_EnableSpellHealEvents` - Deprecated compatibility toggle for SPELL_HEAL_BY_SELF, SPELL_HEAL_BY_OTHER, and SPELL_HEAL_ON_SELF. In version 4.5.0 and later can just register the event to enable them. 0 to disable, 1 to enable. Default is 0.
 
-- `NP_EnableSpellEnergizeEvents` - Whether to enable SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_OTHER, and SPELL_ENERGIZE_ON_SELF events. 0 to disable, 1 to enable. Default is 0.
+- `NP_EnableSpellEnergizeEvents` - Deprecated compatibility toggle for SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_OTHER, and SPELL_ENERGIZE_ON_SELF. In version 4.5.0 and later can just register the event to enable them. 0 to disable, 1 to enable. Default is 0.
 
 - `NP_EnableEnhancedTooltips` - Whether to enable nampower's tooltip additions such as spell proc chance, ICD, and item cooldown text. 0 to disable, 1 to enable. Default is 1.
+
+- `NP_EnableLocalSetRaidTarget` - Whether `SetRaidTarget` should fall back to the local-only raid marker table update when you are not in a party or raid. 0 to disable, 1 to enable. Default is 1.
 
 - `NP_EnableUnitEventsPet` - Whether to fire unit state events for the `pet` and `partypet1`–`partypet4` unit tokens. 0 to disable, 1 to enable. Default is 1.
 
@@ -233,12 +235,12 @@ Available events:
 - SPELL_GO_SELF and SPELL_GO_OTHER - Triggered by the server to indicate a spell completed casting.
 - SPELL_DAMAGE_EVENT_SELF and SPELL_DAMAGE_EVENT_OTHER - Combat damage events
 - Buff/Debuff Events (BUFF_ADDED_SELF, BUFF_REMOVED_SELF, BUFF_UPDATE_DURATION_SELF, etc.)
-- AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER - Aura application events (fires once per aura effect per target; "Self" fires when the aura lands on the active player, including self-cast with no explicit target; includes aura metadata + amplitude/misc + aura cap bitfield for buff/debuff slots). Handles single-target and multi-target (AOE) spells. Some auras don't have spell effects and won't trigger this; use BUFF/DEBUFF gains for those. Set `NP_EnableAuraCastEvents=1` to enable. See EVENTS.md for details on multi-target behavior and known limitations.
-- AUTO_ATTACK_SELF and AUTO_ATTACK_OTHER - Auto attack round events (fires when auto attack hits are processed; includes damage, hit info, victim state, absorb/resist/block amounts). Set `NP_EnableAutoAttackEvents=1` to enable. See EVENTS.md for details.
-- SPELL_HEAL_BY_SELF, SPELL_HEAL_BY_OTHER, and SPELL_HEAL_ON_SELF - Spell healing events (fires when spell heals are processed; includes target, caster, spell ID, amount, critical flag, and periodic flag). Set `NP_EnableSpellHealEvents=1` to enable. See EVENTS.md for details.
-- SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_OTHER, and SPELL_ENERGIZE_ON_SELF - Spell energize events (fires when power is restored via spells; includes target, caster, spell ID, power type, amount, and periodic flag). Set `NP_EnableSpellEnergizeEvents=1` to enable. See EVENTS.md for details.
+- AURA_CAST_ON_SELF and AURA_CAST_ON_OTHER - Aura application events (fires once per aura effect per target; "Self" fires when the aura lands on the active player, including self-cast with no explicit target; includes aura metadata + amplitude/misc + aura cap bitfield for buff/debuff slots). Handles single-target and multi-target (AOE) spells. Some auras don't have spell effects and won't trigger this; use BUFF/DEBUFF gains for those. Register the event to enable it. `NP_EnableAuraCastEvents` remains as a deprecated compatibility toggle. See EVENTS.md for details on multi-target behavior and known limitations.
+- AUTO_ATTACK_SELF and AUTO_ATTACK_OTHER - Auto attack round events (fires when auto attack hits are processed; includes damage, hit info, victim state, absorb/resist/block amounts). Register the event to enable it. `NP_EnableAutoAttackEvents` remains as a deprecated compatibility toggle. See EVENTS.md for details.
+- SPELL_HEAL_BY_SELF, SPELL_HEAL_BY_OTHER, and SPELL_HEAL_ON_SELF - Spell healing events (fires when spell heals are processed; includes target, caster, spell ID, amount, critical flag, and periodic flag). Register the event to enable it. `NP_EnableSpellHealEvents` remains as a deprecated compatibility toggle. See EVENTS.md for details.
+- SPELL_ENERGIZE_BY_SELF, SPELL_ENERGIZE_BY_OTHER, and SPELL_ENERGIZE_ON_SELF - Spell energize events (fires when power is restored via spells; includes target, caster, spell ID, power type, amount, and periodic flag). Register the event to enable it. `NP_EnableSpellEnergizeEvents` remains as a deprecated compatibility toggle. See EVENTS.md for details.
 - UNIT_DIED - Fires when a unit dies
-- KEY_DOWN and KEY_UP - Keyboard key events from `CSimpleTop::OnKeyDown` / `CSimpleTop::OnKeyUp` (see [EVENTS.md](EVENTS.md#key_down-and-key_up) for full argument and key-code details)
+- KEY_DOWN and KEY_UP - Keyboard key events from `CSimpleTop::OnKeyDown` / `CSimpleTop::OnKeyUp` (see [EVENTS.md](EVENTS.md#key_down-and-key_up) for full argument and key-code details). Register the event to enable it.
 
 ## Bug Reporting
 If you encounter any bugs please report them in the issues tab.  Please include the nampower_debug.txt file in the same directory as your WoW.exe to help me diagnose the issue.  If you are able to reproduce the bug please include the steps to reproduce it.  In a future version once bugs are ironed out I'll make logging optional.
