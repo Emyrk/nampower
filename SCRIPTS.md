@@ -77,6 +77,8 @@ For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, 
     - [EncryptedServerLogin(username, encryptedPasswordBase64String)](#encryptedserverloginusername-encryptedpasswordbase64string)
     - [CombatLogFlush()](#combatlogflush)
     - [DisenchantAll](#disenchantallitemidorname-includesoulbound-or-disenchantallquality-includesoulbound)
+    - [GetQuestLogQuestIds()](#getquestlogquestids)
+    - [GetQuestDialogQuestId()](#getquestdialogquestid)
 ---
 
 ## Performance Optimization - Table References
@@ -1700,3 +1702,33 @@ DisenchantAll("Glowing Brightwood Staff", 1)
 - The function will stop if you run out of matching items or if the disenchant spell fails
 - Displays chat messages: "Disenchanting [Item Link] move during cast to cancel.", "No more items to disenchant.", and "Disenchant interrupted or failed."
 - **REVIEW YOUR BAGS CAREFULLY BEFORE USE** - disenchanting cannot be undone!
+
+#### GetQuestLogQuestIds()
+Returns a compact table of real quest IDs from the current quest log.
+
+**Returns:**
+- A Lua table indexed `1..N` containing quest IDs only.
+
+**Examples:**
+```
+/run local t=GetQuestLogQuestIds(); local i; for i=1,table.getn(t) do print(t[i]) end
+```
+
+---
+
+#### GetQuestDialogQuestId()
+Returns the real quest ID for the currently open quest dialog.
+
+This is mainly useful while handling:
+- `QUEST_DETAIL`
+- `QUEST_PROGRESS`
+- `QUEST_COMPLETE`
+
+**Returns:**
+- The current dialog quest ID as a number.
+- `nil` when no valid quest dialog is active.
+
+**Examples:**
+```
+/run print(GetQuestDialogQuestId())
+```

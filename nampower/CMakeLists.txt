@@ -59,6 +59,8 @@ set(SOURCE_FILES
         unit.cpp
         tooltip.hpp
         tooltip.cpp
+        quest.hpp
+        quest.cpp
 )
 
 add_library(${DLL_NAME} SHARED ${SOURCE_FILES})

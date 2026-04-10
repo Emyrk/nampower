@@ -51,6 +51,7 @@
 #include "unit.hpp"
 #include "pet.hpp"
 #include "tooltip.hpp"
+#include "quest.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -2132,6 +2133,12 @@ namespace Nampower {
 
         char executeCustomLuaFile[] = "ExecuteCustomLuaFile";
         RegisterLuaFunction(executeCustomLuaFile, reinterpret_cast<uintptr_t *>(Script_ExecuteCustomLuaFile));
+
+        char getQuestLogQuestIds[] = "GetQuestLogQuestIds";
+        RegisterLuaFunction(getQuestLogQuestIds, reinterpret_cast<uintptr_t *>(Script_GetQuestLogQuestIds));
+
+        char getQuestDialogQuestId[] = "GetQuestDialogQuestId";
+        RegisterLuaFunction(getQuestDialogQuestId, reinterpret_cast<uintptr_t *>(Script_GetQuestDialogQuestId));
     }
 
     void Glue_LoadScriptFunctionsHook(hadesmem::PatchDetourBase *detour) {
