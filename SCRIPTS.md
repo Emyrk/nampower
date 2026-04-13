@@ -332,8 +332,9 @@ Returns a table reference containing all equipped items for the specified unit.
 - `unitToken` (string): Can be a standard unit token ("player", "target", "pet", etc.) or a GUID string
 
 **Returns:**
-- A Lua table reference with equipment slot indices as keys (0-18) and item info tables as values
+- A Lua table reference with equipment slot indices as keys (1-19) and item info tables as values. Empty slots are nil.
 - Returns nil if the unit cannot be found or inspected
+- Player and non-player calls return separate table references, so results do not overwrite each other
 
 For the player, item info includes:
 - `itemId`: The item's ID
@@ -341,6 +342,7 @@ For the player, item info includes:
 - `duration`: Item duration in milliseconds
 - `spellChargesRemaining`: Remaining spell charges as a single number. It uses the largest absolute value found in the internal 5-slot spell-charge array.
 - `flags`: Item flags
+- `randomPropertiesId`: Random property ID (e.g. for randomly enchanted items)
 - `permanentEnchantId`: Permanent enchantment ID
 - `tempEnchantId`: Temporary enchantment ID
 - `tempEnchantmentTimeLeftMs`: Time remaining on temp enchant in milliseconds
@@ -350,6 +352,7 @@ For the player, item info includes:
 
 For other inspected units (limited data):
 - `itemId`: The item's ID
+- `randomPropertiesId`: Random property ID
 - `permanentEnchantId`: Permanent enchantment ID
 - `tempEnchantId`: Temporary enchantment ID
 
@@ -368,8 +371,8 @@ end
 
 -- Check player's weapon durability
 local items = GetEquippedItems("player")
-if items and items[15] then -- slot 15 is main hand
-    local weapon = items[15]
+if items and items[16] then -- slot 16 is main hand
+    local weapon = items[16]
     print("Weapon durability: " .. weapon.durability .. "/" .. weapon.maxDurability)
 end
 ```
@@ -379,14 +382,14 @@ Returns item info for a specific equipment slot on the specified unit.
 
 **Parameters:**
 - `unitToken` (string): Can be a standard unit token ("player", "target", "pet", etc.) or a GUID string
-- `slot` (number): Equipment slot number (0-18)
+- `slot` (number): Equipment slot number (1-19)
   - 1 = Head, 2 = Neck, 3 = Shoulder, 4 = Shirt, 5 = Chest
   - 6 = Waist, 7 = Legs, 8 = Feet, 9 = Wrist, 10 = Hands
   - 11 = Finger 1, 12 = Finger 2, 13 = Trinket 1, 14 = Trinket 2
   - 15 = Back, 16 = Main Hand, 17 = Off Hand, 18 = Ranged, 19 = Tabard
 
 **Returns:**
-- A Lua table reference containing the item info (same fields as GetEquippedItems)
+- A Lua table reference containing the item info (same fields as GetEquippedItems for the respective unit type)
 - Returns nil if the slot is empty, unit cannot be found, or unit cannot be inspected
 
 **Examples:**

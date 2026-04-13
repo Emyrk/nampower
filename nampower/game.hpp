@@ -529,6 +529,12 @@ namespace game {
         uint32_t itemId;
         uint32_t permanentEnchantId;
         uint32_t tempEnchantId;
+        uint32_t unk2;
+        uint32_t unk3;
+        uint32_t unk4;
+        uint32_t unk5;
+        uint32_t unk6;
+        uint32_t randomPropertiesId;
     };
 
 

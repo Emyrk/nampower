@@ -41,6 +41,7 @@ namespace Nampower {
         uint32_t duration;
         int32_t spellChargesRemaining;
         uint32_t flags;
+        uint32_t randomPropertiesId;
         uint32_t permanentEnchantId;
         uint32_t tempEnchantId;
         uint32_t tempEnchantmentTimeLeftMs;
@@ -49,6 +50,7 @@ namespace Nampower {
         uint32_t maxDurability;
 
         CachedItemData() : itemId(0), stackCount(0), duration(0), spellChargesRemaining(0), flags(0),
+                           randomPropertiesId(0),
                            permanentEnchantId(0), tempEnchantId(0),
                            tempEnchantmentTimeLeftMs(0), tempEnchantmentCharges(0),
                            durability(0), maxDurability(0) {}
@@ -59,6 +61,7 @@ namespace Nampower {
                    duration == other.duration &&
                    spellChargesRemaining == other.spellChargesRemaining &&
                    flags == other.flags &&
+                   randomPropertiesId == other.randomPropertiesId &&
                    permanentEnchantId == other.permanentEnchantId &&
                    tempEnchantId == other.tempEnchantId &&
                    tempEnchantmentTimeLeftMs == other.tempEnchantmentTimeLeftMs &&

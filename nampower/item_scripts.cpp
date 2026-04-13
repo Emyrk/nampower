@@ -16,6 +16,7 @@ namespace Nampower {
     static int basicItemInfoTableRef = LUA_REFNIL;
     static int itemInfoTableRef = LUA_REFNIL;
     static int equippedItemsTableRef = LUA_REFNIL;
+    static int targetEquippedItemsTableRef = LUA_REFNIL;
     static int bagItemsTableRef = LUA_REFNIL;
     static int trinketsTableRef = LUA_REFNIL;
     static uint32_t lastTrinketCount = 0;
@@ -33,13 +34,21 @@ namespace Nampower {
     // Item entry table references: 2D matrix [bagIndex][slot] for direct mapping
     static std::array<std::array<int, MAX_BAG_SLOTS>, MAX_BAGS> itemEntryTableRefs{};
 
-    // Equipped item table references (slots 0-18)
+    // Equipped item table references for player (slots 0-18)
     static std::array<int, MAX_EQUIPPED_SLOTS> equippedItemTableRefs{};
+
+    // Equipped item table references for non-player (target) inspections (slots 0-18)
+    static std::array<int, MAX_EQUIPPED_SLOTS> targetEquippedItemTableRefs{};
+
+    // Trinket-specific table references (separate from equippedItemTableRefs/itemEntryTableRefs)
+    static std::array<int, MAX_EQUIPPED_SLOTS> equippedTrinketTableRefs{};
+    static std::array<std::array<int, MAX_BAG_SLOTS>, MAX_BAGS> bagTrinketTableRefs{};
 
     // String keys used when pushing item data to Lua
     static char itemIdKey[] = "itemId";
     static char permanentEnchantIdKey[] = "permanentEnchantId";
     static char tempEnchantIdKey[] = "tempEnchantId";
+    static char randomPropertiesIdKey[] = "randomPropertiesId";
     static char stackCountKey[] = "stackCount";
     static char durationKey[] = "duration";
     static char spellChargesRemainingKey[] = "spellChargesRemaining";
@@ -117,6 +126,7 @@ namespace Nampower {
         PushTableValue(luaState, itemIdKey, cgItem->itemId);
         PushTableValue(luaState, permanentEnchantIdKey, cgItem->permanentEnchantId);
         PushTableValue(luaState, tempEnchantIdKey, cgItem->tempEnchantId);
+        PushTableValue(luaState, randomPropertiesIdKey, cgItem->randomPropertiesId);
     }
 
     void CreateItemInfoTable(uintptr_t *luaState, game::CGItem_C *item) {
@@ -136,6 +146,7 @@ namespace Nampower {
         PushTableValue(luaState, durationKey, itemFields->duration);
         PushTableValue(luaState, spellChargesRemainingKey, GetMaxSpellChargesRemaining(itemFields->spellChargesRemaining));
         PushTableValue(luaState, flagsKey, itemFields->flags);
+        PushTableValue(luaState, randomPropertiesIdKey, itemFields->randomPropertiesId);
         PushTableValue(luaState, permanentEnchantIdKey, itemFields->permEnchantmentSlot.id);
         PushTableValue(luaState, tempEnchantIdKey, itemFields->tempEnchantmentSlot.id);
         PushTableValue(luaState, tempEnchantmentTimeLeftMsKey, itemFields->tempEnchantmentSlot.duration);
@@ -203,6 +214,7 @@ namespace Nampower {
         currentData.duration = itemFields->duration;
         currentData.spellChargesRemaining = GetMaxSpellChargesRemaining(itemFields->spellChargesRemaining);
         currentData.flags = itemFields->flags;
+        currentData.randomPropertiesId = itemFields->randomPropertiesId;
         currentData.permanentEnchantId = itemFields->permEnchantmentSlot.id;
         currentData.tempEnchantId = itemFields->tempEnchantmentSlot.id;
         currentData.tempEnchantmentTimeLeftMs = itemFields->tempEnchantmentSlot.duration;
@@ -276,6 +288,7 @@ namespace Nampower {
             PushTableValue(luaState, durationKey, itemFields->duration);
             PushTableValue(luaState, spellChargesRemainingKey, GetMaxSpellChargesRemaining(itemFields->spellChargesRemaining));
             PushTableValue(luaState, flagsKey, itemFields->flags);
+            PushTableValue(luaState, randomPropertiesIdKey, itemFields->randomPropertiesId);
             PushTableValue(luaState, permanentEnchantIdKey, itemFields->permEnchantmentSlot.id);
             PushTableValue(luaState, tempEnchantIdKey, itemFields->tempEnchantmentSlot.id);
             PushTableValue(luaState, tempEnchantmentTimeLeftMsKey, itemFields->tempEnchantmentSlot.duration);
@@ -571,10 +584,10 @@ namespace Nampower {
                 if (copyTable) {
                     lua_newtable(luaState);
                 } else {
-                    // Get table ref based on location (direct 2D mapping)
+                    // Use dedicated trinket table refs, separate from GetEquippedItems/GetBagItems refs
                     if (bagIndex == EQUIPPED_BAG_INDEX) {
                         if (slot < MAX_EQUIPPED_SLOTS) {
-                            GetTableRef(luaState, equippedItemTableRefs[slot]);
+                            GetTableRef(luaState, equippedTrinketTableRefs[slot]);
                         } else {
                             lua_newtable(luaState);
                         }
@@ -589,7 +602,7 @@ namespace Nampower {
                         }
 
                         if (adjustedSlot < MAX_BAG_SLOTS) {
-                            GetTableRef(luaState, itemEntryTableRefs[cacheIndexForTableRef][adjustedSlot]);
+                            GetTableRef(luaState, bagTrinketTableRefs[cacheIndexForTableRef][adjustedSlot]);
                         } else {
                             lua_newtable(luaState);
                         }
@@ -612,7 +625,7 @@ namespace Nampower {
                     PushTableValue(luaState, itemLevelKey, itemStats->m_itemLevel);
 
                     // Get texture path using display ID
-                    if (itemStats && itemStats->m_displayInfoID > 0) {
+                    if (itemStats->m_displayInfoID > 0) {
                         char *texturePath = getInventoryArt(itemStats->m_displayInfoID);
                         if (texturePath && texturePath[0] != '\0') {
                             PushTableValue(luaState, textureKey, texturePath);
@@ -707,11 +720,12 @@ namespace Nampower {
             return 0;
         }
 
-        // Get or create reusable table
-        GetTableRef(luaState, equippedItemsTableRef);
-
         auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
         bool isPlayer = (guid == playerGuid);
+
+        // Use separate outer tables for player vs target to avoid cross-contamination
+        GetTableRef(luaState, isPlayer ? equippedItemsTableRef : targetEquippedItemsTableRef);
+
 
         if (isPlayer) {
             auto const getBagItem = reinterpret_cast<CGBag_C_GetItemAtSlotT>(Offsets::CGBag_C_GetItemAtSlot);
@@ -721,6 +735,10 @@ namespace Nampower {
                 auto item = getBagItem(inventory, slot);
                 if (item) {
                     PushBagCGItemToTable(luaState, -999, slot, item);
+                } else {
+                    lua_pushnumber(luaState, static_cast<double>(slot + 1));
+                    lua_pushnil(luaState);
+                    lua_settable(luaState, -3);
                 }
             }
         } else {
@@ -729,11 +747,17 @@ namespace Nampower {
 
             for (uint32_t slot = 0; slot <= 18; slot++) {
                 auto cgItem = getEquippedItem(unit, slot);
+                lua_pushnumber(luaState, static_cast<double>(slot+1)); // lua is 1 indexed
                 if (cgItem) {
-                    lua_pushnumber(luaState, static_cast<double>(slot+1)); // lua is 1 indexed
-                    CreateBasicItemInfoTable(luaState, cgItem);
-                    lua_settable(luaState, -3);
+                    GetTableRef(luaState, targetEquippedItemTableRefs[slot]);
+                    PushTableValue(luaState, itemIdKey, cgItem->itemId);
+                    PushTableValue(luaState, permanentEnchantIdKey, cgItem->permanentEnchantId);
+                    PushTableValue(luaState, tempEnchantIdKey, cgItem->tempEnchantId);
+                    PushTableValue(luaState, randomPropertiesIdKey, cgItem->randomPropertiesId);
+                } else {
+                    lua_pushnil(luaState);
                 }
+                lua_settable(luaState, -3);
             }
         }
 
