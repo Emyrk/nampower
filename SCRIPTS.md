@@ -1706,15 +1706,26 @@ DisenchantAll("Glowing Brightwood Staff", 1)
 - Displays chat messages: "Disenchanting [Item Link] move during cast to cancel.", "No more items to disenchant.", and "Disenchant interrupted or failed."
 - **REVIEW YOUR BAGS CAREFULLY BEFORE USE** - disenchanting cannot be undone!
 
-#### GetQuestLogQuestIds()
-Returns a compact table of real quest IDs from the current quest log.
+#### GetQuestLogQuestIds([useCopy])
+Returns a table of real quest IDs from the current quest log, skipping category headers and invalid entries.
+
+**Parameters:**
+- `useCopy` (number, optional): If non-zero, returns a fresh table each call. If omitted or 0, returns a reusable table reference that is updated in place (stale entries from removed quests are set to nil automatically).
 
 **Returns:**
-- A Lua table indexed `1..N` containing quest IDs only.
+- A Lua table indexed `1..N` containing quest IDs as numbers, with no gaps. Header rows and entries with an invalid quest ID are excluded.
+- Returns an empty table if the quest log is empty or contains more than 256 entries.
 
 **Examples:**
-```
-/run local t=GetQuestLogQuestIds(); local i; for i=1,table.getn(t) do print(t[i]) end
+```lua
+-- Print all current quest IDs (reusable ref)
+local t = GetQuestLogQuestIds()
+for i = 1, table.getn(t) do
+    print(t[i])
+end
+
+-- Get a snapshot copy (safe to store across calls)
+local snapshot = GetQuestLogQuestIds(1)
 ```
 
 ---
