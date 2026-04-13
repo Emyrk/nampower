@@ -221,6 +221,7 @@ This includes functions for:
 - Encrypted login helpers (EncryptPassword, EncryptedServerLogin)
 - Talent helpers (LearnTalentRank)
 - Spell lookups and utilities (GetUnitGUID, CombatLogFlush, etc.)
+- Quest ID helpers (GetQuestLogQuestIds, GetQuestDialogQuestId)
 
 Detailed parameter, return-value, and behavior notes for individual functions are documented in [SCRIPTS.md](SCRIPTS.md).
 

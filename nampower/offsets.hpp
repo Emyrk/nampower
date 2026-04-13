@@ -301,4 +301,9 @@ enum class Offsets : std::uint32_t {
     PetActionBarSlots = 0x00b71438,
     PetReactionMode = 0x00b71468,
     ActivePetGuid = 0x00b714a0,
+    
+    QuestLogEntries = 0x00BB71C0,
+    QuestLogEntryCount = 0x00BB7478,
+    QuestDialogState = 0x00BE0818,
+    QuestDialogCurrentQuestId = 0x00BE081C,
 };
