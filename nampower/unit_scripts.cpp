@@ -408,7 +408,7 @@ namespace Nampower {
             }
         }
 
-        if (!hasHexAndUnitSuffix) {
+        if (!isHexToken && !hasHexAndUnitSuffix) {
             uint64_t result = original(nameStr);
             if (result != 0) {
                 return result;
