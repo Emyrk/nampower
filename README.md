@@ -1,3 +1,5 @@
+> **Note:** This is a fork of [nampower by avitasia](https://gitea.com/avitasia/nampower). This fork is mainly a mirror and no future development is planned.
+
 # v2.0.0 Changes
 
 Added spell queuing, automatic retry on error, and quickcasting with lots of customization.  

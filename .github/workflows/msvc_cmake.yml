@@ -20,7 +20,7 @@ jobs:
 
     - name: Build Boost
       run: |
-        Invoke-WebRequest https://boostorg.jfrog.io/artifactory/main/release/1.78.0/source/boost_1_78_0.zip -OutFile boost.zip
+        Invoke-WebRequest https://archives.boost.io/release/1.78.0/source/boost_1_78_0.zip -OutFile boost.zip
         Expand-Archive -Path boost.zip -DestinationPath .
         cd boost_1_78_0
         .\bootstrap
