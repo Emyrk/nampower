@@ -1,3 +1,5 @@
+# ***Please clone all repos you are interested in, this account will be deleted in 7 days***
+
 # v2.0.0 Changes
 
 Added spell queuing, automatic retry on error, and quickcasting with lots of customization.  
