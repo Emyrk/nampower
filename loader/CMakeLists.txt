@@ -10,4 +10,6 @@ set(SOURCE_FILES
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})
 target_link_libraries(${EXECUTABLE_NAME} shlwapi.lib asmjit.lib udis86.lib)
 
+
+
 install(TARGETS ${EXECUTABLE_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")

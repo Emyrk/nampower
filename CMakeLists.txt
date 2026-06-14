@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 
 foreach(policy
         CMP0074 # CMake 3.12
+        CMP0144 # CMake 3.27 - use upper-case <PACKAGENAME>_ROOT variables
 )
     if(POLICY ${policy})
         cmake_policy(SET ${policy} NEW)
@@ -21,9 +22,15 @@ project(${PROJECT_NAME})
 if( NOT CMAKE_BUILD_TYPE )
     set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
-set(BOOST_ROOT "C:/software/boost_1_80_0/boost")
-set(BOOST_INCLUDEDIR "C:/software/boost_1_80_0")
-set(BOOST_LIBRARYDIR "C:/software/boost_1_80_0/lib32-msvc-14.3")
+if(NOT BOOST_ROOT)
+    set(BOOST_ROOT "C:/software/boost_1_80_0/boost")
+endif()
+if(NOT BOOST_INCLUDEDIR)
+    set(BOOST_INCLUDEDIR "C:/software/boost_1_80_0")
+endif()
+if(NOT BOOST_LIBRARYDIR)
+    set(BOOST_LIBRARYDIR "C:/software/boost_1_80_0/lib32-msvc-14.3")
+endif()
 set (Boost_DETAILED_FAILURE_MSG ON)
 set (Boost_DEBUG ON)
 
@@ -40,11 +47,15 @@ else()
 endif()
 
 if ("x_${CMAKE_BUILD_TYPE}" STREQUAL "x_Debug")
-    set(HADESMEM_ROOT "C:/software/hadesmem-v142-Debug-Win32")
+    if(NOT HADESMEM_ROOT)
+        set(HADESMEM_ROOT "C:/software/hadesmem-v142-Debug-Win32")
+    endif()
     set(HADESMEM_BUILD "Debug")
     link_directories("${Boost_LIBRARY_DIR_DEBUG}")
 else()
-    set(HADESMEM_ROOT "C:/software/hadesmem-v142-Release-Win32")
+    if(NOT HADESMEM_ROOT)
+        set(HADESMEM_ROOT "C:/software/hadesmem-v142-Release-Win32")
+    endif()
     set(HADESMEM_BUILD "Release")
     link_directories("${Boost_LIBRARY_DIR_RELEASE}")
 endif()
@@ -89,12 +100,10 @@ include_directories(
 
 link_directories("${HADESMEM_LIB_DIR}")
 
-# Set static runtime library
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT /NODEFAULTLIB:MSVCRTD")
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT /NODEFAULTLIB:MSVCRTD")
+# Use dynamic runtime (/MD) to match hadesmem prebuilt libs (asmjit, udis86)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
 
 # Link static libraries
 add_subdirectory(loader)

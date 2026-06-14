@@ -10,7 +10,7 @@ env:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
     - uses: actions/checkout@v4
@@ -20,16 +20,20 @@ jobs:
         Invoke-WebRequest https://github.com/namreeb/hadesmem/releases/download/v1.7.0/hadesmem-v142-Release-Win32.zip -OutFile hadesmem.zip
         Expand-Archive -Path hadesmem.zip -DestinationPath .
 
-    - name: Build Boost
+    - name: Download Boost
       run: |
-        Invoke-WebRequest https://boostorg.jfrog.io/artifactory/main/release/1.78.0/source/boost_1_78_0.zip -OutFile boost.zip
+        Invoke-WebRequest https://archives.boost.io/release/1.78.0/source/boost_1_78_0.zip -OutFile boost.zip
         Expand-Archive -Path boost.zip -DestinationPath .
+
+    - name: Build Boost
+      shell: cmd
+      run: |
         cd boost_1_78_0
-        .\bootstrap
-        .\b2 --with-filesystem --with-program_options link=static threading=multi runtime-link=shared architecture=x86 address-model=32 stage
+        call bootstrap.bat
+        b2 --with-filesystem --with-program_options link=static threading=multi runtime-link=shared architecture=x86 address-model=32 stage
 
     - name: Configure CMake
-      run: cmake -A Win32 -B ${{github.workspace}}/build -DBOOST_ROOT=boost_1_78_0 -DHADESMEM_ROOT=hadesmem-v142-Release-Win32 -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/artifact
+      run: cmake -A Win32 -B ${{github.workspace}}/build -DBOOST_ROOT=${{github.workspace}}/boost_1_78_0 -DBOOST_INCLUDEDIR=${{github.workspace}}/boost_1_78_0 -DBOOST_LIBRARYDIR=${{github.workspace}}/boost_1_78_0/stage/lib -DHADESMEM_ROOT=${{github.workspace}}/hadesmem-v142-Release-Win32 -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/artifact
 
     - name: Build
       run: |
