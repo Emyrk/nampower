@@ -1,4 +1,4 @@
-# ***Please clone all repos you are interested in, this account will be deleted in 7 days***
+# ***This is a mirror of the nampower***
 
 # v2.0.0 Changes
 
@@ -28,7 +28,7 @@ If all else fails can turn off queuing for a specific macro like so depending on
 /run SetCVar("NP_QueueInstantSpells", "1")
 ```
 ## Installation
-Grab the latest nampower.dll from https://gitea.com/avitasia/nampower/releases and place in the same directory as WoW.exe.  You can also get the helper addon mentioned below and place that in Interface/Addons.
+Grab the latest nampower.dll from https://github.com/Emyrk/nampower/releases and place in the same directory as WoW.exe.  You can also get the helper addon mentioned below and place that in Interface/Addons.
 
 <b>You will need launch the game with a launcher like Vanillafixes https://github.com/hannesmann/vanillafixes or Unitxp https://github.com/allfoxwy/UnitXP_SP3</b> to actually have the nampower dll get loaded.
 
@@ -41,7 +41,7 @@ CMakeLists.txt is currently looking for boost at `set(BOOST_INCLUDEDIR "C:/softw
 ## Configuration
 
 ### Configure with addon
-There is a companion addon to make it easy to check/change the settings in game.  You can download it here - [nampowersettings](https://gitea.com/avitasia/nampowersettings).
+There is a companion addon to make it easy to check/change the settings in game.  You can download it here - [nampowersettings](https://github.com/Emyrk/nampowersettings).
 
 ### Manual Configuration
 The following CVars control the behavior of the spell queuing system:
