@@ -1,4 +1,4 @@
-# ***This is a mirror of the nampower***
+# ***This is a mirror of nampower***
 
 # v2.0.0 Changes
 
