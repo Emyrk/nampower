@@ -1541,7 +1541,9 @@ namespace Nampower {
         auto const original = detour->GetTrampolineT<UnitCombatLogDispelledT>();
         original(casterGuid, targetGuid, spellId);
 
-        if (!casterGuid || *casterGuid == 0) return;
+        // Some servers send malformed dispel logs that make the client invoke this callback
+        // repeatedly after the packet is exhausted. Do not amplify those zero-ID calls into Lua events.
+        if (!casterGuid || *casterGuid == 0 || spellId == 0) return;
 
         static char format[] = "%s%s%d";
         char *casterGuidStr = ConvertGuidToString(*casterGuid);
