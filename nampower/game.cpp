@@ -87,6 +87,10 @@ namespace game {
 
 
     std::uint32_t GetCastTime(void *unit, uint32_t spellId) {
+        if (!unit) {
+            return 0;
+        }
+
         auto const vmt = *reinterpret_cast<std::uint8_t **>(unit);
         int
         (__thiscall *getSpellCastingTime)(void *, uint32_t) = *reinterpret_cast<decltype(&getSpellCastingTime)>(vmt +

@@ -461,6 +461,16 @@ namespace Nampower {
         auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
         auto playerUnit = (playerGuid > 0) ? game::GetObjectPtr(playerGuid) : nullptr;
 
+        // The client can call this with a null caster unit while there is no active player object,
+        // e.g. an action bar keypress landing on the loading screen as a battleground ends.
+        // playerUnit is null in that state too, so the casterUnit != playerUnit check below does
+        // not catch it and we would go on to dereference null in game::GetCastTime.
+        if (casterUnit == nullptr) {
+            DEBUG_LOG("Ignoring cast of spell id " << spellId << " with no caster unit");
+            auto const castSpell = detour->GetTrampolineT<Spell_C_CastSpellT>();
+            return castSpell(casterUnit, spellId, item, guid);
+        }
+
         if (item == nullptr && casterUnit != playerUnit) {
             DEBUG_LOG("Ignoring non active player cast of spell " << game::GetSpellName(spellId) << " " << spellId);
             // just call original function if caster is not the active player
